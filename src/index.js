@@ -8,6 +8,7 @@ import { Game } from './game/Game.js';
 import { Renderer } from './render/Renderer.js';
 import { InputHandler } from './input/InputHandler.js';
 import { validateTerminalSize } from './utils/terminal.js';
+import { gameConfig } from './config/gameConfig.js';
 
 /**
  * Main game function
@@ -19,7 +20,10 @@ async function main() {
 
   try {
     // Step 8.2: Terminal Size Validation
-    const sizeCheck = validateTerminalSize(25, 30);
+    const sizeCheck = validateTerminalSize(
+      gameConfig.terminal.minRows,
+      gameConfig.terminal.minColumns
+    );
     if (!sizeCheck.valid) {
       console.error(`\n${sizeCheck.message}`);
       console.error('Please resize your terminal and try again.\n');

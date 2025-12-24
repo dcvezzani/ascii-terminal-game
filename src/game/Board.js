@@ -1,10 +1,12 @@
+import { gameConfig } from '../config/gameConfig.js';
+
 /**
- * Board class represents the game board as a 20x20 grid
+ * Board class represents the game board as a grid
  */
 export class Board {
   constructor() {
-    this.width = 20;
-    this.height = 20;
+    this.width = gameConfig.board.width;
+    this.height = gameConfig.board.height;
     this.grid = this._initializeGrid();
   }
 

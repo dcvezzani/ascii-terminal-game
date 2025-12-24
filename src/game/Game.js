@@ -1,4 +1,5 @@
 import { Board } from './Board.js';
+import { gameConfig } from '../config/gameConfig.js';
 
 /**
  * Game class manages game state and logic
@@ -6,9 +7,9 @@ import { Board } from './Board.js';
 export class Game {
   constructor() {
     this.board = new Board();
-    this.playerX = 10; // Center position
-    this.playerY = 10; // Center position
-    this.score = 0;
+    this.playerX = gameConfig.player.initialX;
+    this.playerY = gameConfig.player.initialY;
+    this.score = gameConfig.game.initialScore;
     this.running = false;
   }
 
@@ -58,9 +59,9 @@ export class Game {
    */
   reset() {
     this.board = new Board();
-    this.playerX = 10;
-    this.playerY = 10;
-    this.score = 0;
+    this.playerX = gameConfig.player.initialX;
+    this.playerY = gameConfig.player.initialY;
+    this.score = gameConfig.game.initialScore;
     this.running = true;
   }
 

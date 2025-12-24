@@ -2,17 +2,18 @@ import ansiEscapes from 'ansi-escapes';
 import chalk from 'chalk';
 import cliCursor from 'cli-cursor';
 import { getHorizontalCenter } from '../utils/terminal.js';
+import { gameConfig } from '../config/gameConfig.js';
 
 /**
  * Renderer class handles all terminal rendering for the game
  */
 export class Renderer {
   constructor() {
-    this.titleOffset = 2; // Rows from top for title
-    this.boardOffset = 5; // Rows from top for board
-    this.statusBarOffset = 26; // Rows from top for status bar (board is 20 rows + offset)
-    this.boardWidth = 20;
-    this.boardHeight = 20;
+    this.titleOffset = gameConfig.renderer.titleOffset;
+    this.boardOffset = gameConfig.renderer.boardOffset;
+    this.statusBarOffset = gameConfig.renderer.statusBarOffset;
+    this.boardWidth = gameConfig.board.width;
+    this.boardHeight = gameConfig.board.height;
   }
 
   /**
