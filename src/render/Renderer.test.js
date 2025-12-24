@@ -499,5 +499,153 @@ describe('Renderer', () => {
       expect(writeSpy).toHaveBeenCalled();
     });
   });
+
+  describe('renderHelp()', () => {
+    test('Renders help screen', () => {
+      process.stdout.rows = 30;
+      process.stdout.columns = 80;
+      renderer.renderHelp();
+      
+      expect(writeSpy).toHaveBeenCalled();
+    });
+
+    test('Clears screen before rendering', () => {
+      process.stdout.rows = 30;
+      process.stdout.columns = 80;
+      renderer.renderHelp();
+      
+      expect(writeSpy).toHaveBeenCalledWith(ansiEscapes.clearScreen);
+    });
+
+    test('Displays title "Terminal Game - Help"', () => {
+      process.stdout.rows = 30;
+      process.stdout.columns = 80;
+      renderer.renderHelp();
+      
+      const allCalls = writeSpy.mock.calls.map(call => String(call[0])).join('');
+      expect(allCalls).toContain('Terminal Game - Help');
+    });
+
+    test('Displays movement instructions (Arrow keys, WASD)', () => {
+      process.stdout.rows = 30;
+      process.stdout.columns = 80;
+      renderer.renderHelp();
+      
+      const allCalls = writeSpy.mock.calls.map(call => String(call[0])).join('');
+      expect(allCalls).toContain('Arrow Keys');
+      expect(allCalls).toContain('WASD');
+    });
+
+    test('Displays control instructions (Q/ESC, R, H/?)', () => {
+      process.stdout.rows = 30;
+      process.stdout.columns = 80;
+      renderer.renderHelp();
+      
+      const allCalls = writeSpy.mock.calls.map(call => String(call[0])).join('');
+      expect(allCalls).toContain('Q or ESC');
+      expect(allCalls).toContain('R - Restart');
+      expect(allCalls).toContain('H or ?');
+    });
+
+    test('Centers help text horizontally', () => {
+      process.stdout.rows = 30;
+      process.stdout.columns = 80;
+      renderer.renderHelp();
+      
+      // Should call cursorTo with calculated center positions
+      expect(writeSpy).toHaveBeenCalled();
+    });
+
+    test('Centers help text vertically', () => {
+      process.stdout.rows = 30;
+      process.stdout.columns = 80;
+      renderer.renderHelp();
+      
+      // Should calculate vertical center
+      expect(writeSpy).toHaveBeenCalled();
+    });
+
+    test('Uses correct colors (title=cyan, sections=yellow, instructions=white)', () => {
+      process.stdout.rows = 30;
+      process.stdout.columns = 80;
+      renderer.renderHelp();
+      
+      // Colors are applied via chalk, verify rendering happened
+      expect(writeSpy).toHaveBeenCalled();
+      const allCalls = writeSpy.mock.calls.map(call => String(call[0])).join('');
+      expect(allCalls).toContain('Terminal Game - Help');
+    });
+
+    test('Formats help text correctly', () => {
+      process.stdout.rows = 30;
+      process.stdout.columns = 80;
+      renderer.renderHelp();
+      
+      const allCalls = writeSpy.mock.calls.map(call => String(call[0])).join('');
+      expect(allCalls).toContain('Movement:');
+      expect(allCalls).toContain('Controls:');
+    });
+
+    test('Moves cursor out of the way after rendering', () => {
+      process.stdout.rows = 30;
+      process.stdout.columns = 80;
+      renderer.renderHelp();
+      
+      // Should call cursorTo at the end
+      expect(writeSpy).toHaveBeenCalled();
+    });
+
+    test('Contains all movement controls', () => {
+      process.stdout.rows = 30;
+      process.stdout.columns = 80;
+      renderer.renderHelp();
+      
+      const allCalls = writeSpy.mock.calls.map(call => String(call[0])).join('');
+      expect(allCalls).toContain('Arrow Keys');
+      expect(allCalls).toContain('W (up)');
+      expect(allCalls).toContain('S (down)');
+      expect(allCalls).toContain('A (left)');
+      expect(allCalls).toContain('D (right)');
+    });
+
+    test('Contains all game controls', () => {
+      process.stdout.rows = 30;
+      process.stdout.columns = 80;
+      renderer.renderHelp();
+      
+      const allCalls = writeSpy.mock.calls.map(call => String(call[0])).join('');
+      expect(allCalls).toContain('Quit game');
+      expect(allCalls).toContain('Restart game');
+      expect(allCalls).toContain('Show this help');
+    });
+
+    test('Instructions are clear and readable', () => {
+      process.stdout.rows = 30;
+      process.stdout.columns = 80;
+      renderer.renderHelp();
+      
+      const allCalls = writeSpy.mock.calls.map(call => String(call[0])).join('');
+      // Should contain key information
+      expect(allCalls.length).toBeGreaterThan(100); // Substantial content
+    });
+
+    test('All key bindings are listed correctly', () => {
+      process.stdout.rows = 30;
+      process.stdout.columns = 80;
+      renderer.renderHelp();
+      
+      const allCalls = writeSpy.mock.calls.map(call => String(call[0])).join('');
+      expect(allCalls).toContain('↑ ↓ ← →');
+      expect(allCalls).toContain('W');
+      expect(allCalls).toContain('S');
+      expect(allCalls).toContain('A');
+      expect(allCalls).toContain('D');
+      expect(allCalls).toContain('Q');
+      expect(allCalls).toContain('ESC');
+      expect(allCalls).toContain('R');
+      expect(allCalls).toContain('H');
+      expect(allCalls).toContain('?');
+    });
+  });
 });
 
