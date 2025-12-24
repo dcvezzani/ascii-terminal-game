@@ -9,7 +9,7 @@ This gameplan implements a simple terminal-based game where players can move a c
 ## Progress Summary
 
 - ✅ **Phase 1: Project Setup** - COMPLETE
-- ⏳ **Phase 2: Core Game Engine** - NOT STARTED
+- ✅ **Phase 2: Core Game Engine** - COMPLETE
 - ⏳ **Phase 3: Terminal Rendering System** - NOT STARTED
 - ⏳ **Phase 4: Input Handling** - NOT STARTED
 - ⏳ **Phase 5: Player Movement** - NOT STARTED
@@ -95,44 +95,44 @@ src/
 
 ### Step 2.1: Create Board Class
 
-- [ ] Create `src/game/Board.js`
-- [ ] Represent 20x20 grid as 2D array
-- [ ] Initialize with outer walls (`#`) and empty spaces (`.`)
-- [ ] Implement `getCell(x, y)` - Get cell content
-- [ ] Implement `setCell(x, y, value)` - Set cell content
-- [ ] Implement `isWall(x, y)` - Check if position is a wall
-- [ ] Implement `isValidPosition(x, y)` - Check if position is within bounds
+- [x] Create `src/game/Board.js`
+- [x] Represent 20x20 grid as 2D array
+- [x] Initialize with outer walls (`#`) and empty spaces (`.`)
+- [x] Implement `getCell(x, y)` - Get cell content
+- [x] Implement `setCell(x, y, value)` - Set cell content
+- [x] Implement `isWall(x, y)` - Check if position is a wall
+- [x] Implement `isValidPosition(x, y)` - Check if position is within bounds
 
 **Verification**:
-- [ ] Board class created
-- [ ] 20x20 grid initialized correctly
-- [ ] Outer walls present on all sides
-- [ ] Interior is all empty spaces
-- [ ] Methods work correctly
+- [x] Board class created
+- [x] 20x20 grid initialized correctly
+- [x] Outer walls present on all sides
+- [x] Interior is all empty spaces
+- [x] Methods work correctly
 
 ### Step 2.2: Create Game Class
 
-- [ ] Create `src/game/Game.js`
-- [ ] Implement game state management:
-  - [ ] Board instance
-  - [ ] Player position (x, y) - starts at (10, 10)
-  - [ ] Score (0 for MVP)
-  - [ ] Game running state
-- [ ] Implement `constructor()` - Initialize game state
-- [ ] Implement `getPlayerPosition()` - Return current position
-- [ ] Implement `getScore()` - Return current score
-- [ ] Implement `movePlayer(dx, dy)` - Move player (with wall collision)
-- [ ] Implement `reset()` - Reset game to initial state
-- [ ] Implement `isRunning()` - Check if game is running
-- [ ] Implement `stop()` - Stop the game
+- [x] Create `src/game/Game.js`
+- [x] Implement game state management:
+  - [x] Board instance
+  - [x] Player position (x, y) - starts at (10, 10)
+  - [x] Score (0 for MVP)
+  - [x] Game running state
+- [x] Implement `constructor()` - Initialize game state
+- [x] Implement `getPlayerPosition()` - Return current position
+- [x] Implement `getScore()` - Return current score
+- [x] Implement `movePlayer(dx, dy)` - Move player (with wall collision)
+- [x] Implement `reset()` - Reset game to initial state
+- [x] Implement `isRunning()` - Check if game is running
+- [x] Implement `stop()` - Stop the game
 
 **Verification**:
-- [ ] Game class created
-- [ ] Player starts at center (10, 10)
-- [ ] Score initialized to 0
-- [ ] Movement methods work
-- [ ] Wall collision prevents movement into walls
-- [ ] Reset method works
+- [x] Game class created
+- [x] Player starts at center (10, 10)
+- [x] Score initialized to 0
+- [x] Movement methods work
+- [x] Wall collision prevents movement into walls
+- [x] Reset method works
 
 ---
 
