@@ -91,6 +91,8 @@ export class Renderer {
     const centerOffset = getHorizontalCenter(statusText.length);
     
     process.stdout.write(ansiEscapes.cursorTo(centerOffset, this.statusBarOffset));
+    // Clear the line first to remove any trailing characters
+    process.stdout.write(ansiEscapes.eraseEndLine);
     process.stdout.write(chalk.dim(statusText));
   }
 
@@ -138,13 +140,24 @@ export class Renderer {
     // Clear old position (restore cell content)
     const oldCell = board.getCell(oldX, oldY);
     const oldColor = oldCell === '#' ? chalk.gray : chalk.white;
-    this.updateCell(oldX, oldY, oldCell, oldColor);
+    const boardStartX = getHorizontalCenter(this.boardWidth);
+    const oldScreenX = boardStartX + oldX;
+    const oldScreenY = this.boardOffset + oldY;
+    
+    process.stdout.write(ansiEscapes.cursorTo(oldScreenX, oldScreenY));
+    process.stdout.write(oldColor(oldCell));
     
     // Draw new position
-    this.updateCell(newX, newY, '@', chalk.green);
+    const newScreenX = boardStartX + newX;
+    const newScreenY = this.boardOffset + newY;
+    process.stdout.write(ansiEscapes.cursorTo(newScreenX, newScreenY));
+    process.stdout.write(chalk.green('@'));
     
     // Update status bar position
     this.renderStatusBar(0, newX, newY);
+    
+    // Move cursor out of the way to prevent scrolling
+    process.stdout.write(ansiEscapes.cursorTo(0, this.statusBarOffset + 1));
   }
 
   /**
