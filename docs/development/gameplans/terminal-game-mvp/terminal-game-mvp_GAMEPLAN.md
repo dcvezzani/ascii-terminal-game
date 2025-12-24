@@ -14,7 +14,7 @@ This gameplan implements a simple terminal-based game where players can move a c
 - ✅ **Phase 4: Input Handling** - COMPLETE
 - ✅ **Phase 5: Player Movement** - COMPLETE
 - ✅ **Phase 6: Game Controls** - COMPLETE
-- ⏳ **Phase 7: Status Bar & Display** - NOT STARTED
+- ✅ **Phase 7: Status Bar & Display** - COMPLETE
 - ⏳ **Phase 8: Testing & Polish** - NOT STARTED
 
 ## Prerequisites
@@ -305,29 +305,33 @@ src/
 
 ### Step 7.1: Implement Status Bar
 
-- [ ] Update `src/render/Renderer.js`
-- [ ] Display status bar at bottom:
-  - [ ] Score: [current score]
-  - [ ] Position: (x, y)
-  - [ ] Instructions: Arrow/WASD to move, Q/ESC to quit, R to restart, H/? for help
-- [ ] Update status bar on position change
+- [x] Update `src/render/Renderer.js` (renderStatusBar() already implemented)
+- [x] Display status bar at bottom:
+  - [x] Score: [current score] (displayed in status bar)
+  - [x] Position: (x, y) (displayed in status bar)
+  - [x] Instructions: Arrow/WASD to move, Q/ESC to quit, R to restart, H/? for help (displayed in status bar)
+- [x] Update status bar on position change (updatePlayerPosition() calls renderStatusBar())
 
 **Verification**:
-- [ ] Status bar displays at bottom
-- [ ] Score shows (0 for MVP)
-- [ ] Position updates correctly
-- [ ] Instructions are visible
+- [x] Status bar displays at bottom (tested in Renderer tests)
+- [x] Score shows (0 for MVP) (tested in Renderer tests)
+- [x] Position updates correctly (tested in Renderer tests)
+- [x] Instructions are visible (tested in Renderer tests)
+
+**Note**: Status bar was already implemented in Phase 3. All functionality tested.
 
 ### Step 7.2: Add Title/Header
 
-- [ ] Update `src/render/Renderer.js`
-- [ ] Display game title at top
-- [ ] Keep title visible during gameplay
+- [x] Update `src/render/Renderer.js` (renderTitle() already implemented)
+- [x] Display game title at top (renderTitle() displays "Terminal Game")
+- [x] Keep title visible during gameplay (renderFull() includes renderTitle())
 
 **Verification**:
-- [ ] Title displays at top
-- [ ] Title is visible and clear
-- [ ] Title doesn't interfere with board
+- [x] Title displays at top (tested in Renderer tests)
+- [x] Title is visible and clear (tested in Renderer tests)
+- [x] Title doesn't interfere with board (tested in Renderer tests)
+
+**Note**: Title was already implemented in Phase 3. All functionality tested.
 
 ---
 
