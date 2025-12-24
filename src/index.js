@@ -17,6 +17,7 @@ async function main() {
   let game = null;
   let renderer = null;
   let inputHandler = null;
+  let showingHelp = false; // Track if help screen is currently displayed
 
   try {
     // Step 8.2: Terminal Size Validation
