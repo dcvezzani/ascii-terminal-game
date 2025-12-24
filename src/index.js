@@ -107,8 +107,16 @@ async function main() {
         }
       },
       onHelp: () => {
-        if (renderer) {
-          renderer.renderHelp();
+        if (renderer && game) {
+          if (showingHelp) {
+            // Return to game - close help and redraw game
+            showingHelp = false;
+            renderer.renderFull(game);
+          } else {
+            // Show help
+            showingHelp = true;
+            renderer.renderHelp();
+          }
         }
       },
     });
