@@ -151,3 +151,4 @@ Potential features to add after MVP:
 - `ai-profile.md` - AI assistant profile and preferences
 - `me-profile.md` - Developer profile and experience
 
+
