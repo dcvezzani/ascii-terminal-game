@@ -155,6 +155,11 @@ async function main() {
           }
         }
       },
+      onUnsupportedKey: () => {
+        if (renderer && game) {
+          renderer.renderFull(game);
+        }
+      },
     });
 
     // Initialize renderer
