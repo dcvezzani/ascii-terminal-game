@@ -121,7 +121,7 @@ export class InputHandler {
     }
 
     // Handle character keys
-    if (str) {
+    if (str && typeof str === 'string') {
       const lowerStr = str.toLowerCase();
       
       switch (lowerStr) {
