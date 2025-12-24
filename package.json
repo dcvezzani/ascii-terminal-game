@@ -1,0 +1,27 @@
+{
+  "name": "first-game",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "A simple terminal-based game",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "keywords": [
+    "game",
+    "terminal",
+    "ascii"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "ansi-escapes": "^7.2.0",
+    "chalk": "^5.6.2",
+    "cli-cursor": "^5.0.0"
+  },
+  "devDependencies": {
+    "vitest": "^4.0.16"
+  }
+}
