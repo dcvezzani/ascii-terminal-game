@@ -36,6 +36,14 @@ async function main() {
     renderer = new Renderer();
     inputHandler = new InputHandler({
       onMoveUp: () => {
+        if (showingHelp) {
+          // Return to game from help screen
+          showingHelp = false;
+          if (renderer && game) {
+            renderer.renderFull(game);
+          }
+          return;
+        }
         if (game && game.isRunning()) {
           const oldPos = game.getPlayerPosition();
           if (game.movePlayer(0, -1)) {
@@ -51,6 +59,14 @@ async function main() {
         }
       },
       onMoveDown: () => {
+        if (showingHelp) {
+          // Return to game from help screen
+          showingHelp = false;
+          if (renderer && game) {
+            renderer.renderFull(game);
+          }
+          return;
+        }
         if (game && game.isRunning()) {
           const oldPos = game.getPlayerPosition();
           if (game.movePlayer(0, 1)) {
@@ -66,6 +82,14 @@ async function main() {
         }
       },
       onMoveLeft: () => {
+        if (showingHelp) {
+          // Return to game from help screen
+          showingHelp = false;
+          if (renderer && game) {
+            renderer.renderFull(game);
+          }
+          return;
+        }
         if (game && game.isRunning()) {
           const oldPos = game.getPlayerPosition();
           if (game.movePlayer(-1, 0)) {
@@ -81,6 +105,14 @@ async function main() {
         }
       },
       onMoveRight: () => {
+        if (showingHelp) {
+          // Return to game from help screen
+          showingHelp = false;
+          if (renderer && game) {
+            renderer.renderFull(game);
+          }
+          return;
+        }
         if (game && game.isRunning()) {
           const oldPos = game.getPlayerPosition();
           if (game.movePlayer(1, 0)) {
@@ -101,6 +133,10 @@ async function main() {
         }
       },
       onRestart: () => {
+        if (showingHelp) {
+          // Close help first if it's displayed
+          showingHelp = false;
+        }
         if (game && renderer) {
           game.reset();
           renderer.renderFull(game);
