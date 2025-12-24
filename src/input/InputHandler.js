@@ -117,6 +117,9 @@ export class InputHandler {
             this.callbacks.onQuit();
           }
           return;
+        default:
+          // Silently ignore unsupported key names
+          return;
       }
     }
 
@@ -160,6 +163,9 @@ export class InputHandler {
           if (this.callbacks.onHelp) {
             this.callbacks.onHelp();
           }
+          break;
+        default:
+          // Silently ignore unsupported keys
           break;
       }
     }
