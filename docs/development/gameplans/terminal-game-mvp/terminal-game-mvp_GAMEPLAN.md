@@ -11,7 +11,7 @@ This gameplan implements a simple terminal-based game where players can move a c
 - ✅ **Phase 1: Project Setup** - COMPLETE
 - ✅ **Phase 2: Core Game Engine** - COMPLETE
 - ✅ **Phase 3: Terminal Rendering System** - COMPLETE
-- ⏳ **Phase 4: Input Handling** - NOT STARTED
+- ✅ **Phase 4: Input Handling** - COMPLETE
 - ⏳ **Phase 5: Player Movement** - NOT STARTED
 - ⏳ **Phase 6: Game Controls** - NOT STARTED
 - ⏳ **Phase 7: Status Bar & Display** - NOT STARTED
@@ -189,28 +189,28 @@ src/
 
 ### Step 4.1: Create Input Handler
 
-- [ ] Create `src/input/InputHandler.js`
-- [ ] Use Node.js `readline` interface for raw mode input
-- [ ] Handle keypress events
-- [ ] Map keys to actions:
-  - [ ] Arrow keys: `\u001b[A` (up), `\u001b[B` (down), `\u001b[C` (right), `\u001b[D` (left)
-  - [ ] WASD: `w`, `s`, `a`, `d`
-  - [ ] Quit: `q`, `\u001b` (ESC)
-  - [ ] Restart: `r`
-  - [ ] Help: `h`, `?`
-- [ ] Implement `constructor(callbacks)` - Initialize with callback functions
-- [ ] Implement `start()` - Start listening for input
-- [ ] Implement `stop()` - Stop listening and cleanup
-- [ ] Implement `handleKeypress(key)` - Process keypress and call appropriate callback
+- [x] Create `src/input/InputHandler.js`
+- [x] Use Node.js `readline` interface for raw mode input
+- [x] Handle keypress events
+- [x] Map keys to actions:
+  - [x] Arrow keys: up, down, left, right (via key.name)
+  - [x] WASD: `w`, `s`, `a`, `d`
+  - [x] Quit: `q`, ESC, Ctrl+C
+  - [x] Restart: `r`
+  - [x] Help: `h`, `?`
+- [x] Implement `constructor(callbacks)` - Initialize with callback functions
+- [x] Implement `start()` - Start listening for input
+- [x] Implement `stop()` - Stop listening and cleanup
+- [x] Implement `handleKeypress(key)` - Process keypress and call appropriate callback
 
 **Verification**:
-- [ ] Input handler created
-- [ ] Can detect arrow keys
-- [ ] Can detect WASD keys
-- [ ] Can detect quit keys (Q, ESC)
-- [ ] Can detect restart key (R)
-- [ ] Can detect help key (H, ?)
-- [ ] Callbacks are called correctly
+- [x] Input handler created
+- [x] Can detect arrow keys (via key.name)
+- [x] Can detect WASD keys
+- [x] Can detect quit keys (Q, ESC, Ctrl+C)
+- [x] Can detect restart key (R)
+- [x] Can detect help key (H, ?)
+- [x] Callbacks are called correctly
 
 ---
 
