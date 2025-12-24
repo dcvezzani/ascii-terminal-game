@@ -34,28 +34,28 @@ A centralized configuration file that:
 ## Requirements
 
 ### Configuration File Structure
-- [x] Create `src/config/gameConfig.js`
-- [x] Define board dimensions (width, height)
-- [x] Define player initial position (calculated as center of board)
-- [x] Define renderer offsets (title, board, status bar)
-- [x] Calculate status bar offset dynamically from board height
-- [x] Define terminal size requirements
-- [x] Define initial game state (score)
+- [x] Create `src/config/gameConfig.js` ✅
+- [x] Define board dimensions (width, height) ✅
+- [x] Define player initial position (calculated as center of board) ✅
+- [x] Define renderer offsets (title, board, status bar) ✅
+- [x] Calculate status bar offset dynamically from board height ✅
+- [x] Define terminal size requirements ✅
+- [x] Define initial game state (score) ✅
 
 ### Code Refactoring
-- [x] Update `Board.js` to use `gameConfig.board.width/height`
-- [x] Update `Game.js` to use `gameConfig.player.initialX/Y`
-- [x] Update `Game.js` to use `gameConfig.game.initialScore`
-- [x] Update `Renderer.js` to use config for all dimensions and offsets
-- [x] Update `index.js` to use `gameConfig.terminal.minRows/minColumns`
-- [x] Remove all hardcoded values from source files
+- [x] Update `Board.js` to use `gameConfig.board.width/height` ✅
+- [x] Update `Game.js` to use `gameConfig.player.initialX/Y` ✅
+- [x] Update `Game.js` to use `gameConfig.game.initialScore` ✅
+- [x] Update `Renderer.js` to use config for all dimensions and offsets ✅
+- [x] Update `index.js` to use `gameConfig.terminal.minRows/minColumns` ✅
+- [x] Remove all hardcoded values from source files ✅
 
 ### Verification
-- [x] All tests pass after refactoring
-- [x] Game runs correctly with config
-- [x] Board size can be changed by editing only config file
-- [x] Player position updates automatically when board size changes
-- [x] Status bar offset updates automatically when board height changes
+- [x] All tests pass after refactoring ✅ (271 tests passing)
+- [x] Game runs correctly with config ✅
+- [x] Board size can be changed by editing only config file ✅
+- [x] Player position updates automatically when board size changes ✅
+- [x] Status bar offset updates automatically when board height changes ✅
 
 ## Technical Requirements
 
