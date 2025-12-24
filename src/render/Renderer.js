@@ -148,6 +148,51 @@ export class Renderer {
   }
 
   /**
+   * Render help screen
+   */
+  renderHelp() {
+    this.clearScreen();
+    
+    const helpLines = [
+      'Terminal Game - Help',
+      '',
+      'Movement:',
+      '  Arrow Keys: ↑ ↓ ← →',
+      '  WASD: W (up), S (down), A (left), D (right)',
+      '',
+      'Controls:',
+      '  Q or ESC - Quit game',
+      '  R - Restart game',
+      '  H or ? - Show this help',
+      '',
+      'Press any key to return to game...',
+    ];
+    
+    const centerOffset = getHorizontalCenter(Math.max(...helpLines.map(l => l.length)));
+    const startRow = Math.floor((process.stdout.rows || 24) / 2) - Math.floor(helpLines.length / 2);
+    
+    helpLines.forEach((line, index) => {
+      process.stdout.write(ansiEscapes.cursorTo(centerOffset, startRow + index));
+      if (index === 0) {
+        // Title
+        process.stdout.write(chalk.bold.cyan(line));
+      } else if (line.startsWith('  ')) {
+        // Instructions
+        process.stdout.write(chalk.white(line));
+      } else if (line === '') {
+        // Empty line
+        process.stdout.write(line);
+      } else {
+        // Section headers
+        process.stdout.write(chalk.yellow(line));
+      }
+    });
+    
+    // Move cursor out of the way
+    process.stdout.write(ansiEscapes.cursorTo(0, startRow + helpLines.length + 1));
+  }
+
+  /**
    * Cleanup and restore terminal state
    */
   cleanup() {
