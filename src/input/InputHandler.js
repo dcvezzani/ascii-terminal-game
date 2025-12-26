@@ -60,6 +60,9 @@ export class InputHandler {
       return;
     }
 
+    // Remove listeners first to prevent any further keypress processing
+    process.stdin.removeAllListeners('keypress');
+
     if (this.rl) {
       this.rl.close();
       this.rl = null;
@@ -70,7 +73,6 @@ export class InputHandler {
     }
 
     process.stdin.pause();
-    process.stdin.removeAllListeners('keypress');
 
     this.listening = false;
   }
@@ -149,7 +151,7 @@ export class InputHandler {
           if (this.callbacks.onQuit) {
             this.callbacks.onQuit();
           }
-          break;
+          return; // Return immediately to prevent any further processing
         case 'r':
           if (this.callbacks.onRestart) {
             this.callbacks.onRestart();
