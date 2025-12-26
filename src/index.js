@@ -128,10 +128,6 @@ async function main() {
         }
       },
       onQuit: () => {
-        // Debug: Log quit callback
-        if (process.env.DEBUG_INPUT) {
-          console.error('[DEBUG] onQuit callback called');
-        }
         // Stop input handler immediately to prevent further keypresses
         if (inputHandler) {
           inputHandler.stop();
