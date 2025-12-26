@@ -128,6 +128,11 @@ async function main() {
         }
       },
       onQuit: () => {
+        // Stop input handler immediately to prevent further keypresses
+        if (inputHandler) {
+          inputHandler.stop();
+        }
+        // Then stop the game
         if (game) {
           game.stop();
         }
