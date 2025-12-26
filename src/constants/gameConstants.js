@@ -5,7 +5,7 @@
 /**
  * Character representing empty space on the board
  */
-export const EMPTY_SPACE_CHAR = '.';
+export const EMPTY_SPACE_CHAR = ' ';
 
 /**
  * Character representing a wall on the board
