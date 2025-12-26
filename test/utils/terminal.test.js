@@ -1,5 +1,5 @@
 import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
-import { getTerminalSize, validateTerminalSize, getHorizontalCenter, getVerticalCenter } from './terminal.js';
+import { getTerminalSize, validateTerminalSize, getHorizontalCenter, getVerticalCenter } from '../../src/utils/terminal.js';
 
 describe('Terminal Utilities', () => {
   describe('getTerminalSize()', () => {

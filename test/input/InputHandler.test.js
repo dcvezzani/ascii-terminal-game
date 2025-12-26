@@ -17,7 +17,7 @@ vi.mock('readline', () => ({
 }));
 
 // Import after mocking
-import { InputHandler } from './InputHandler.js';
+import { InputHandler } from '../../src/input/InputHandler.js';
 
 describe('InputHandler', () => {
   let inputHandler;

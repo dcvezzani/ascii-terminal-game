@@ -1,7 +1,7 @@
 import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
-import { Renderer } from './Renderer.js';
-import { Board } from '../game/Board.js';
-import { Game } from '../game/Game.js';
+import { Renderer } from '../../src/render/Renderer.js';
+import { Board } from '../../src/game/Board.js';
+import { Game } from '../../src/game/Game.js';
 import ansiEscapes from 'ansi-escapes';
 import chalk from 'chalk';
 import cliCursor from 'cli-cursor';

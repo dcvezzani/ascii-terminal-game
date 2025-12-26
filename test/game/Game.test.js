@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'vitest';
-import { Game } from './Game.js';
+import { Game } from '../../src/game/Game.js';
 
 describe('Game', () => {
   describe('Initialization', () => {

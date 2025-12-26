@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'vitest';
-import { Board } from './Board.js';
+import { Board } from '../../src/game/Board.js';
 
 describe('Board', () => {
   describe('Initialization', () => {

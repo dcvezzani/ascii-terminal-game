@@ -1,8 +1,8 @@
 import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
-import { Game } from '../game/Game.js';
-import { Renderer } from '../render/Renderer.js';
-import { InputHandler } from '../input/InputHandler.js';
-import { validateTerminalSize } from '../utils/terminal.js';
+import { Game } from '../../src/game/Game.js';
+import { Renderer } from '../../src/render/Renderer.js';
+import { InputHandler } from '../../src/input/InputHandler.js';
+import { validateTerminalSize } from '../../src/utils/terminal.js';
 
 // Mock process.stdout.write
 const mockWrite = vi.fn();

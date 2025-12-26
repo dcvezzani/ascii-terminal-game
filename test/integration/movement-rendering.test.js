@@ -1,6 +1,6 @@
 import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
-import { Game } from '../game/Game.js';
-import { Renderer } from '../render/Renderer.js';
+import { Game } from '../../src/game/Game.js';
+import { Renderer } from '../../src/render/Renderer.js';
 import chalk from 'chalk';
 
 // Mock process.stdout.write
