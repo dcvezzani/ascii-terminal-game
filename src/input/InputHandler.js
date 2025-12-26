@@ -57,7 +57,15 @@ export class InputHandler {
    */
   stop() {
     if (!this.listening) {
+      if (process.env.DEBUG_INPUT) {
+        console.error('[DEBUG] stop() called but not listening');
+      }
       return;
+    }
+
+    // Debug: Log stop
+    if (process.env.DEBUG_INPUT) {
+      console.error('[DEBUG] stop() called, removing listeners...');
     }
 
     // Remove listeners first to prevent any further keypress processing
@@ -83,6 +91,11 @@ export class InputHandler {
    * @param {Object} key - Key object with name, ctrl, etc.
    */
   handleKeypress(str, key) {
+    // Debug: Log keypress (can be removed after debugging)
+    if (process.env.DEBUG_INPUT) {
+      console.error(`[DEBUG] Keypress: str=${JSON.stringify(str)}, key.name=${key?.name}, listening=${this.listening}`);
+    }
+    
     // Handle Ctrl+C
     if (key && key.ctrl && key.name === 'c') {
       if (this.callbacks.onQuit) {
@@ -148,6 +161,10 @@ export class InputHandler {
           }
           break;
         case 'q':
+          // Debug: Log quit keypress
+          if (process.env.DEBUG_INPUT) {
+            console.error(`[DEBUG] 'q' key detected, calling onQuit, listening=${this.listening}`);
+          }
           if (this.callbacks.onQuit) {
             this.callbacks.onQuit();
           }

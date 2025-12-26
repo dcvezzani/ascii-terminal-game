@@ -1,5 +1,5 @@
 import { gameConfig } from '../config/gameConfig.js';
-
+import { EMPTY_SPACE_CHAR, WALL_CHAR } from '../constants/gameConstants.js';
 /**
  * Board class represents the game board as a grid
  */
@@ -22,10 +22,10 @@ export class Board {
       for (let x = 0; x < this.width; x++) {
         // Outer walls on all sides
         if (y === 0 || y === this.height - 1 || x === 0 || x === this.width - 1) {
-          row.push('#');
+          row.push(WALL_CHAR);
         } else {
           // Empty space in interior
-          row.push('.');
+          row.push(EMPTY_SPACE_CHAR);
         }
       }
       grid.push(row);
@@ -70,7 +70,7 @@ export class Board {
    */
   isWall(x, y) {
     const cell = this.getCell(x, y);
-    return cell === '#';
+    return cell === WALL_CHAR;
   }
 
   /**

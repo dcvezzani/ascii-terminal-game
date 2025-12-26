@@ -3,7 +3,7 @@ import chalk from 'chalk';
 import cliCursor from 'cli-cursor';
 import { getHorizontalCenter } from '../utils/terminal.js';
 import { gameConfig } from '../config/gameConfig.js';
-
+import { EMPTY_SPACE_CHAR, WALL_CHAR, PLAYER_CHAR } from '../constants/gameConstants.js';
 /**
  * Renderer class handles all terminal rendering for the game
  */
@@ -61,17 +61,17 @@ export class Renderer {
         
         if (x === playerX && y === playerY) {
           // Player position
-          char = '@';
+          char = PLAYER_CHAR;
           color = chalk.green;
         } else {
           const cell = board.getCell(x, y);
-          if (cell === '#') {
+          if (cell === WALL_CHAR) {
             // Wall
-            char = '#';
+            char = WALL_CHAR;
             color = chalk.gray;
           } else {
             // Empty space
-            char = '.';
+            char = EMPTY_SPACE_CHAR;
             color = chalk.white;
           }
         }
@@ -140,7 +140,7 @@ export class Renderer {
   updatePlayerPosition(oldX, oldY, newX, newY, board) {
     // Clear old position (restore cell content)
     const oldCell = board.getCell(oldX, oldY);
-    const oldColor = oldCell === '#' ? chalk.gray : chalk.white;
+    const oldColor = oldCell === WALL_CHAR ? chalk.gray : chalk.white;
     const boardStartX = getHorizontalCenter(this.boardWidth);
     const oldScreenX = boardStartX + oldX;
     const oldScreenY = this.boardOffset + oldY;
@@ -152,7 +152,7 @@ export class Renderer {
     const newScreenX = boardStartX + newX;
     const newScreenY = this.boardOffset + newY;
     process.stdout.write(ansiEscapes.cursorTo(newScreenX, newScreenY));
-    process.stdout.write(chalk.green('@'));
+    process.stdout.write(chalk.green(PLAYER_CHAR));
     
     // Update status bar position
     this.renderStatusBar(0, newX, newY);
