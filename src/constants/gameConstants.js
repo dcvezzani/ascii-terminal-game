@@ -5,6 +5,14 @@
  * See src/config/unicode-mappings.json for the full mapping.
  */
 
+import unicodeMappings from '../config/unicode-mappings.json' with { type: 'json' };
+
+/**
+ * Font set mapping labels to Unicode hex values
+ * Loaded from unicode-mappings.json
+ */
+export const fontSet = unicodeMappings;
+
 /**
  * Converts a Unicode hex string to its corresponding glyph character
  * @param {string} hexString - Unicode hex value (e.g., "263A" for ☺)
@@ -25,17 +33,17 @@ export function toGlyph(hexString) {
  * Character representing empty space on the board
  * Unicode: U+0020 (SPACE)
  */
-export const EMPTY_SPACE_CHAR = toGlyph("0020");
+export const EMPTY_SPACE_CHAR = toGlyph(fontSet.SPACE);
 
 /**
  * Character representing a wall on the board
  * Unicode: U+0023 (NUMBER SIGN / HASH)
  */
-export const WALL_CHAR = toGlyph("0023");
+export const WALL_CHAR = toGlyph(fontSet.NUMBER_SIGN);
 
 /**
  * Character representing the player
  * Unicode: U+263A (WHITE SMILING FACE)
  */
-export const PLAYER_CHAR = toGlyph("263A");
+export const PLAYER_CHAR = toGlyph(fontSet.WHITE_SMILING_FACE);
 
