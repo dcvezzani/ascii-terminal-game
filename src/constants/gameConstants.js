@@ -61,18 +61,18 @@ export function toGlyph(hexString, color = null) {
  * Converts a color name to its hex string value
  * Uses font-color.json mappings for color lookups
  * @param {string} color - Color name (e.g., "red", "GREEN", "dark_gray")
- * @returns {string|null} Hex string value (e.g., "FF0000") or null if not found
+ * @returns {string} Hex string value (e.g., "FF0000"), defaults to white ("FFFFFF") if not found
  */
 export function toColorHexValue(color) {
   if (!color || typeof color !== 'string') {
-    return null;
+    return fontColorMappings.WHITE;
   }
   
   // Transform to uppercase for lookup
   const upperColor = color.toUpperCase();
   
-  // Look up in font color mappings
-  return fontColorMappings[upperColor] || null;
+  // Look up in font color mappings, default to white if not found
+  return fontColorMappings[upperColor] || fontColorMappings.WHITE;
 }
 
 /**
