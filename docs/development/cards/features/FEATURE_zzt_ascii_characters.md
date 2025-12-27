@@ -12,10 +12,11 @@ The user wants to use the same font characters used by ZZT (Zoo of ZZT), a class
 **Reference**: [Museum of ZZT ASCII Character Reference](https://museumofzzt.com/ascii/)
 
 **Location**: Implementation will be in:
-- `src/constants/gameConstants.js` - Add ZZT character constants
-- `src/constants/zztCharacters.js` - New file for ZZT character mappings
-- `src/render/Renderer.js` - Use ZZT characters for rendering
-- `src/game/Board.js` - Use ZZT characters for board initialization
+- `src/constants/characterSets/zztCharacters.js` - New file for ZZT character mappings
+- `src/constants/characterSets/index.js` - Character set selector/loader
+- `src/constants/gameConstants.js` - Import and use selected character set
+- `src/render/Renderer.js` - Use characters from gameConstants (no changes needed)
+- `src/game/Board.js` - Use characters from gameConstants (no changes needed)
 
 ## Problem
 
@@ -75,19 +76,26 @@ Incorporate ZZT ASCII characters into the game to give it a classic retro aesthe
 
 ## Implementation Approach
 
-### Option 1: Simple Character Replacement (Easiest)
-- Create `src/constants/zztCharacters.js` with ZZT character mappings
-- Update `gameConstants.js` to import and use ZZT characters
-- Replace current characters with ZZT equivalents
-- **Pros**: Simple, quick to implement
-- **Cons**: Limited customization
+### Option 1: Character Set System (Recommended)
+- Create `src/constants/characterSets/` directory for character set definitions
+- Create `src/constants/characterSets/zztCharacters.js` with ZZT character mappings
+- Create `src/constants/characterSets/simpleCharacters.js` with current simple ASCII characters
+- Create `src/constants/characterSets/index.js` to export selected character set
+- Update `gameConstants.js` to import from character set system
+- Keep Unicode characters separate from other game constants
+- **Pros**: 
+  - Clean separation of concerns
+  - Easy to add new character sets (roguelike, custom, etc.)
+  - Simple to switch between character sets
+  - Future-proof architecture
+- **Cons**: Slightly more files, but better organization
 
-### Option 2: Character Theme System (More Flexible)
-- Create character theme system (simple, zzt, custom)
-- Allow switching between themes
-- Store themes in configuration
-- **Pros**: Flexible, allows easy switching
-- **Cons**: More complex, may be overkill
+### Option 2: Character Theme System (More Flexible, Future Enhancement)
+- Build on Option 1, add theme switching via configuration
+- Allow runtime switching between character sets
+- Store selected theme in gameConfig
+- **Pros**: Very flexible, allows user customization
+- **Cons**: More complex, can be added later if needed
 
 ### Recommended ZZT Characters
 
@@ -126,29 +134,90 @@ Based on the [Museum of ZZT ASCII reference](https://museumofzzt.com/ascii/):
 
 ### Implementation Steps
 
-1. **Create ZZT Characters File**
+1. **Create Character Sets Directory Structure**
+   ```
+   src/constants/characterSets/
+     ├── index.js              # Character set selector
+     ├── simpleCharacters.js   # Current simple ASCII characters
+     └── zztCharacters.js      # ZZT Unicode characters
+   ```
+
+2. **Create Simple Characters Set** (baseline)
    ```javascript
-   // src/constants/zztCharacters.js
-   export const ZZT_CHARACTERS = {
-     PLAYER: '@',        // or '☺'
-     WALL_SOLID: '█',    // 219
-     WALL_MEDIUM: '▓',   // 178
-     WALL_LIGHT: '▒',    // 177
-     EMPTY: ' ',         // or '·'
+   // src/constants/characterSets/simpleCharacters.js
+   export const simpleCharacters = {
+     PLAYER: '@',
+     WALL: '#',
+     EMPTY: ' ',
    };
    ```
 
-2. **Update gameConstants.js**
-   - Import ZZT characters
-   - Use ZZT characters instead of simple ASCII
-   - Keep simple ASCII as fallback option
+3. **Create ZZT Characters Set**
+   ```javascript
+   // src/constants/characterSets/zztCharacters.js
+   export const zztCharacters = {
+     PLAYER: '@',        // Keep classic @
+     WALL: '█',          // U+2588 - Full block (Code Page 437: 219)
+     WALL_MEDIUM: '▓',   // U+2593 - Dark shade (178)
+     WALL_LIGHT: '▒',    // U+2592 - Medium shade (177)
+     EMPTY: ' ',         // Space
+     // Future: Add more ZZT characters as needed
+   };
+   ```
 
-3. **Update Renderer.js**
-   - Use ZZT characters from constants
-   - No logic changes needed
+4. **Create Character Set Selector**
+   ```javascript
+   // src/constants/characterSets/index.js
+   import { simpleCharacters } from './simpleCharacters.js';
+   import { zztCharacters } from './zztCharacters.js';
+   
+   // Select character set (can be made configurable later)
+   const CHARACTER_SET = 'zzt'; // or 'simple'
+   
+   export const characterSet = CHARACTER_SET === 'zzt' 
+     ? zztCharacters 
+     : simpleCharacters;
+   
+   // Export individual characters for convenience
+   export const PLAYER_CHAR = characterSet.PLAYER;
+   export const WALL_CHAR = characterSet.WALL;
+   export const EMPTY_SPACE_CHAR = characterSet.EMPTY;
+   ```
 
-4. **Update Board.js**
-   - Use ZZT wall character for initialization
+5. **Update gameConstants.js**
+   - Import from character set system instead of defining directly
+   - Keep structure, but source from character sets
+   ```javascript
+   // src/constants/gameConstants.js
+   import { 
+     PLAYER_CHAR, 
+     WALL_CHAR, 
+     EMPTY_SPACE_CHAR 
+   } from './characterSets/index.js';
+   
+   export const PLAYER_CHAR = PLAYER_CHAR;
+   export const WALL_CHAR = WALL_CHAR;
+   export const EMPTY_SPACE_CHAR = EMPTY_SPACE_CHAR;
+   ```
+
+6. **No Changes Needed to Renderer.js or Board.js**
+   - They already import from gameConstants.js
+   - Will automatically use new characters
+
+### Future Extensibility
+
+This architecture makes it easy to add new character sets:
+
+**Future Character Sets:**
+- `roguelikeCharacters.js` - Traditional roguelike symbols
+- `boxDrawingCharacters.js` - Box-drawing characters for borders
+- `customCharacters.js` - User-defined character set
+- `emojiCharacters.js` - Emoji-based characters
+
+**Future Enhancement:**
+- Add character set selection to `gameConfig.js`
+- Allow runtime switching
+- Support custom character set files
 
 ### Terminal Compatibility
 
@@ -190,19 +259,23 @@ Based on the [Museum of ZZT ASCII reference](https://museumofzzt.com/ascii/):
 
 ## Notes
 
-- Easiest approach: Simple character replacement (Option 1)
-- Start with basic characters, can expand later
+- **Architecture Decision**: Keep Unicode characters separate in `characterSets/` directory
+- This allows easy addition of future character sets (roguelike, custom, etc.)
+- Character sets are isolated and can be swapped easily
+- Start with ZZT characters, can add more sets incrementally
 - Test in multiple terminals to ensure compatibility
-- Consider making it configurable (simple vs ZZT characters)
+- Future: Can make character set selection configurable via gameConfig
 
 ## Open Questions
 
 - [ ] Which specific ZZT characters should we use?
   - **Answer**: Start with `█` for walls, keep `@` for player, space for empty
-- [ ] Should we support switching between simple and ZZT characters?
-  - **Answer**: Start with ZZT, can add switching later if needed
+- [ ] Should we support switching between character sets?
+  - **Answer**: Architecture supports it, but start with ZZT as default. Can add configurable switching later
 - [ ] What about terminals that don't support extended ASCII?
-  - **Answer**: Test first, add fallback if needed
+  - **Answer**: Test first, add fallback to simple characters if needed
 - [ ] Should we use box-drawing characters or solid blocks for walls?
-  - **Answer**: Start with solid blocks (`█`), can add box-drawing later
+  - **Answer**: Start with solid blocks (`█`), can add box-drawing character set later
+- [ ] How should character sets be organized?
+  - **Answer**: Separate directory (`characterSets/`) with individual files per set, selector in index.js
 
