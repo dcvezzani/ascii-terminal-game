@@ -109,8 +109,8 @@ Based on the [Museum of ZZT ASCII reference](https://museumofzzt.com/ascii/):
 - Box-drawing: `─` (196), `│` (179), `┌` (218), `┐` (191), `└` (192), `┘` (217)
 
 **Player:**
-- `@` (64) - Keep current (classic roguelike)
-- `☺` (1) - Smiley face (classic ZZT)
+- `☺` (1) - Smiley face (classic ZZT) ⭐ **SELECTED**
+- `@` (64) - Classic roguelike (alternative)
 - `►` (16) - Right arrow
 
 **Empty Space:**
@@ -118,10 +118,10 @@ Based on the [Museum of ZZT ASCII reference](https://museumofzzt.com/ascii/):
 - `·` (250) - Middle dot
 - `.` (46) - Period
 
-**Recommended Default:**
-- Player: `@` (keep current - classic and recognizable)
-- Walls: `█` (solid block - clear and visible)
-- Empty: ` ` (space - clean)
+**Selected Default:**
+- Player: `☺` (Code Page 437: 1) - Traditional ZZT smiley face
+- Walls: `█` (Code Page 437: 219, U+2588) - Solid block
+- Empty: ` ` (Code Page 437: 32) - Space
 
 ## Technical Details
 
@@ -142,13 +142,13 @@ Based on the [Museum of ZZT ASCII reference](https://museumofzzt.com/ascii/):
      └── zztCharacters.js      # ZZT Unicode characters
    ```
 
-2. **Create Simple Characters Set** (baseline)
+2. **Create Simple Characters Set** (baseline/fallback)
    ```javascript
    // src/constants/characterSets/simpleCharacters.js
    export const simpleCharacters = {
-     PLAYER: '@',
-     WALL: '#',
-     EMPTY: ' ',
+     PLAYER: '@',        // Simple ASCII @
+     WALL: '#',          // Simple ASCII #
+     EMPTY: ' ',         // Space
    };
    ```
 
@@ -156,11 +156,11 @@ Based on the [Museum of ZZT ASCII reference](https://museumofzzt.com/ascii/):
    ```javascript
    // src/constants/characterSets/zztCharacters.js
    export const zztCharacters = {
-     PLAYER: '@',        // Keep classic @
-     WALL: '█',          // U+2588 - Full block (Code Page 437: 219)
-     WALL_MEDIUM: '▓',   // U+2593 - Dark shade (178)
-     WALL_LIGHT: '▒',    // U+2592 - Medium shade (177)
-     EMPTY: ' ',         // Space
+     PLAYER: '☺',        // Code Page 437: 1, U+263A - Traditional ZZT smiley face
+     WALL: '█',          // Code Page 437: 219, U+2588 - Full block
+     WALL_MEDIUM: '▓',   // Code Page 437: 178, U+2593 - Dark shade
+     WALL_LIGHT: '▒',    // Code Page 437: 177, U+2592 - Medium shade
+     EMPTY: ' ',         // Code Page 437: 32 - Space
      // Future: Add more ZZT characters as needed
    };
    ```
@@ -269,7 +269,7 @@ This architecture makes it easy to add new character sets:
 ## Open Questions
 
 - [ ] Which specific ZZT characters should we use?
-  - **Answer**: Start with `█` for walls, keep `@` for player, space for empty
+  - **Answer**: `☺` (smiley face) for player, `█` for walls, space for empty
 - [ ] Should we support switching between character sets?
   - **Answer**: Architecture supports it, but start with ZZT as default. Can add configurable switching later
 - [ ] What about terminals that don't support extended ASCII?
