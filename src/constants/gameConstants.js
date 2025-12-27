@@ -15,7 +15,14 @@ import { Glyph } from '../game/Glyph.js';
 export const fontSet = unicodeMappings;
 
 /**
+ * Cache for Glyph instances to avoid creating duplicates
+ * Key format: "unicode|color" (e.g., "263A|null" or "0020|green")
+ */
+const glyphCache = new Map();
+
+/**
  * Converts a Unicode hex string to its corresponding Glyph instance
+ * Uses caching to avoid creating duplicate Glyph instances
  * @param {string} hexString - Unicode hex value (e.g., "263A" for ☺)
  * @param {string|null} color - Optional color for the glyph
  * @returns {Glyph} A Glyph instance with the Unicode character
@@ -24,14 +31,28 @@ export function toGlyph(hexString, color = null) {
   // Remove any leading "U+" or "0x" prefix if present
   const cleanHex = hexString.replace(/^[Uu]\+?|^0[xX]/, '');
   
+  // Create cache key from unicode hex and color
+  const cacheKey = `${cleanHex}|${color}`;
+  
+  // Check cache first
+  if (glyphCache.has(cacheKey)) {
+    return glyphCache.get(cacheKey);
+  }
+  
   // Parse hex string to code point
   const codePoint = parseInt(cleanHex, 16);
   
   // Convert code point to Unicode character
   const char = String.fromCodePoint(codePoint);
   
+  // Create new Glyph instance
+  const glyph = new Glyph(char, cleanHex, color);
+  
+  // Cache it for future use
+  glyphCache.set(cacheKey, glyph);
+  
   // Return Glyph instance
-  return new Glyph(char, color);
+  return glyph;
 }
 
 /**
