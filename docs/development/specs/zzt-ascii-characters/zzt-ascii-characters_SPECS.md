@@ -320,17 +320,17 @@ src/constants/
 
 ### Terminal Compatibility
 
-**How Code Page 437 Works in Modern Terminals**:
-- Code Page 437 is a legacy DOS encoding (IBM PC character set)
-- Modern terminals use UTF-8 Unicode encoding
-- We use Unicode characters that visually match CP437 characters
+**How Unicode Characters Work in Modern Terminals**:
+- Modern terminals use UTF-8 Unicode encoding by default
+- Unicode characters are stored as UTF-8 in source files
 - Terminal font must support these Unicode characters
+- Most modern monospace fonts include block characters and symbols
 
 **Supported Terminals**:
-- macOS Terminal.app (should work with Unicode characters)
-- iTerm2 (should work with Unicode characters)
-- Windows Terminal (should work with Unicode characters)
-- Most modern Linux terminals (should work with Unicode characters)
+- macOS Terminal.app (works with Unicode characters)
+- iTerm2 (works with Unicode characters)
+- Windows Terminal (works with Unicode characters)
+- Most modern Linux terminals (work with Unicode characters)
 
 **Font Requirements**:
 - Terminal font must include Unicode block characters (U+2588, U+2592, U+2593)
@@ -343,10 +343,11 @@ src/constants/
 - Update `CHARACTER_SET` in `index.js` to `'simple'`
 - Simple characters use basic ASCII that works everywhere
 
-**Alternative Approach** (if Unicode doesn't match):
-- Could use a CP437-to-Unicode mapping library
-- Or manually verify each character displays correctly
-- Test actual character appearance, not just code points
+**Why Not Use Actual Code Page 437?**:
+- CP437 is a legacy DOS encoding, not supported in modern JavaScript/Node.js
+- Would require terminal configuration (not cross-platform)
+- Would require encoding conversion libraries (unnecessary complexity)
+- Unicode equivalents work out of the box in modern terminals
 
 ### Testing Strategy
 
