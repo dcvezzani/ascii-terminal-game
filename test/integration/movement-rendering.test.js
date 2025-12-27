@@ -1,8 +1,17 @@
 import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
 import { Game } from '../../src/game/Game.js';
 import { Renderer } from '../../src/render/Renderer.js';
-import { PLAYER_CHAR } from '../../src/constants/gameConstants.js';
+import { PLAYER_CHAR, EMPTY_SPACE_CHAR } from '../../src/constants/gameConstants.js';
+import { gameConfig } from '../../src/config/gameConfig.js';
 import chalk from 'chalk';
+
+// Helper to get center position
+function getCenterPosition() {
+  return {
+    x: Math.floor(gameConfig.board.width / 2),
+    y: Math.floor(gameConfig.board.height / 2),
+  };
+}
 
 // Mock process.stdout.write
 const mockWrite = vi.fn();
@@ -28,15 +37,16 @@ describe('Movement and Rendering Integration', () => {
 
   describe('Game and Renderer Integration', () => {
     test('Game initializes correctly', () => {
+      const center = getCenterPosition();
       expect(game).toBeDefined();
-      expect(game.getPlayerPosition()).toEqual({ x: 10, y: 10 });
+      expect(game.getPlayerPosition()).toEqual({ x: center.x, y: center.y });
       expect(game.getScore()).toBe(0);
     });
 
     test('Renderer initializes correctly', () => {
       expect(renderer).toBeDefined();
-      expect(renderer.boardWidth).toBe(20);
-      expect(renderer.boardHeight).toBe(20);
+      expect(renderer.boardWidth).toBe(gameConfig.board.width);
+      expect(renderer.boardHeight).toBe(gameConfig.board.height);
     });
 
     test('Game and Renderer can work together', () => {
@@ -49,13 +59,14 @@ describe('Movement and Rendering Integration', () => {
 
   describe('Movement to Rendering Flow', () => {
     test('Player movement triggers renderer update', () => {
+      const center = getCenterPosition();
       const oldPosition = game.getPlayerPosition();
       const moved = game.movePlayer(1, 0);
       
       expect(moved).toBe(true);
       
       const newPosition = game.getPlayerPosition();
-      expect(newPosition.x).toBe(11);
+      expect(newPosition.x).toBe(center.x + 1);
       
       // Update renderer
       renderer.updatePlayerPosition(
@@ -145,6 +156,7 @@ describe('Movement and Rendering Integration', () => {
 
   describe('Complete Movement Flow', () => {
     test('Complete flow: movePlayer → updatePlayerPosition', () => {
+      const center = getCenterPosition();
       const oldPosition = game.getPlayerPosition();
       
       // Move player
@@ -152,8 +164,8 @@ describe('Movement and Rendering Integration', () => {
       expect(moved).toBe(true);
       
       const newPosition = game.getPlayerPosition();
-      expect(newPosition.x).toBe(11);
-      expect(newPosition.y).toBe(10);
+      expect(newPosition.x).toBe(center.x + 1);
+      expect(newPosition.y).toBe(center.y);
       
       // Update renderer
       renderer.updatePlayerPosition(
@@ -169,32 +181,36 @@ describe('Movement and Rendering Integration', () => {
     });
 
     test('Multiple movements work correctly', () => {
+      const center = getCenterPosition();
       let position = game.getPlayerPosition();
       
       // Move right
       game.movePlayer(1, 0);
       position = game.getPlayerPosition();
-      expect(position).toEqual({ x: 11, y: 10 });
+      expect(position).toEqual({ x: center.x + 1, y: center.y });
       
       // Move down
       game.movePlayer(0, 1);
       position = game.getPlayerPosition();
-      expect(position).toEqual({ x: 11, y: 11 });
+      expect(position).toEqual({ x: center.x + 1, y: center.y + 1 });
       
       // Move left
       game.movePlayer(-1, 0);
       position = game.getPlayerPosition();
-      expect(position).toEqual({ x: 10, y: 11 });
+      expect(position).toEqual({ x: center.x, y: center.y + 1 });
       
       // Move up
       game.movePlayer(0, -1);
       position = game.getPlayerPosition();
-      expect(position).toEqual({ x: 10, y: 10 });
+      expect(position).toEqual({ x: center.x, y: center.y });
     });
 
     test('Wall collision prevents movement and rendering update', () => {
-      // Move to edge
-      game.movePlayer(8, 0); // Move to x=18
+      const center = getCenterPosition();
+      // Move to edge (one cell from right wall)
+      const nearEdgeX = gameConfig.board.width - 2;
+      const dx = nearEdgeX - center.x;
+      game.movePlayer(dx, 0);
       const positionBefore = game.getPlayerPosition();
       
       // Try to move into wall
@@ -211,28 +227,30 @@ describe('Movement and Rendering Integration', () => {
 
   describe('State Consistency', () => {
     test('Game position matches expected position after movement', () => {
+      const center = getCenterPosition();
       game.movePlayer(1, 0);
       const position = game.getPlayerPosition();
-      expect(position).toEqual({ x: 11, y: 10 });
+      expect(position).toEqual({ x: center.x + 1, y: center.y });
       
       game.movePlayer(0, 1);
       const position2 = game.getPlayerPosition();
-      expect(position2).toEqual({ x: 11, y: 11 });
+      expect(position2).toEqual({ x: center.x + 1, y: center.y + 1 });
     });
 
     test('Board state is consistent across components', () => {
-      const cellBefore = game.board.getCell(10, 10);
-      expect(cellBefore).toBe('.');
+      const center = getCenterPosition();
+      const cellBefore = game.board.getCell(center.x, center.y);
+      expect(cellBefore).toBe(EMPTY_SPACE_CHAR.char);
       
       game.movePlayer(1, 0);
       
       // Old position should still be empty
-      const oldCell = game.board.getCell(10, 10);
-      expect(oldCell).toBe('.');
+      const oldCell = game.board.getCell(center.x, center.y);
+      expect(oldCell).toBe(EMPTY_SPACE_CHAR.char);
       
       // New position should be empty (player is tracked separately)
-      const newCell = game.board.getCell(11, 10);
-      expect(newCell).toBe('.');
+      const newCell = game.board.getCell(center.x + 1, center.y);
+      expect(newCell).toBe(EMPTY_SPACE_CHAR.char);
     });
 
     test('State remains consistent after multiple operations', () => {

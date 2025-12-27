@@ -278,8 +278,11 @@ describe('Game', () => {
   describe('movePlayer() - Boundary Checks', () => {
     test('Cannot move outside board bounds (negative coordinates)', () => {
       const game = new Game();
+      const center = getCenterPosition();
       // Move to x=1, y=1 (near edge)
-      game.movePlayer(-9, -9);
+      const dx = 1 - center.x;
+      const dy = 1 - center.y;
+      game.movePlayer(dx, dy);
       expect(game.getPlayerPosition()).toEqual({ x: 1, y: 1 });
       
       // Try to move to negative coordinates
@@ -305,11 +308,17 @@ describe('Game', () => {
 
     test('Returns false when movement is out of bounds', () => {
       const game = new Game();
-      game.movePlayer(-10, 0); // Try to move to x=-1
-      expect(game.getPlayerPosition().x).toBe(10); // Should not move
+      const center = getCenterPosition();
+      const initialX = center.x;
       
-      game.movePlayer(10, 0); // Try to move to x=20
-      expect(game.getPlayerPosition().x).toBe(10); // Should not move
+      // Try to move to negative x (out of bounds)
+      game.movePlayer(-(initialX + 1), 0);
+      expect(game.getPlayerPosition().x).toBe(initialX); // Should not move
+      
+      // Try to move beyond board width
+      const beyondBounds = gameConfig.board.width - initialX;
+      game.movePlayer(beyondBounds, 0);
+      expect(game.getPlayerPosition().x).toBe(initialX); // Should not move
     });
 
     test('Player position does not change when out of bounds', () => {
@@ -358,7 +367,7 @@ describe('Game', () => {
       
       // Try to move into wall
       expect(game.movePlayer(1, 0)).toBe(false);
-      expect(game.getPlayerPosition().x).toBe(18);
+      expect(game.getPlayerPosition().x).toBe(nearEdgeX);
     });
   });
 
@@ -472,15 +481,16 @@ describe('Game', () => {
 
     test('Game state is consistent after reset', () => {
       const game = new Game();
+      const center = getCenterPosition();
       game.movePlayer(5, 5);
       game.start();
       
       game.reset();
       
-      expect(game.getPlayerPosition()).toEqual({ x: 10, y: 10 });
+      expect(game.getPlayerPosition()).toEqual({ x: center.x, y: center.y });
       expect(game.getScore()).toBe(0);
       expect(game.isRunning()).toBe(true);
-      expect(game.board.getCell(10, 10)).toBe('.');
+      expect(game.board.getCell(center.x, center.y)).toBe(EMPTY_SPACE_CHAR.char);
     });
   });
 });

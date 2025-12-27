@@ -3,6 +3,15 @@ import { Game } from '../../src/game/Game.js';
 import { Renderer } from '../../src/render/Renderer.js';
 import { InputHandler } from '../../src/input/InputHandler.js';
 import { validateTerminalSize } from '../../src/utils/terminal.js';
+import { gameConfig } from '../../src/config/gameConfig.js';
+
+// Helper to get center position
+function getCenterPosition() {
+  return {
+    x: Math.floor(gameConfig.board.width / 2),
+    y: Math.floor(gameConfig.board.height / 2),
+  };
+}
 
 // Mock process.stdout.write
 const mockWrite = vi.fn();
@@ -100,16 +109,17 @@ describe('Game Loop Integration', () => {
   describe('Component Initialization', () => {
     test('Game initializes correctly', () => {
       const game = new Game();
+      const center = getCenterPosition();
       expect(game).toBeDefined();
-      expect(game.getPlayerPosition()).toEqual({ x: 10, y: 10 });
+      expect(game.getPlayerPosition()).toEqual({ x: center.x, y: center.y });
       expect(game.getScore()).toBe(0);
     });
 
     test('Renderer initializes correctly', () => {
       const renderer = new Renderer();
       expect(renderer).toBeDefined();
-      expect(renderer.boardWidth).toBe(20);
-      expect(renderer.boardHeight).toBe(20);
+      expect(renderer.boardWidth).toBe(gameConfig.board.width);
+      expect(renderer.boardHeight).toBe(gameConfig.board.height);
     });
 
     test('InputHandler initializes correctly', () => {
@@ -165,13 +175,14 @@ describe('Game Loop Integration', () => {
     test('Movement controls work', () => {
       const game = new Game();
       const renderer = new Renderer();
+      const center = getCenterPosition();
       const oldPos = game.getPlayerPosition();
       
       const moved = game.movePlayer(1, 0);
       expect(moved).toBe(true);
       
       const newPos = game.getPlayerPosition();
-      expect(newPos.x).toBe(11);
+      expect(newPos.x).toBe(center.x + 1);
       
       renderer.updatePlayerPosition(
         oldPos.x,
@@ -198,14 +209,15 @@ describe('Game Loop Integration', () => {
       const renderer = new Renderer();
       
       // Move player
+      const center = getCenterPosition();
       game.movePlayer(5, 5);
       const pos1 = game.getPlayerPosition();
-      expect(pos1).not.toEqual({ x: 10, y: 10 });
+      expect(pos1).not.toEqual({ x: center.x, y: center.y });
       
       // Reset
       game.reset();
       const pos2 = game.getPlayerPosition();
-      expect(pos2).toEqual({ x: 10, y: 10 });
+      expect(pos2).toEqual({ x: center.x, y: center.y });
       expect(game.getScore()).toBe(0);
       
       // Re-render
@@ -312,21 +324,22 @@ describe('Game Loop Integration', () => {
       let position = game.getPlayerPosition();
       
       // Multiple movements
+      const center = getCenterPosition();
       game.movePlayer(1, 0);
       position = game.getPlayerPosition();
-      expect(position).toEqual({ x: 11, y: 10 });
+      expect(position).toEqual({ x: center.x + 1, y: center.y });
       
       game.movePlayer(0, 1);
       position = game.getPlayerPosition();
-      expect(position).toEqual({ x: 11, y: 11 });
+      expect(position).toEqual({ x: center.x + 1, y: center.y + 1 });
       
       game.movePlayer(-1, 0);
       position = game.getPlayerPosition();
-      expect(position).toEqual({ x: 10, y: 11 });
+      expect(position).toEqual({ x: center.x, y: center.y + 1 });
       
       game.movePlayer(0, -1);
       position = game.getPlayerPosition();
-      expect(position).toEqual({ x: 10, y: 10 });
+      expect(position).toEqual({ x: center.x, y: center.y });
     });
   });
 });
