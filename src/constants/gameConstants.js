@@ -6,6 +6,8 @@
  */
 
 import unicodeMappings from '../config/unicode-mappings.json' with { type: 'json' };
+import fontColorMappings from '../config/font-color.json' with { type: 'json' };
+
 import { Glyph } from '../game/Glyph.js';
 
 /**
@@ -56,6 +58,24 @@ export function toGlyph(hexString, color = null) {
 }
 
 /**
+ * Converts a color name to its hex string value
+ * Uses font-color.json mappings for color lookups
+ * @param {string} color - Color name (e.g., "red", "GREEN", "dark_gray")
+ * @returns {string|null} Hex string value (e.g., "FF0000") or null if not found
+ */
+export function toColorHexValue(color) {
+  if (!color || typeof color !== 'string') {
+    return null;
+  }
+  
+  // Transform to uppercase for lookup
+  const upperColor = color.toUpperCase();
+  
+  // Look up in font color mappings
+  return fontColorMappings[upperColor] || null;
+}
+
+/**
  * Character representing empty space on the board
  * Unicode: U+0020 (SPACE)
  */
@@ -71,5 +91,5 @@ export const WALL_CHAR = toGlyph(fontSet.NUMBER_SIGN);
  * Character representing the player
  * Unicode: U+263A (WHITE SMILING FACE)
  */
-export const PLAYER_CHAR = toGlyph(fontSet.INVERTED_SMILING_FACE);
+export const PLAYER_CHAR = toGlyph(fontSet.INVERTED_SMILING_FACE, toColorHexValue('white'));
 
