@@ -61,17 +61,17 @@ export class Renderer {
         
         if (x === playerX && y === playerY) {
           // Player position
-          char = PLAYER_CHAR;
+          char = PLAYER_CHAR.char;
           color = chalk.green;
         } else {
           const cell = board.getCell(x, y);
-          if (cell === WALL_CHAR) {
+          if (cell === WALL_CHAR.char) {
             // Wall
-            char = WALL_CHAR;
+            char = WALL_CHAR.char;
             color = chalk.gray;
           } else {
             // Empty space
-            char = EMPTY_SPACE_CHAR;
+            char = EMPTY_SPACE_CHAR.char;
             color = chalk.white;
           }
         }
@@ -140,7 +140,7 @@ export class Renderer {
   updatePlayerPosition(oldX, oldY, newX, newY, board) {
     // Clear old position (restore cell content)
     const oldCell = board.getCell(oldX, oldY);
-    const oldColor = oldCell === WALL_CHAR ? chalk.gray : chalk.white;
+    const oldColor = oldCell === WALL_CHAR.char ? chalk.gray : chalk.white;
     const boardStartX = getHorizontalCenter(this.boardWidth);
     const oldScreenX = boardStartX + oldX;
     const oldScreenY = this.boardOffset + oldY;
@@ -152,7 +152,7 @@ export class Renderer {
     const newScreenX = boardStartX + newX;
     const newScreenY = this.boardOffset + newY;
     process.stdout.write(ansiEscapes.cursorTo(newScreenX, newScreenY));
-    process.stdout.write(chalk.green(PLAYER_CHAR));
+    process.stdout.write(chalk.green(PLAYER_CHAR.char));
     
     // Update status bar position
     this.renderStatusBar(0, newX, newY);

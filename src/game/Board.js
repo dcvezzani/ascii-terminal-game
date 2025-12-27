@@ -22,10 +22,10 @@ export class Board {
       for (let x = 0; x < this.width; x++) {
         // Outer walls on all sides
         if (y === 0 || y === this.height - 1 || x === 0 || x === this.width - 1) {
-          row.push(WALL_CHAR);
+          row.push(WALL_CHAR.char);
         } else {
           // Empty space in interior
-          row.push(EMPTY_SPACE_CHAR);
+          row.push(EMPTY_SPACE_CHAR.char);
         }
       }
       grid.push(row);
@@ -70,7 +70,7 @@ export class Board {
    */
   isWall(x, y) {
     const cell = this.getCell(x, y);
-    return cell === WALL_CHAR;
+    return cell === WALL_CHAR.char;
   }
 
   /**

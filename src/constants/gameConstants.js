@@ -6,6 +6,7 @@
  */
 
 import unicodeMappings from '../config/unicode-mappings.json' with { type: 'json' };
+import { Glyph } from '../game/Glyph.js';
 
 /**
  * Font set mapping labels to Unicode hex values
@@ -14,11 +15,12 @@ import unicodeMappings from '../config/unicode-mappings.json' with { type: 'json
 export const fontSet = unicodeMappings;
 
 /**
- * Converts a Unicode hex string to its corresponding glyph character
+ * Converts a Unicode hex string to its corresponding Glyph instance
  * @param {string} hexString - Unicode hex value (e.g., "263A" for ☺)
- * @returns {string} The Unicode character corresponding to the hex value
+ * @param {string|null} color - Optional color for the glyph
+ * @returns {Glyph} A Glyph instance with the Unicode character
  */
-export function toGlyph(hexString) {
+export function toGlyph(hexString, color = null) {
   // Remove any leading "U+" or "0x" prefix if present
   const cleanHex = hexString.replace(/^[Uu]\+?|^0[xX]/, '');
   
@@ -26,7 +28,10 @@ export function toGlyph(hexString) {
   const codePoint = parseInt(cleanHex, 16);
   
   // Convert code point to Unicode character
-  return String.fromCodePoint(codePoint);
+  const char = String.fromCodePoint(codePoint);
+  
+  // Return Glyph instance
+  return new Glyph(char, color);
 }
 
 /**
@@ -45,5 +50,5 @@ export const WALL_CHAR = toGlyph(fontSet.NUMBER_SIGN);
  * Character representing the player
  * Unicode: U+263A (WHITE SMILING FACE)
  */
-export const PLAYER_CHAR = toGlyph(fontSet.WHITE_SMILING_FACE);
+export const PLAYER_CHAR = toGlyph(fontSet.INVERTED_SMILING_FACE);
 
