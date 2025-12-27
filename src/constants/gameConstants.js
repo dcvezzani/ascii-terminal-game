@@ -29,9 +29,9 @@ export const EMPTY_SPACE_CHAR = toGlyph("0020");
 
 /**
  * Character representing a wall on the board
- * Unicode: U+2588 (FULL BLOCK 100 FILL)
+ * Unicode: U+0023 (NUMBER SIGN / HASH)
  */
-export const WALL_CHAR = toGlyph("2588");
+export const WALL_CHAR = toGlyph("0023");
 
 /**
  * Character representing the player
