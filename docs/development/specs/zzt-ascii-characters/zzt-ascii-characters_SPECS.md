@@ -2,18 +2,22 @@
 
 ## Overview
 
-This specification details the implementation of ZZT-style characters to replace the current simple ASCII characters in the terminal game. ZZT originally used IBM Code Page 437 (legacy DOS encoding), but modern terminals use UTF-8 Unicode. Therefore, we will use **Unicode characters that visually match Code Page 437 characters** rather than actual CP437 encoding.
-
-The implementation will use a flexible character set system that allows for easy customization and future expansion with additional character sets.
+This specification details the implementation of ZZT-style characters using **actual IBM Code Page 437 byte values** (0-255) to replace the current simple ASCII characters in the terminal game. The implementation will output CP437 bytes directly, requiring the user to configure their terminal (iTerm) with a CP437-compatible font.
 
 **Reference Card**: `docs/development/cards/features/FEATURE_zzt_ascii_characters.md`
 
+**Key Approach**:
+- Use CP437 byte values (0-255) directly, not Unicode equivalents
+- Output raw bytes using Node.js `Buffer`
+- User configures iTerm with a CP437 font (e.g., "Perfect DOS VGA", "IBM VGA")
+- Terminal interprets bytes as CP437 when using the correct font
+
 ## Goals
 
-1. Replace simple ASCII characters with ZZT-style Unicode characters (Unicode equivalents of Code Page 437)
+1. Replace simple ASCII characters with actual CP437 byte values
 2. Create a flexible character set system for future extensibility
 3. Maintain backward compatibility with existing game logic
-4. Provide authentic ZZT retro aesthetic using Unicode characters that match CP437 appearance
+4. Provide authentic ZZT retro aesthetic using original CP437 encoding
 
 ## Current State
 
@@ -29,19 +33,19 @@ The implementation will use a flexible character set system that allows for easy
 
 ## Target State
 
-**Target Characters:**
-- Player: `☺` (Unicode: U+263A, visually matches CP437: 1) - Traditional ZZT smiley face
-- Walls: `█` (Unicode: U+2588, visually matches CP437: 219) - Full block
-- Empty: ` ` (ASCII: 32, same as CP437: 32) - Space
-
-**Note**: We use Unicode characters (UTF-8) that visually match Code Page 437 characters. Modern terminals use UTF-8, so we cannot use actual CP437 encoding. The Unicode equivalents should render identically to CP437 characters when displayed in a terminal with appropriate font support.
+**Target Characters (CP437 Byte Values):**
+- Player: CP437 byte `1` (smiley face ☺) - Traditional ZZT player character
+- Walls: CP437 byte `219` (solid block █) - Full block for walls
+- Empty: CP437 byte `32` (space) - Empty space
 
 **Target Architecture:**
 - Character sets organized in `src/constants/characterSets/` directory
 - Separate files for each character set (simple, zzt, future sets)
 - Character set selector in `index.js`
+- Characters stored as CP437 byte values (0-255)
+- Output helper functions to write CP437 bytes to terminal
 - `gameConstants.js` imports from character set system
-- No changes needed to Renderer or Board classes
+- Renderer updated to output CP437 bytes instead of Unicode strings
 
 ## Functional Requirements
 
@@ -89,33 +93,33 @@ The implementation will use a flexible character set system that allows for easy
 
 ### FR3: ZZT Characters Set
 
-**Requirement**: Create ZZT-style extended ASCII character set.
+**Requirement**: Create ZZT-style character set using CP437 byte values.
 
 **Details**:
-- Use traditional ZZT characters from Code Page 437
-- Player: smiley face (☺)
-- Walls: solid block (█)
+- Use actual CP437 byte values (0-255) for characters
+- Player: CP437 byte 1 (smiley face)
+- Walls: CP437 byte 219 (solid block)
+- Store as byte values, not Unicode strings
 - Include additional ZZT characters for future use
 
 **Character Definitions**:
 ```javascript
 {
-  PLAYER: '☺',        // CP437: 1 → Unicode: U+263A (White Smiling Face)
-  WALL: '█',          // CP437: 219 → Unicode: U+2588 (Full Block)
-  WALL_MEDIUM: '▓',   // CP437: 178 → Unicode: U+2593 (Dark Shade)
-  WALL_LIGHT: '▒',    // CP437: 177 → Unicode: U+2592 (Medium Shade)
-  EMPTY: ' ',         // CP437: 32 → ASCII: 32 (Space)
+  PLAYER: 1,          // CP437 byte 1 - Smiley face ☺
+  WALL: 219,          // CP437 byte 219 - Full block █
+  WALL_MEDIUM: 178,   // CP437 byte 178 - Medium shade ▓
+  WALL_LIGHT: 177,    // CP437 byte 177 - Light shade ▒
+  EMPTY: 32,          // CP437 byte 32 - Space
 }
 ```
 
-**Note**: We use Unicode characters that visually match Code Page 437 characters. Modern terminals use UTF-8, so we can't directly use CP437 code points. The Unicode equivalents should render the same as CP437 characters when displayed in a terminal with appropriate font support.
-
 **Acceptance Criteria**:
 - [ ] `zztCharacters.js` file created
-- [ ] Exports character object with required characters
-- [ ] Player character is ☺ (traditional ZZT smiley)
-- [ ] Wall character is █ (solid block)
+- [ ] Exports character object with CP437 byte values
+- [ ] Player character is byte value 1
+- [ ] Wall character is byte value 219
 - [ ] Additional ZZT characters included for future use
+- [ ] Values are numbers (0-255), not strings
 
 ### FR4: Character Set Selector
 
@@ -137,7 +141,7 @@ export const characterSet = CHARACTER_SET === 'zzt'
   ? zztCharacters 
   : simpleCharacters;
 
-// Export individual characters
+// Export individual characters (as byte values)
 export const PLAYER_CHAR = characterSet.PLAYER;
 export const WALL_CHAR = characterSet.WALL;
 export const EMPTY_SPACE_CHAR = characterSet.EMPTY;
@@ -147,7 +151,7 @@ export const EMPTY_SPACE_CHAR = characterSet.EMPTY;
 - [ ] `index.js` imports both character sets
 - [ ] Selects character set based on constant
 - [ ] Exports selected character set object
-- [ ] Exports individual character constants
+- [ ] Exports individual character constants (as byte values)
 - [ ] Easy to switch between character sets
 
 ### FR5: Update Game Constants
@@ -157,7 +161,8 @@ export const EMPTY_SPACE_CHAR = characterSet.EMPTY;
 **Details**:
 - Import from character set system instead of defining directly
 - Maintain same export structure
-- No breaking changes to existing imports
+- Export byte values, not strings
+- No breaking changes to existing imports (but values are now bytes)
 
 **Implementation**:
 ```javascript
@@ -167,63 +172,131 @@ import {
   EMPTY_SPACE_CHAR 
 } from './characterSets/index.js';
 
-export const PLAYER_CHAR = PLAYER_CHAR;
-export const WALL_CHAR = WALL_CHAR;
-export const EMPTY_SPACE_CHAR = EMPTY_SPACE_CHAR;
+export const PLAYER_CHAR = PLAYER_CHAR;  // CP437 byte value
+export const WALL_CHAR = WALL_CHAR;      // CP437 byte value
+export const EMPTY_SPACE_CHAR = EMPTY_SPACE_CHAR; // CP437 byte value
 ```
 
 **Acceptance Criteria**:
 - [ ] `gameConstants.js` imports from character set system
-- [ ] Exports same constants as before
-- [ ] No changes needed to files that import from gameConstants
+- [ ] Exports same constants as before (but as byte values)
 - [ ] Characters now use ZZT set by default
 
-### FR6: Verify Character Display
+### FR6: CP437 Output Helper
 
-**Requirement**: Ensure ZZT characters display correctly in terminals.
+**Requirement**: Create helper functions to output CP437 bytes to terminal.
 
 **Details**:
-- Test in common terminals (Terminal.app, iTerm2, Windows Terminal)
-- Verify Unicode characters render correctly
-- Document any terminal compatibility issues
+- Create utility function to write CP437 byte to stdout
+- Handle conversion from byte value to Buffer for output
+- Support both single byte and string of bytes
+
+**Implementation**:
+```javascript
+// src/utils/cp437.js
+/**
+ * Write a CP437 byte value to stdout
+ * @param {number} byteValue - CP437 byte value (0-255)
+ */
+export function writeCP437Byte(byteValue) {
+  const buffer = Buffer.from([byteValue]);
+  process.stdout.write(buffer);
+}
+
+/**
+ * Write a string of CP437 byte values to stdout
+ * @param {number[]} byteValues - Array of CP437 byte values
+ */
+export function writeCP437Bytes(byteValues) {
+  const buffer = Buffer.from(byteValues);
+  process.stdout.write(buffer);
+}
+```
 
 **Acceptance Criteria**:
-- [ ] Characters display correctly in macOS Terminal
-- [ ] Characters display correctly in iTerm2
-- [ ] Characters display correctly in Windows Terminal (if available)
-- [ ] Fallback to simple characters works if needed
+- [ ] `cp437.js` utility file created
+- [ ] `writeCP437Byte()` function implemented
+- [ ] `writeCP437Bytes()` function implemented
+- [ ] Functions output raw bytes correctly
+
+### FR7: Update Renderer for CP437
+
+**Requirement**: Update Renderer to output CP437 bytes instead of Unicode strings.
+
+**Details**:
+- Replace string output with CP437 byte output
+- Use `writeCP437Byte()` helper for single characters
+- Update all character rendering methods
+- Maintain same API, change internal implementation
+
+**Acceptance Criteria**:
+- [ ] Renderer uses CP437 byte output
+- [ ] All character rendering methods updated
+- [ ] Game displays CP437 characters correctly
+- [ ] No breaking changes to Renderer API
+
+### FR8: Terminal Font Configuration
+
+**Requirement**: Document CP437 font setup for iTerm.
+
+**Details**:
+- Provide instructions for downloading CP437 font
+- Document iTerm font configuration steps
+- List recommended CP437 fonts
+- Create setup documentation
+
+**Recommended CP437 Fonts**:
+- **Perfect DOS VGA** - Popular CP437 font
+- **IBM VGA** - Original IBM font
+- **Terminus** - Modern CP437-compatible font
+- **Unifont** - Unicode font with CP437 support
+
+**iTerm Configuration Steps**:
+1. Download CP437 font (TTF/WOFF)
+2. Install font on macOS
+3. Open iTerm Preferences → Profiles → Text
+4. Select CP437 font from font dropdown
+5. Set font size appropriately
+6. Test game display
+
+**Acceptance Criteria**:
+- [ ] Documentation created for font setup
+- [ ] Font download sources listed
+- [ ] iTerm configuration steps documented
+- [ ] Testing instructions provided
 
 ## Technical Requirements
 
-### TR1: Character Encoding
+### TR1: CP437 Byte Encoding
 
-**Requirement**: Use proper character encoding for Code Page 437 characters.
+**Requirement**: Use actual CP437 byte values (0-255) for characters.
 
 **Details**:
-- ZZT uses IBM Code Page 437 (legacy DOS encoding)
-- Modern terminals use UTF-8 Unicode
-- Need to map CP437 characters to Unicode equivalents
-- Store as Unicode characters (UTF-8) in source code
-- Ensure file encoding is UTF-8
+- Store characters as numeric byte values (0-255)
+- Output raw bytes using Node.js `Buffer`
+- Terminal interprets bytes as CP437 when using CP437 font
+- No Unicode conversion needed
 
-**Code Page 437 to Unicode Mapping**:
-- CP437 char 1 (smiley) → Unicode U+263A `☺` (White Smiling Face)
-- CP437 char 219 (solid block) → Unicode U+2588 `█` (Full Block)
-- CP437 char 178 (medium shade) → Unicode U+2593 `▓` (Dark Shade)
-- CP437 char 177 (light shade) → Unicode U+2592 `▒` (Medium Shade)
+**CP437 Byte Values**:
+- Player: `1` (smiley face ☺)
+- Wall: `219` (full block █)
+- Wall Medium: `178` (medium shade ▓)
+- Wall Light: `177` (light shade ▒)
+- Empty: `32` (space)
 
-**Important Note**: 
-- Code Page 437 is a legacy encoding from DOS era
-- Modern terminals use UTF-8, so we use Unicode equivalents
-- The Unicode characters should visually match CP437 characters
-- Terminal font must support these Unicode characters
+**Output Method**:
+```javascript
+// Convert byte value to Buffer and write
+const byte = 219; // CP437 wall character
+const buffer = Buffer.from([byte]);
+process.stdout.write(buffer);
+```
 
 **Acceptance Criteria**:
-- [ ] All character files use UTF-8 encoding
-- [ ] Characters defined as Unicode strings (not CP437 code points)
-- [ ] Unicode characters visually match CP437 characters
-- [ ] No encoding issues in source files
-- [ ] Characters display correctly in modern terminals
+- [ ] Characters stored as numeric byte values (0-255)
+- [ ] Output uses Buffer.from() to create byte buffers
+- [ ] No Unicode string conversion
+- [ ] Raw bytes written to stdout
 
 ### TR2: Module Structure
 
@@ -241,18 +314,19 @@ export const EMPTY_SPACE_CHAR = EMPTY_SPACE_CHAR;
 
 ### TR3: Backward Compatibility
 
-**Requirement**: No breaking changes to existing code.
+**Requirement**: Minimize breaking changes to existing code.
 
 **Details**:
-- Renderer.js and Board.js continue to work without changes
-- gameConstants.js maintains same export interface
-- All existing imports continue to work
+- gameConstants.js maintains same export names (but values are now bytes)
+- Renderer.js needs updates to output bytes instead of strings
+- Board.js may need minor updates if it uses character constants directly
+- All existing imports continue to work (but may need updates for byte handling)
 
 **Acceptance Criteria**:
-- [ ] All existing tests pass
-- [ ] No changes needed to Renderer.js
-- [ ] No changes needed to Board.js
-- [ ] Game runs correctly with new characters
+- [ ] All existing tests updated for byte values
+- [ ] Renderer.js updated to use CP437 byte output
+- [ ] Board.js works with byte values
+- [ ] Game runs correctly with CP437 characters
 
 ### TR4: Extensibility
 
@@ -282,22 +356,24 @@ export const EMPTY_SPACE_CHAR = EMPTY_SPACE_CHAR;
 
 ```javascript
 {
-  PLAYER: string,      // Player character
-  WALL: string,        // Wall character
-  WALL_MEDIUM?: string, // Optional: Medium shade wall
-  WALL_LIGHT?: string,  // Optional: Light shade wall
-  EMPTY: string,       // Empty space character
+  PLAYER: number,      // CP437 byte value for player (0-255)
+  WALL: number,       // CP437 byte value for wall (0-255)
+  WALL_MEDIUM?: number, // Optional: Medium shade wall byte value
+  WALL_LIGHT?: number,  // Optional: Light shade wall byte value
+  EMPTY: number,       // CP437 byte value for empty space (0-255)
 }
 ```
 
 **Required Properties**:
-- `PLAYER`: Character for player
-- `WALL`: Character for walls
-- `EMPTY`: Character for empty spaces
+- `PLAYER`: CP437 byte value (0-255) for player character
+- `WALL`: CP437 byte value (0-255) for wall character
+- `EMPTY`: CP437 byte value (0-255) for empty space
 
 **Optional Properties**:
-- `WALL_MEDIUM`: Alternative wall character
-- `WALL_LIGHT`: Alternative wall character
+- `WALL_MEDIUM`: Alternative wall character byte value
+- `WALL_LIGHT`: Alternative wall character byte value
+
+**Note**: All values are numbers (0-255), not strings.
 
 ## File Structure
 
@@ -306,48 +382,69 @@ src/constants/
 ├── gameConstants.js                    # Updated to import from characterSets
 └── characterSets/                      # New directory
     ├── index.js                        # Character set selector
-    ├── simpleCharacters.js            # Simple ASCII characters
-    └── zztCharacters.js               # ZZT Unicode characters
+    ├── simpleCharacters.js            # Simple ASCII characters (as bytes)
+    └── zztCharacters.js               # ZZT CP437 characters (as bytes)
+
+src/utils/
+└── cp437.js                           # CP437 output helper functions
 ```
 
 ## Implementation Notes
 
 ### Character Selection
 
-**Default**: ZZT characters (`zzt`)
+**Default**: ZZT characters (`zzt`) using CP437 byte values
 - Can be changed by updating `CHARACTER_SET` constant in `index.js`
 - Future: Can be made configurable via `gameConfig.js`
 
+### CP437 Font Setup
+
+**Required**: User must configure terminal with CP437-compatible font
+
+**Recommended Fonts**:
+1. **Perfect DOS VGA** - Most popular CP437 font
+   - Download: Search for "Perfect DOS VGA" font
+   - Format: TTF
+   - Best match for ZZT aesthetic
+
+2. **IBM VGA** - Original IBM font
+   - Download: Search for "IBM VGA" or "IBM PC" font
+   - Format: TTF
+   - Authentic CP437 appearance
+
+3. **Terminus** - Modern CP437-compatible
+   - Download: Available on most package managers
+   - Format: TTF/OTF
+   - Good Unicode + CP437 support
+
+**iTerm Configuration**:
+1. Download CP437 font (TTF file)
+2. Double-click TTF file to install on macOS
+3. Open iTerm → Preferences (⌘,)
+4. Go to Profiles → Text tab
+5. Click "Change Font" button
+6. Select CP437 font from list
+7. Set appropriate font size (e.g., 14-16pt)
+8. Click "OK"
+
+**Testing**:
+- Run game and verify characters display correctly
+- Player should show as smiley face (☺)
+- Walls should show as solid blocks (█)
+- If characters don't display correctly, verify font is selected in iTerm
+
 ### Terminal Compatibility
 
-**How Unicode Characters Work in Modern Terminals**:
-- Modern terminals use UTF-8 Unicode encoding by default
-- Unicode characters are stored as UTF-8 in source files
-- Terminal font must support these Unicode characters
-- Most modern monospace fonts include block characters and symbols
-
-**Supported Terminals**:
-- macOS Terminal.app (works with Unicode characters)
-- iTerm2 (works with Unicode characters)
-- Windows Terminal (works with Unicode characters)
-- Most modern Linux terminals (work with Unicode characters)
-
-**Font Requirements**:
-- Terminal font must include Unicode block characters (U+2588, U+2592, U+2593)
-- Terminal font must include Unicode smiley face (U+263A)
-- Most modern monospace fonts support these characters
-- If characters don't display, user may need to change terminal font
+**Supported Terminals** (with CP437 font):
+- iTerm2 (recommended) - Full CP437 support
+- macOS Terminal.app - Should work with CP437 font
+- Windows Terminal - Should work with CP437 font
+- Linux terminals - May need font configuration
 
 **Fallback**:
-- If ZZT characters don't display correctly, switch to `simple` character set
+- If CP437 characters don't display correctly, switch to `simple` character set
 - Update `CHARACTER_SET` in `index.js` to `'simple'`
-- Simple characters use basic ASCII that works everywhere
-
-**Why Not Use Actual Code Page 437?**:
-- CP437 is a legacy DOS encoding, not supported in modern JavaScript/Node.js
-- Would require terminal configuration (not cross-platform)
-- Would require encoding conversion libraries (unnecessary complexity)
-- Unicode equivalents work out of the box in modern terminals
+- Simple characters use standard ASCII (bytes 32-126) that work everywhere
 
 ### Testing Strategy
 
@@ -359,21 +456,25 @@ src/constants/
 ## Success Criteria
 
 - [ ] Character set directory structure created
-- [ ] Simple and ZZT character sets implemented
+- [ ] Simple and ZZT character sets implemented (as byte values)
 - [ ] Character set selector working
+- [ ] CP437 output helper functions created
 - [ ] gameConstants.js updated to use character sets
-- [ ] Game displays ZZT characters correctly
-- [ ] Player character is ☺ (smiley face)
-- [ ] Wall character is █ (solid block)
-- [ ] All existing tests pass
-- [ ] No breaking changes to existing code
+- [ ] Renderer updated to output CP437 bytes
+- [ ] Game displays CP437 characters correctly (with CP437 font)
+- [ ] Player character is CP437 byte 1 (smiley face ☺)
+- [ ] Wall character is CP437 byte 219 (solid block █)
+- [ ] All existing tests updated and passing
+- [ ] Documentation created for CP437 font setup
 - [ ] Architecture supports future character sets
 
 ## Dependencies
 
 - `src/constants/gameConstants.js` - Must exist
-- `src/render/Renderer.js` - Uses characters from gameConstants
+- `src/render/Renderer.js` - Uses characters from gameConstants (needs updates)
 - `src/game/Board.js` - Uses characters from gameConstants
+- Node.js `Buffer` API - For CP437 byte output
+- CP437-compatible font - User must install and configure in iTerm
 
 ## Related Documents
 
@@ -383,9 +484,11 @@ src/constants/
 ## Open Questions
 
 All questions from the feature card have been answered:
-- ✅ Character selection: ☺ for player, █ for walls
+- ✅ Character selection: CP437 byte 1 for player, byte 219 for walls
 - ✅ Architecture: Character set system with separate directory
 - ✅ Extensibility: Designed for future character sets
+- ✅ Encoding: Using actual CP437 byte values, not Unicode
+- ✅ Font: User will configure iTerm with CP437 font
 
 ## Status
 
