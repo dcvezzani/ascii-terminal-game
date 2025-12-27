@@ -96,13 +96,15 @@ This specification details the implementation of ZZT-style extended ASCII charac
 **Character Definitions**:
 ```javascript
 {
-  PLAYER: '☺',        // Code Page 437: 1, Unicode: U+263A
-  WALL: '█',          // Code Page 437: 219, Unicode: U+2588
-  WALL_MEDIUM: '▓',   // Code Page 437: 178, Unicode: U+2593
-  WALL_LIGHT: '▒',    // Code Page 437: 177, Unicode: U+2592
-  EMPTY: ' ',         // Code Page 437: 32
+  PLAYER: '☺',        // CP437: 1 → Unicode: U+263A (White Smiling Face)
+  WALL: '█',          // CP437: 219 → Unicode: U+2588 (Full Block)
+  WALL_MEDIUM: '▓',   // CP437: 178 → Unicode: U+2593 (Dark Shade)
+  WALL_LIGHT: '▒',    // CP437: 177 → Unicode: U+2592 (Medium Shade)
+  EMPTY: ' ',         // CP437: 32 → ASCII: 32 (Space)
 }
 ```
+
+**Note**: We use Unicode characters that visually match Code Page 437 characters. Modern terminals use UTF-8, so we can't directly use CP437 code points. The Unicode equivalents should render the same as CP437 characters when displayed in a terminal with appropriate font support.
 
 **Acceptance Criteria**:
 - [ ] `zztCharacters.js` file created
@@ -191,23 +193,33 @@ export const EMPTY_SPACE_CHAR = EMPTY_SPACE_CHAR;
 
 ### TR1: Character Encoding
 
-**Requirement**: Use proper Unicode encoding for extended ASCII characters.
+**Requirement**: Use proper character encoding for Code Page 437 characters.
 
 **Details**:
-- ZZT characters use Code Page 437 equivalents
-- Store as Unicode characters (UTF-8)
+- ZZT uses IBM Code Page 437 (legacy DOS encoding)
+- Modern terminals use UTF-8 Unicode
+- Need to map CP437 characters to Unicode equivalents
+- Store as Unicode characters (UTF-8) in source code
 - Ensure file encoding is UTF-8
 
-**Characters**:
-- `☺` = U+263A (White Smiling Face)
-- `█` = U+2588 (Full Block)
-- `▓` = U+2593 (Dark Shade)
-- `▒` = U+2592 (Medium Shade)
+**Code Page 437 to Unicode Mapping**:
+- CP437 char 1 (smiley) → Unicode U+263A `☺` (White Smiling Face)
+- CP437 char 219 (solid block) → Unicode U+2588 `█` (Full Block)
+- CP437 char 178 (medium shade) → Unicode U+2593 `▓` (Dark Shade)
+- CP437 char 177 (light shade) → Unicode U+2592 `▒` (Medium Shade)
+
+**Important Note**: 
+- Code Page 437 is a legacy encoding from DOS era
+- Modern terminals use UTF-8, so we use Unicode equivalents
+- The Unicode characters should visually match CP437 characters
+- Terminal font must support these Unicode characters
 
 **Acceptance Criteria**:
 - [ ] All character files use UTF-8 encoding
-- [ ] Characters defined as Unicode strings
+- [ ] Characters defined as Unicode strings (not CP437 code points)
+- [ ] Unicode characters visually match CP437 characters
 - [ ] No encoding issues in source files
+- [ ] Characters display correctly in modern terminals
 
 ### TR2: Module Structure
 
@@ -304,15 +316,33 @@ src/constants/
 
 ### Terminal Compatibility
 
+**How Code Page 437 Works in Modern Terminals**:
+- Code Page 437 is a legacy DOS encoding (IBM PC character set)
+- Modern terminals use UTF-8 Unicode encoding
+- We use Unicode characters that visually match CP437 characters
+- Terminal font must support these Unicode characters
+
 **Supported Terminals**:
-- macOS Terminal.app (should work)
-- iTerm2 (should work)
-- Windows Terminal (should work)
-- Most modern Linux terminals (should work)
+- macOS Terminal.app (should work with Unicode characters)
+- iTerm2 (should work with Unicode characters)
+- Windows Terminal (should work with Unicode characters)
+- Most modern Linux terminals (should work with Unicode characters)
+
+**Font Requirements**:
+- Terminal font must include Unicode block characters (U+2588, U+2592, U+2593)
+- Terminal font must include Unicode smiley face (U+263A)
+- Most modern monospace fonts support these characters
+- If characters don't display, user may need to change terminal font
 
 **Fallback**:
 - If ZZT characters don't display correctly, switch to `simple` character set
 - Update `CHARACTER_SET` in `index.js` to `'simple'`
+- Simple characters use basic ASCII that works everywhere
+
+**Alternative Approach** (if Unicode doesn't match):
+- Could use a CP437-to-Unicode mapping library
+- Or manually verify each character displays correctly
+- Test actual character appearance, not just code points
 
 ### Testing Strategy
 
