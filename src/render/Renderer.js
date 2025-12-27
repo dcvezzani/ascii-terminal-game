@@ -17,6 +17,19 @@ export class Renderer {
   }
 
   /**
+   * Converts a hex color string to a chalk color function
+   * @param {string|null} hexColor - Hex color string (e.g., "FF0000") or null
+   * @returns {Function} Chalk color function, defaults to white if hexColor is null
+   */
+  getColorFunction(hexColor) {
+    if (!hexColor) {
+      return chalk.white;
+    }
+    // Chalk accepts hex with or without # prefix
+    return chalk.hex(`#${hexColor}`);
+  }
+
+  /**
    * Initialize renderer - hide cursor and prepare terminal
    */
   initialize() {
@@ -56,27 +69,24 @@ export class Renderer {
       process.stdout.write(ansiEscapes.cursorTo(boardStartX, this.boardOffset + y));
       
       for (let x = 0; x < this.boardWidth; x++) {
-        let char;
-        let color;
+        let glyph;
         
         if (x === playerX && y === playerY) {
           // Player position
-          char = PLAYER_CHAR.char;
-          color = chalk.green;
+          glyph = PLAYER_CHAR;
         } else {
           const cell = board.getCell(x, y);
           if (cell === WALL_CHAR.char) {
             // Wall
-            char = WALL_CHAR.char;
-            color = chalk.gray;
+            glyph = WALL_CHAR;
           } else {
             // Empty space
-            char = EMPTY_SPACE_CHAR.char;
-            color = chalk.white;
+            glyph = EMPTY_SPACE_CHAR;
           }
         }
         
-        process.stdout.write(color(char));
+        const colorFn = this.getColorFunction(glyph.color);
+        process.stdout.write(colorFn(glyph.char));
       }
     }
   }
@@ -140,19 +150,21 @@ export class Renderer {
   updatePlayerPosition(oldX, oldY, newX, newY, board) {
     // Clear old position (restore cell content)
     const oldCell = board.getCell(oldX, oldY);
-    const oldColor = oldCell === WALL_CHAR.char ? chalk.gray : chalk.white;
+    const oldGlyph = oldCell === WALL_CHAR.char ? WALL_CHAR : EMPTY_SPACE_CHAR;
+    const oldColorFn = this.getColorFunction(oldGlyph.color);
     const boardStartX = getHorizontalCenter(this.boardWidth);
     const oldScreenX = boardStartX + oldX;
     const oldScreenY = this.boardOffset + oldY;
     
     process.stdout.write(ansiEscapes.cursorTo(oldScreenX, oldScreenY));
-    process.stdout.write(oldColor(oldCell));
+    process.stdout.write(oldColorFn(oldGlyph.char));
     
     // Draw new position
     const newScreenX = boardStartX + newX;
     const newScreenY = this.boardOffset + newY;
+    const playerColorFn = this.getColorFunction(PLAYER_CHAR.color);
     process.stdout.write(ansiEscapes.cursorTo(newScreenX, newScreenY));
-    process.stdout.write(chalk.green(PLAYER_CHAR.char));
+    process.stdout.write(playerColorFn(PLAYER_CHAR.char));
     
     // Update status bar position
     this.renderStatusBar(0, newX, newY);

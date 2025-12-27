@@ -79,17 +79,17 @@ export function toColorHexValue(color) {
  * Character representing empty space on the board
  * Unicode: U+0020 (SPACE)
  */
-export const EMPTY_SPACE_CHAR = toGlyph(fontSet.SPACE);
+export const EMPTY_SPACE_CHAR = toGlyph(fontSet.SPACE, toColorHexValue('white'));
 
 /**
  * Character representing a wall on the board
  * Unicode: U+0023 (NUMBER SIGN / HASH)
  */
-export const WALL_CHAR = toGlyph(fontSet.NUMBER_SIGN);
+export const WALL_CHAR = toGlyph(fontSet.NUMBER_SIGN, toColorHexValue('gray'));
 
 /**
  * Character representing the player
  * Unicode: U+263A (WHITE SMILING FACE)
  */
-export const PLAYER_CHAR = toGlyph(fontSet.INVERTED_SMILING_FACE, toColorHexValue('white'));
+export const PLAYER_CHAR = toGlyph(fontSet.SMILING_FACE, toColorHexValue('white'));
 

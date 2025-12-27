@@ -1,6 +1,7 @@
 import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
 import { Game } from '../../src/game/Game.js';
 import { Renderer } from '../../src/render/Renderer.js';
+import { PLAYER_CHAR } from '../../src/constants/gameConstants.js';
 import chalk from 'chalk';
 
 // Mock process.stdout.write
@@ -100,7 +101,7 @@ describe('Movement and Rendering Integration', () => {
       
       // Should render player at new position
       const allCalls = writeSpy.mock.calls.map(call => String(call[0])).join('');
-      expect(allCalls).toContain('@');
+      expect(allCalls).toContain(PLAYER_CHAR.char);
     });
 
     test('Status bar updates with new position', () => {

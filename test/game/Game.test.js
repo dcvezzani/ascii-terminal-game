@@ -1,20 +1,32 @@
 import { describe, test, expect } from 'vitest';
 import { Game } from '../../src/game/Game.js';
+import { gameConfig } from '../../src/config/gameConfig.js';
+import { EMPTY_SPACE_CHAR, WALL_CHAR } from '../../src/constants/gameConstants.js';
+
+// Helper to get center position
+function getCenterPosition() {
+  return {
+    x: Math.floor(gameConfig.board.width / 2),
+    y: Math.floor(gameConfig.board.height / 2),
+  };
+}
 
 describe('Game', () => {
   describe('Initialization', () => {
     test('Game is created with Board instance', () => {
       const game = new Game();
       expect(game.board).toBeDefined();
-      expect(game.board.width).toBe(20);
-      expect(game.board.height).toBe(20);
+      expect(game.board.width).toBe(gameConfig.board.width);
+      expect(game.board.height).toBe(gameConfig.board.height);
     });
 
-    test('Player starts at center position (10, 10)', () => {
+    test('Player starts at center position', () => {
       const game = new Game();
       const position = game.getPlayerPosition();
-      expect(position.x).toBe(10);
-      expect(position.y).toBe(10);
+      const expectedX = Math.floor(gameConfig.board.width / 2);
+      const expectedY = Math.floor(gameConfig.board.height / 2);
+      expect(position.x).toBe(expectedX);
+      expect(position.y).toBe(expectedY);
     });
 
     test('Score is initialized to 0', () => {
@@ -30,7 +42,9 @@ describe('Game', () => {
     test('getPlayerPosition() returns correct initial position', () => {
       const game = new Game();
       const position = game.getPlayerPosition();
-      expect(position).toEqual({ x: 10, y: 10 });
+      const expectedX = Math.floor(gameConfig.board.width / 2);
+      const expectedY = Math.floor(gameConfig.board.height / 2);
+      expect(position).toEqual({ x: expectedX, y: expectedY });
     });
 
     test('getScore() returns 0', () => {
@@ -84,37 +98,42 @@ describe('Game', () => {
   describe('movePlayer() - Successful Movement', () => {
     test('Moves player right (dx=1, dy=0) successfully', () => {
       const game = new Game();
+      const center = getCenterPosition();
       const success = game.movePlayer(1, 0);
       expect(success).toBe(true);
-      expect(game.getPlayerPosition()).toEqual({ x: 11, y: 10 });
+      expect(game.getPlayerPosition()).toEqual({ x: center.x + 1, y: center.y });
     });
 
     test('Moves player left (dx=-1, dy=0) successfully', () => {
       const game = new Game();
+      const center = getCenterPosition();
       const success = game.movePlayer(-1, 0);
       expect(success).toBe(true);
-      expect(game.getPlayerPosition()).toEqual({ x: 9, y: 10 });
+      expect(game.getPlayerPosition()).toEqual({ x: center.x - 1, y: center.y });
     });
 
     test('Moves player up (dx=0, dy=-1) successfully', () => {
       const game = new Game();
+      const center = getCenterPosition();
       const success = game.movePlayer(0, -1);
       expect(success).toBe(true);
-      expect(game.getPlayerPosition()).toEqual({ x: 10, y: 9 });
+      expect(game.getPlayerPosition()).toEqual({ x: center.x, y: center.y - 1 });
     });
 
     test('Moves player down (dx=0, dy=1) successfully', () => {
       const game = new Game();
+      const center = getCenterPosition();
       const success = game.movePlayer(0, 1);
       expect(success).toBe(true);
-      expect(game.getPlayerPosition()).toEqual({ x: 10, y: 11 });
+      expect(game.getPlayerPosition()).toEqual({ x: center.x, y: center.y + 1 });
     });
 
     test('Moves player diagonally (dx=1, dy=1) successfully', () => {
       const game = new Game();
+      const center = getCenterPosition();
       const success = game.movePlayer(1, 1);
       expect(success).toBe(true);
-      expect(game.getPlayerPosition()).toEqual({ x: 11, y: 11 });
+      expect(game.getPlayerPosition()).toEqual({ x: center.x + 1, y: center.y + 1 });
     });
 
     test('Returns true when movement is successful', () => {
@@ -127,36 +146,40 @@ describe('Game', () => {
 
     test('Player position is updated correctly after movement', () => {
       const game = new Game();
+      const center = getCenterPosition();
       game.movePlayer(1, 0);
-      expect(game.getPlayerPosition().x).toBe(11);
-      expect(game.getPlayerPosition().y).toBe(10);
+      expect(game.getPlayerPosition().x).toBe(center.x + 1);
+      expect(game.getPlayerPosition().y).toBe(center.y);
       
       game.movePlayer(0, 1);
-      expect(game.getPlayerPosition().x).toBe(11);
-      expect(game.getPlayerPosition().y).toBe(11);
+      expect(game.getPlayerPosition().x).toBe(center.x + 1);
+      expect(game.getPlayerPosition().y).toBe(center.y + 1);
     });
 
     test('Can move multiple times in sequence', () => {
       const game = new Game();
+      const center = getCenterPosition();
       game.movePlayer(1, 0); // Right
-      expect(game.getPlayerPosition()).toEqual({ x: 11, y: 10 });
+      expect(game.getPlayerPosition()).toEqual({ x: center.x + 1, y: center.y });
       
       game.movePlayer(0, 1); // Down
-      expect(game.getPlayerPosition()).toEqual({ x: 11, y: 11 });
+      expect(game.getPlayerPosition()).toEqual({ x: center.x + 1, y: center.y + 1 });
       
       game.movePlayer(-1, 0); // Left
-      expect(game.getPlayerPosition()).toEqual({ x: 10, y: 11 });
+      expect(game.getPlayerPosition()).toEqual({ x: center.x, y: center.y + 1 });
       
       game.movePlayer(0, -1); // Up
-      expect(game.getPlayerPosition()).toEqual({ x: 10, y: 10 });
+      expect(game.getPlayerPosition()).toEqual({ x: center.x, y: center.y });
     });
   });
 
   describe('movePlayer() - Wall Collision', () => {
     test('Cannot move into left wall (x=0)', () => {
       const game = new Game();
+      const center = getCenterPosition();
       // Move player to left edge (x=1)
-      game.movePlayer(-9, 0);
+      const dx = 1 - center.x;
+      game.movePlayer(dx, 0);
       expect(game.getPlayerPosition().x).toBe(1);
       
       // Try to move into wall
@@ -165,22 +188,27 @@ describe('Game', () => {
       expect(game.getPlayerPosition().x).toBe(1); // Position unchanged
     });
 
-    test('Cannot move into right wall (x=19)', () => {
+    test('Cannot move into right wall', () => {
       const game = new Game();
-      // Move player to right edge (x=18)
-      game.movePlayer(8, 0);
-      expect(game.getPlayerPosition().x).toBe(18);
+      const center = getCenterPosition();
+      // Move player to right edge (one cell from wall)
+      const nearEdgeX = gameConfig.board.width - 2;
+      const dx = nearEdgeX - center.x;
+      game.movePlayer(dx, 0);
+      expect(game.getPlayerPosition().x).toBe(nearEdgeX);
       
       // Try to move into wall
       const success = game.movePlayer(1, 0);
       expect(success).toBe(false);
-      expect(game.getPlayerPosition().x).toBe(18); // Position unchanged
+      expect(game.getPlayerPosition().x).toBe(nearEdgeX); // Position unchanged
     });
 
     test('Cannot move into top wall (y=0)', () => {
       const game = new Game();
+      const center = getCenterPosition();
       // Move player to top edge (y=1)
-      game.movePlayer(0, -9);
+      const dy = 1 - center.y;
+      game.movePlayer(0, dy);
       expect(game.getPlayerPosition().y).toBe(1);
       
       // Try to move into wall
@@ -189,32 +217,41 @@ describe('Game', () => {
       expect(game.getPlayerPosition().y).toBe(1); // Position unchanged
     });
 
-    test('Cannot move into bottom wall (y=19)', () => {
+    test('Cannot move into bottom wall', () => {
       const game = new Game();
-      // Move player to bottom edge (y=18)
-      game.movePlayer(0, 8);
-      expect(game.getPlayerPosition().y).toBe(18);
+      const center = getCenterPosition();
+      // Move player to bottom edge (one cell from wall)
+      const nearEdgeY = gameConfig.board.height - 2;
+      const dy = nearEdgeY - center.y;
+      game.movePlayer(0, dy);
+      expect(game.getPlayerPosition().y).toBe(nearEdgeY);
       
       // Try to move into wall
       const success = game.movePlayer(0, 1);
       expect(success).toBe(false);
-      expect(game.getPlayerPosition().y).toBe(18); // Position unchanged
+      expect(game.getPlayerPosition().y).toBe(nearEdgeY); // Position unchanged
     });
 
     test('Returns false when movement is blocked by wall', () => {
       const game = new Game();
+      const center = getCenterPosition();
       // Move to left edge
-      game.movePlayer(-9, 0);
+      const dxLeft = 1 - center.x;
+      game.movePlayer(dxLeft, 0);
       expect(game.movePlayer(-1, 0)).toBe(false);
       
       // Move to right edge
-      game.movePlayer(17, 0);
+      const nearEdgeX = gameConfig.board.width - 2;
+      const dxRight = nearEdgeX - center.x;
+      game.movePlayer(dxRight - dxLeft, 0);
       expect(game.movePlayer(1, 0)).toBe(false);
     });
 
     test('Player position does not change when blocked by wall', () => {
       const game = new Game();
-      game.movePlayer(-9, 0); // Move to x=1
+      const center = getCenterPosition();
+      const dx = 1 - center.x;
+      game.movePlayer(dx, 0); // Move to x=1
       const positionBefore = game.getPlayerPosition();
       
       game.movePlayer(-1, 0); // Try to move into wall
@@ -225,13 +262,16 @@ describe('Game', () => {
 
     test('Can move to edge of board but not into wall', () => {
       const game = new Game();
-      // Move to x=18 (one before right wall)
-      game.movePlayer(8, 0);
-      expect(game.getPlayerPosition().x).toBe(18);
+      const center = getCenterPosition();
+      // Move to one before right wall
+      const nearEdgeX = gameConfig.board.width - 2;
+      const dx = nearEdgeX - center.x;
+      game.movePlayer(dx, 0);
+      expect(game.getPlayerPosition().x).toBe(nearEdgeX);
       
-      // Can't move into wall at x=19
+      // Can't move into wall
       expect(game.movePlayer(1, 0)).toBe(false);
-      expect(game.getPlayerPosition().x).toBe(18);
+      expect(game.getPlayerPosition().x).toBe(nearEdgeX);
     });
   });
 
@@ -247,11 +287,16 @@ describe('Game', () => {
       expect(game.movePlayer(0, -2)).toBe(false);
     });
 
-    test('Cannot move outside board bounds (coordinates >= 20)', () => {
+    test('Cannot move outside board bounds (coordinates >= board size)', () => {
       const game = new Game();
-      // Move to x=18, y=18 (near edge)
-      game.movePlayer(8, 8);
-      expect(game.getPlayerPosition()).toEqual({ x: 18, y: 18 });
+      const center = getCenterPosition();
+      // Move to near edge (one cell from right/bottom wall)
+      const nearEdgeX = gameConfig.board.width - 2;
+      const nearEdgeY = gameConfig.board.height - 2;
+      const dx = nearEdgeX - center.x;
+      const dy = nearEdgeY - center.y;
+      game.movePlayer(dx, dy);
+      expect(game.getPlayerPosition()).toEqual({ x: nearEdgeX, y: nearEdgeY });
       
       // Try to move beyond bounds
       expect(game.movePlayer(2, 0)).toBe(false);
@@ -291,19 +336,25 @@ describe('Game', () => {
       expect(game.getPlayerPosition()).toEqual(positionBefore);
     });
 
-    test('Moving large distances (dx=10, dy=10) - should be blocked if out of bounds', () => {
+    test('Moving large distances - should be blocked if out of bounds', () => {
       const game = new Game();
-      // From center (10, 10), moving (10, 10) would go to (20, 20) which is out of bounds
-      const success = game.movePlayer(10, 10);
+      const center = getCenterPosition();
+      // Try to move beyond board bounds
+      const largeDx = gameConfig.board.width;
+      const largeDy = gameConfig.board.height;
+      const success = game.movePlayer(largeDx, largeDy);
       expect(success).toBe(false);
-      expect(game.getPlayerPosition()).toEqual({ x: 10, y: 10 });
+      expect(game.getPlayerPosition()).toEqual({ x: center.x, y: center.y });
     });
 
     test('Moving from center to near wall, then trying to move into wall', () => {
       const game = new Game();
-      // Move to near right wall
-      game.movePlayer(8, 0); // x=18
-      expect(game.getPlayerPosition().x).toBe(18);
+      const center = getCenterPosition();
+      // Move to near right wall (one cell from edge)
+      const nearEdgeX = gameConfig.board.width - 2;
+      const dx = nearEdgeX - center.x;
+      game.movePlayer(dx, 0);
+      expect(game.getPlayerPosition().x).toBe(nearEdgeX);
       
       // Try to move into wall
       expect(game.movePlayer(1, 0)).toBe(false);
@@ -312,13 +363,14 @@ describe('Game', () => {
   });
 
   describe('reset()', () => {
-    test('Resets player position to center (10, 10)', () => {
+    test('Resets player position to center', () => {
       const game = new Game();
+      const center = getCenterPosition();
       game.movePlayer(5, 5);
-      expect(game.getPlayerPosition()).not.toEqual({ x: 10, y: 10 });
+      expect(game.getPlayerPosition()).not.toEqual({ x: center.x, y: center.y });
       
       game.reset();
-      expect(game.getPlayerPosition()).toEqual({ x: 10, y: 10 });
+      expect(game.getPlayerPosition()).toEqual({ x: center.x, y: center.y });
     });
 
     test('Resets score to 0', () => {
@@ -333,12 +385,13 @@ describe('Game', () => {
       const boardBefore = game.board;
       
       // Modify board
-      game.board.setCell(10, 10, 'X');
-      expect(game.board.getCell(10, 10)).toBe('X');
+      const center = getCenterPosition();
+      game.board.setCell(center.x, center.y, 'X');
+      expect(game.board.getCell(center.x, center.y)).toBe('X');
       
       game.reset();
       // Board should be reinitialized
-      expect(game.board.getCell(10, 10)).toBe('.');
+      expect(game.board.getCell(center.x, center.y)).toBe(EMPTY_SPACE_CHAR.char);
       expect(game.board).not.toBe(boardBefore);
     });
 
@@ -360,35 +413,37 @@ describe('Game', () => {
       game.reset();
       
       // Board should be back to original state
-      expect(game.board.getCell(5, 5)).toBe('.');
-      expect(game.board.getCell(15, 15)).toBe('.');
-      expect(game.board.getCell(0, 0)).toBe('#');
-      expect(game.board.getCell(19, 19)).toBe('#');
+      expect(game.board.getCell(5, 5)).toBe(EMPTY_SPACE_CHAR.char);
+      expect(game.board.getCell(15, 15)).toBe(EMPTY_SPACE_CHAR.char);
+      expect(game.board.getCell(0, 0)).toBe(WALL_CHAR.char);
+      expect(game.board.getCell(gameConfig.board.width - 1, gameConfig.board.height - 1)).toBe(WALL_CHAR.char);
     });
 
     test('Can reset multiple times', () => {
       const game = new Game();
+      const center = getCenterPosition();
       game.movePlayer(5, 5);
       game.reset();
-      expect(game.getPlayerPosition()).toEqual({ x: 10, y: 10 });
+      expect(game.getPlayerPosition()).toEqual({ x: center.x, y: center.y });
       
       game.movePlayer(-3, -3);
       game.reset();
-      expect(game.getPlayerPosition()).toEqual({ x: 10, y: 10 });
+      expect(game.getPlayerPosition()).toEqual({ x: center.x, y: center.y });
     });
   });
 
   describe('State Consistency', () => {
     test('Player position remains consistent after multiple operations', () => {
       const game = new Game();
+      const center = getCenterPosition();
       game.movePlayer(1, 0);
-      expect(game.getPlayerPosition().x).toBe(11);
+      expect(game.getPlayerPosition().x).toBe(center.x + 1);
       
       game.movePlayer(0, 1);
-      expect(game.getPlayerPosition()).toEqual({ x: 11, y: 11 });
+      expect(game.getPlayerPosition()).toEqual({ x: center.x + 1, y: center.y + 1 });
       
       game.movePlayer(-1, 0);
-      expect(game.getPlayerPosition()).toEqual({ x: 10, y: 11 });
+      expect(game.getPlayerPosition()).toEqual({ x: center.x, y: center.y + 1 });
     });
 
     test('Score remains 0 (as per MVP requirements)', () => {
@@ -404,10 +459,11 @@ describe('Game', () => {
 
     test('Board state is maintained correctly', () => {
       const game = new Game();
+      const center = getCenterPosition();
       // Board should have walls on edges
       expect(game.board.isWall(0, 0)).toBe(true);
-      expect(game.board.isWall(19, 19)).toBe(true);
-      expect(game.board.isWall(10, 10)).toBe(false);
+      expect(game.board.isWall(gameConfig.board.width - 1, gameConfig.board.height - 1)).toBe(true);
+      expect(game.board.isWall(center.x, center.y)).toBe(false);
       
       // After operations, board should still be valid
       game.movePlayer(1, 0);

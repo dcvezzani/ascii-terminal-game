@@ -2,6 +2,8 @@ import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
 import { Renderer } from '../../src/render/Renderer.js';
 import { Board } from '../../src/game/Board.js';
 import { Game } from '../../src/game/Game.js';
+import { PLAYER_CHAR, WALL_CHAR, EMPTY_SPACE_CHAR } from '../../src/constants/gameConstants.js';
+import { gameConfig } from '../../src/config/gameConfig.js';
 import ansiEscapes from 'ansi-escapes';
 import chalk from 'chalk';
 import cliCursor from 'cli-cursor';
@@ -37,8 +39,8 @@ describe('Renderer', () => {
     });
 
     test('Constructor sets boardWidth and boardHeight correctly', () => {
-      expect(renderer.boardWidth).toBe(20);
-      expect(renderer.boardHeight).toBe(20);
+      expect(renderer.boardWidth).toBe(gameConfig.board.width);
+      expect(renderer.boardHeight).toBe(gameConfig.board.height);
     });
 
     test('All offset properties are set', () => {
@@ -163,32 +165,32 @@ describe('Renderer', () => {
       expect(writeSpy.mock.calls.length).toBeGreaterThan(20);
     });
 
-    test('Renders player character (@) at correct position with green color', () => {
+    test('Renders player character at correct position with color', () => {
       process.stdout.columns = 80;
       renderer.renderBoard(board, 10, 10);
       
-      // Player should be rendered with green color
+      // Player should be rendered with its associated color
       // We can't easily test the exact color, but we can verify the character
       const allCalls = writeSpy.mock.calls.map(call => call[0]).join('');
-      expect(allCalls).toContain('@');
+      expect(allCalls).toContain(PLAYER_CHAR.char);
     });
 
-    test('Renders walls (#) with gray color', () => {
+    test('Renders walls with associated color', () => {
       process.stdout.columns = 80;
       renderer.renderBoard(board, 10, 10);
       
-      // Walls should be rendered
+      // Walls should be rendered with their associated color
       const allCalls = writeSpy.mock.calls.map(call => call[0]).join('');
-      expect(allCalls).toContain('#');
+      expect(allCalls).toContain(WALL_CHAR.char);
     });
 
-    test('Renders empty spaces (.) with white color', () => {
+    test('Renders empty spaces with associated color', () => {
       process.stdout.columns = 80;
       renderer.renderBoard(board, 10, 10);
       
-      // Empty spaces should be rendered
+      // Empty spaces should be rendered with their associated color
       const allCalls = writeSpy.mock.calls.map(call => call[0]).join('');
-      expect(allCalls).toContain('.');
+      expect(allCalls).toContain(EMPTY_SPACE_CHAR.char);
     });
 
     test('Handles all board positions correctly', () => {
@@ -210,8 +212,8 @@ describe('Renderer', () => {
       
       // Verify that rendering happened (contains board characters)
       const allCalls = writeSpy.mock.calls.map(call => String(call[0])).join('');
-      expect(allCalls).toContain('#');
-      expect(allCalls).toContain('.');
+      expect(allCalls).toContain(WALL_CHAR.char);
+      expect(allCalls).toContain(EMPTY_SPACE_CHAR.char);
     });
   });
 
@@ -338,48 +340,48 @@ describe('Renderer', () => {
   describe('updateCell()', () => {
     test('Calculates correct screen position from board coordinates', () => {
       process.stdout.columns = 80;
-      const boardStartX = Math.floor((80 - 20) / 2);
+      const boardStartX = Math.floor((80 - gameConfig.board.width) / 2);
       
-      renderer.updateCell(5, 5, '.', chalk.white);
+      renderer.updateCell(5, 5, EMPTY_SPACE_CHAR.char, chalk.white);
       
-      expect(writeSpy).toHaveBeenCalledWith(ansiEscapes.cursorTo(boardStartX + 5, 10)); // boardOffset + 5
+      expect(writeSpy).toHaveBeenCalledWith(ansiEscapes.cursorTo(boardStartX + 5, gameConfig.renderer.boardOffset + 5));
     });
 
     test('Moves cursor to correct position', () => {
       process.stdout.columns = 80;
-      const boardStartX = Math.floor((80 - 20) / 2);
+      const boardStartX = Math.floor((80 - gameConfig.board.width) / 2);
       
-      renderer.updateCell(10, 10, '@', chalk.green);
+      renderer.updateCell(10, 10, PLAYER_CHAR.char, chalk.green);
       
-      expect(writeSpy).toHaveBeenCalledWith(ansiEscapes.cursorTo(boardStartX + 10, 15)); // boardOffset + 10
+      expect(writeSpy).toHaveBeenCalledWith(ansiEscapes.cursorTo(boardStartX + 10, gameConfig.renderer.boardOffset + 10));
     });
 
     test('Writes character with correct color', () => {
       process.stdout.columns = 80;
-      renderer.updateCell(10, 10, '@', chalk.green);
+      renderer.updateCell(10, 10, PLAYER_CHAR.char, chalk.green);
       
       // Should write the colored character
       const colorCall = writeSpy.mock.calls.find(call => 
-        typeof call[0] === 'string' && call[0].includes('@')
+        typeof call[0] === 'string' && call[0].includes(PLAYER_CHAR.char)
       );
       expect(colorCall).toBeDefined();
     });
 
     test('Handles all board positions', () => {
       process.stdout.columns = 80;
-      renderer.updateCell(0, 0, '#', chalk.gray);
-      renderer.updateCell(19, 19, '.', chalk.white);
+      renderer.updateCell(0, 0, WALL_CHAR.char, chalk.gray);
+      renderer.updateCell(gameConfig.board.width - 1, gameConfig.board.height - 1, EMPTY_SPACE_CHAR.char, chalk.white);
       
       expect(writeSpy).toHaveBeenCalledTimes(4); // 2 cursorTo + 2 characters
     });
 
     test('Uses horizontal centering offset correctly', () => {
       process.stdout.columns = 100;
-      const boardStartX = Math.floor((100 - 20) / 2);
+      const boardStartX = Math.floor((100 - gameConfig.board.width) / 2);
       
-      renderer.updateCell(0, 0, '#', chalk.gray);
+      renderer.updateCell(0, 0, WALL_CHAR.char, chalk.gray);
       
-      expect(writeSpy).toHaveBeenCalledWith(ansiEscapes.cursorTo(boardStartX, 5));
+      expect(writeSpy).toHaveBeenCalledWith(ansiEscapes.cursorTo(boardStartX, gameConfig.renderer.boardOffset));
     });
   });
 
@@ -402,9 +404,9 @@ describe('Renderer', () => {
       process.stdout.columns = 80;
       renderer.updatePlayerPosition(10, 10, 11, 10, board);
       
-      // Should write @ character
+      // Should write player character
       const allCalls = writeSpy.mock.calls.map(call => call[0]).join('');
-      expect(allCalls).toContain('@');
+      expect(allCalls).toContain(PLAYER_CHAR.char);
     });
 
     test('Uses correct colors (green for player, gray/white for cells)', () => {
