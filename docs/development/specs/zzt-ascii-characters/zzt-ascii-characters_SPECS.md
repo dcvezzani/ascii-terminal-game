@@ -2,16 +2,18 @@
 
 ## Overview
 
-This specification details the implementation of ZZT-style extended ASCII characters (IBM Code Page 437) to replace the current simple ASCII characters in the terminal game. The implementation will use a flexible character set system that allows for easy customization and future expansion with additional character sets.
+This specification details the implementation of ZZT-style characters to replace the current simple ASCII characters in the terminal game. ZZT originally used IBM Code Page 437 (legacy DOS encoding), but modern terminals use UTF-8 Unicode. Therefore, we will use **Unicode characters that visually match Code Page 437 characters** rather than actual CP437 encoding.
+
+The implementation will use a flexible character set system that allows for easy customization and future expansion with additional character sets.
 
 **Reference Card**: `docs/development/cards/features/FEATURE_zzt_ascii_characters.md`
 
 ## Goals
 
-1. Replace simple ASCII characters with ZZT-style Unicode characters
+1. Replace simple ASCII characters with ZZT-style Unicode characters (Unicode equivalents of Code Page 437)
 2. Create a flexible character set system for future extensibility
 3. Maintain backward compatibility with existing game logic
-4. Provide authentic ZZT retro aesthetic
+4. Provide authentic ZZT retro aesthetic using Unicode characters that match CP437 appearance
 
 ## Current State
 
@@ -28,9 +30,11 @@ This specification details the implementation of ZZT-style extended ASCII charac
 ## Target State
 
 **Target Characters:**
-- Player: `☺` (Code Page 437: 1, Unicode: U+263A) - Traditional ZZT smiley face
-- Walls: `█` (Code Page 437: 219, Unicode: U+2588) - Full block
-- Empty: ` ` (Code Page 437: 32) - Space
+- Player: `☺` (Unicode: U+263A, visually matches CP437: 1) - Traditional ZZT smiley face
+- Walls: `█` (Unicode: U+2588, visually matches CP437: 219) - Full block
+- Empty: ` ` (ASCII: 32, same as CP437: 32) - Space
+
+**Note**: We use Unicode characters (UTF-8) that visually match Code Page 437 characters. Modern terminals use UTF-8, so we cannot use actual CP437 encoding. The Unicode equivalents should render identically to CP437 characters when displayed in a terminal with appropriate font support.
 
 **Target Architecture:**
 - Character sets organized in `src/constants/characterSets/` directory
