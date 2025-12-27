@@ -128,10 +128,12 @@ export const MIDDLE_DOT = 250;     // CP437: 250, ·
 **Requirement**: Each glyph should include comprehensive documentation.
 
 **Details**:
-- JSDoc-style comments for each glyph
+- Comprehensive JSDoc-style comments for each glyph
 - Include CP437 byte value
-- Include Unicode character representation (if applicable)
-- Include visual description
+- Include Unicode character representation
+- Include visual representation
+- Include description of the glyph
+- Include usage notes (when applicable)
 
 **Comment Format**:
 ```javascript
@@ -140,44 +142,64 @@ export const MIDDLE_DOT = 250;     // CP437: 250, ·
  * CP437: 1
  * Unicode: U+263A (☺)
  * Visual: ☺
+ * Description: Traditional ZZT player character, classic smiley face
+ * Usage: Default player character in ZZT-style games
  */
 export const SMILEY_FACE = 1;
 ```
 
 **Acceptance Criteria**:
-- [ ] Each glyph has documentation comment
+- [ ] Each glyph has comprehensive documentation comment
 - [ ] Comments include CP437 byte value
-- [ ] Comments include Unicode reference (if applicable)
+- [ ] Comments include Unicode reference
 - [ ] Comments include visual representation
+- [ ] Comments include description
+- [ ] Comments include usage notes (when applicable)
 
 ### FR4: Initial Glyph Set
 
 **Requirement**: Define which glyphs to include in the initial implementation.
 
 **Details**:
-- Include glyphs currently used in the game
-- Include common ZZT/CP437 glyphs for future use
-- Organize by category
+- **Comprehensive CP437 glyph set** - Include all commonly used CP437 glyphs
+- Organize by category (player, walls, blocks, box-drawing, etc.)
+- Use CP437 byte values immediately (not strings)
 
-**Required Glyphs** (currently used):
-- `SMILEY_FACE` - Player character (currently `'☺'`, will be CP437: 1)
-- `FULL_BLOCK` - Wall character (currently `'#'`, will be CP437: 219)
-- `SPACE` - Empty space (currently `' '`, will be CP437: 32)
+**Glyph Categories**:
 
-**Optional Glyphs** (for future use):
-- `PLAYER_ARROW` - Alternative player character (CP437: 16, ►)
-- `PLAYER_AT` - Alternative player character (CP437: 64, @)
-- `MEDIUM_SHADE` - Alternative wall (CP437: 178, ▓)
-- `LIGHT_SHADE` - Alternative wall (CP437: 177, ▒)
-- `LIGHTEST_SHADE` - Alternative wall (CP437: 176, ░)
-- `DOT` - Alternative empty space (CP437: 46, '.')
-- `MIDDLE_DOT` - Alternative empty space (CP437: 250, ·)
+**Player Characters**:
+- `SMILEY_FACE` - CP437: 1, ☺ (currently used)
+- `PLAYER_ARROW` - CP437: 16, ►
+- `PLAYER_AT` - CP437: 64, @
+
+**Walls and Blocks**:
+- `FULL_BLOCK` - CP437: 219, █ (currently used)
+- `MEDIUM_SHADE` - CP437: 178, ▓
+- `LIGHT_SHADE` - CP437: 177, ▒
+- `LIGHTEST_SHADE` - CP437: 176, ░
+
+**Empty/Space**:
+- `SPACE` - CP437: 32, ' ' (currently used)
+- `DOT` - CP437: 46, '.'
+- `MIDDLE_DOT` - CP437: 250, ·
+
+**Box Drawing Characters**:
+- `HORIZONTAL_LINE` - CP437: 196, ─
+- `VERTICAL_LINE` - CP437: 179, │
+- `TOP_LEFT_CORNER` - CP437: 218, ┌
+- `TOP_RIGHT_CORNER` - CP437: 191, ┐
+- `BOTTOM_LEFT_CORNER` - CP437: 192, └
+- `BOTTOM_RIGHT_CORNER` - CP437: 217, ┘
+- Additional box-drawing characters as needed
+
+**Additional Common CP437 Glyphs**:
+- Include other commonly used CP437 characters (arrows, symbols, etc.)
 
 **Acceptance Criteria**:
-- [ ] Required glyphs defined
-- [ ] Optional glyphs documented
+- [ ] Comprehensive glyph set defined
+- [ ] All glyphs use CP437 byte values
 - [ ] All glyphs organized by category
-- [ ] Clear distinction between required and optional
+- [ ] Box-drawing characters included
 
 ### FR5: Update gameConstants.js
 
@@ -204,24 +226,32 @@ export const EMPTY_SPACE_CHAR = SPACE;
 - [ ] Same export interface maintained
 - [ ] No breaking changes to existing code
 
-### FR6: Support Current String Values
+### FR6: Reverse Lookup Map
 
-**Requirement**: Support current string character values during transition.
+**Requirement**: Create a reverse lookup map to find glyph name from byte value.
 
 **Details**:
-- Initially, glyph map may use string values
-- Should be easy to transition to byte values later
-- Code structure should support both
+- Create object map: `{ byteValue: 'GLYPH_NAME' }`
+- Export as `GLYPH_REVERSE_MAP`
+- Useful for debugging and value-to-name lookups
 
-**Transition Strategy**:
-- Phase 1: Use string values in glyph map (matches current state)
-- Phase 2: Update to CP437 byte values when ready
-- No code changes needed beyond glyph map values
+**Implementation**:
+```javascript
+// Reverse lookup: byte value → glyph name
+export const GLYPH_REVERSE_MAP = {
+  1: 'SMILEY_FACE',
+  16: 'PLAYER_ARROW',
+  32: 'SPACE',
+  64: 'PLAYER_AT',
+  219: 'FULL_BLOCK',
+  // ... etc
+};
+```
 
 **Acceptance Criteria**:
-- [ ] Glyph map supports string values
-- [ ] Easy to transition to byte values
-- [ ] No breaking changes during transition
+- [ ] Reverse lookup map created
+- [ ] Maps all glyph byte values to names
+- [ ] Exported for use in other modules
 
 ## Technical Requirements
 
@@ -247,23 +277,23 @@ export const SPACE = 32;
 - [ ] Can import individual glyphs
 - [ ] No object map required
 
-### TR2: Value Type Support
+### TR2: CP437 Byte Values
 
-**Requirement**: Support both string and number (byte) values.
+**Requirement**: Use CP437 byte values (numbers) for all glyphs.
 
 **Details**:
-- Initially may use strings (current state)
-- Will transition to numbers (CP437 bytes)
-- Code structure should handle both
+- All glyph values are numbers (0-255)
+- No string values used
+- Direct CP437 byte encoding
 
 **Value Types**:
-- **Current**: Strings (`'☺'`, `'#'`, `' '`)
-- **Future**: Numbers (`1`, `219`, `32`)
+- All values are numbers: `1`, `219`, `32`, etc.
+- No string values
 
 **Acceptance Criteria**:
-- [ ] Glyph map supports string values
-- [ ] Glyph map supports number values
-- [ ] Easy to change value types
+- [ ] All glyph values are numbers (CP437 bytes)
+- [ ] No string values in glyph map
+- [ ] Values are in valid CP437 range (0-255)
 
 ### TR3: Module Structure
 
@@ -362,15 +392,18 @@ No code changes needed beyond updating glyph map values.
 
 ## Success Criteria
 
-- [ ] `glyphMap.js` file created with glyph definitions
-- [ ] Glyphs organized by category
-- [ ] Each glyph has comprehensive documentation
+- [ ] `glyphMap.js` file created with comprehensive CP437 glyph definitions
+- [ ] All glyphs use CP437 byte values (numbers, not strings)
+- [ ] Glyphs organized by category with clear comments
+- [ ] Each glyph has comprehensive documentation (CP437, Unicode, visual, description, usage)
+- [ ] Reverse lookup map (`GLYPH_REVERSE_MAP`) created and exported
+- [ ] Box-drawing characters included
 - [ ] `gameConstants.js` updated to use glyph map
 - [ ] All existing tests pass
+- [ ] Basic tests created for glyph map (verify exports, values)
 - [ ] Game runs correctly with glyph map
 - [ ] Code is more readable with named constants
 - [ ] Easy to add new glyphs in the future
-- [ ] Supports both string and number values
 
 ## Dependencies
 
@@ -396,7 +429,7 @@ No code changes needed beyond updating glyph map values.
 
 **Recommendation**: Option B - Include currently used glyphs plus common ZZT alternatives for future use.
 
-**Answer**: _[To be answered by user]_
+**Answer**: **Option C** - Comprehensive CP437 glyph set (all commonly used glyphs)
 
 ### Q2: Value Type for Initial Implementation
 
@@ -409,7 +442,7 @@ No code changes needed beyond updating glyph map values.
 
 **Recommendation**: Option A - Use string values initially to match current state, easy to transition to bytes later.
 
-**Answer**: _[To be answered by user]_
+**Answer**: **Option B** - Use CP437 byte values immediately (`1`, `219`, `32`) - future-ready
 
 ### Q3: Glyph Documentation Format
 
@@ -422,7 +455,7 @@ No code changes needed beyond updating glyph map values.
 
 **Recommendation**: Option B - Standard documentation with CP437 byte, Unicode reference, and visual representation.
 
-**Answer**: _[To be answered by user]_
+**Answer**: **Option C** - Comprehensive (CP437 byte + Unicode + visual + description + usage notes)
 
 ### Q4: Naming Convention for Similar Glyphs
 
@@ -435,7 +468,7 @@ No code changes needed beyond updating glyph map values.
 
 **Recommendation**: Use descriptive names that indicate the visual appearance (FULL_BLOCK, MEDIUM_SHADE) rather than category prefixes.
 
-**Answer**: _[To be answered by user]_
+**Answer**: **FULL_BLOCK, MEDIUM_SHADE, LIGHT_SHADE, LIGHTEST_SHADE** - Use descriptive names that indicate visual appearance
 
 ### Q5: Box Drawing Characters
 
@@ -448,7 +481,7 @@ No code changes needed beyond updating glyph map values.
 
 **Recommendation**: Option C - Include box-drawing characters but comment them out, ready for future use.
 
-**Answer**: _[To be answered by user]_
+**Answer**: **Option A** - Include common box-drawing characters (HORIZONTAL_LINE, VERTICAL_LINE, CORNERS, etc.)
 
 ### Q6: Reverse Lookup Function
 
@@ -463,7 +496,7 @@ No code changes needed beyond updating glyph map values.
 
 **Recommendation**: Option A - Not needed for initial implementation, can add later if needed.
 
-**Answer**: _[To be answered by user]_
+**Answer**: **Option B** - Simple object map for reverse lookup
 
 ### Q7: Glyph Categories Organization
 
@@ -476,7 +509,7 @@ No code changes needed beyond updating glyph map values.
 
 **Recommendation**: Option A - Single file with clear comment sections, simpler for initial implementation.
 
-**Answer**: _[To be answered by user]_
+**Answer**: **Option A** - Single file (`glyphMap.js`) with comments organizing by category
 
 ### Q8: Testing Requirements
 
@@ -489,11 +522,24 @@ No code changes needed beyond updating glyph map values.
 
 **Recommendation**: Option B - Basic tests to verify glyphs are exported correctly and have expected values.
 
-**Answer**: _[To be answered by user]_
+**Answer**: **Option B** - Basic tests (verify exports exist, values are correct)
 
 ## Status
 
-**Status**: 📋 READY FOR ANSWERS
+**Status**: 📋 READY FOR GAMEPLAN
 
-**Next Step**: Answer open questions, then create gameplan document for implementation
+**Next Step**: Create gameplan document for implementation
+
+## Answers Summary
+
+All open questions have been answered:
+
+- **Q1**: Option C - Comprehensive CP437 glyph set (all commonly used glyphs)
+- **Q2**: Option B - Use CP437 byte values immediately (`1`, `219`, `32`) - future-ready
+- **Q3**: Option C - Comprehensive documentation (CP437 byte + Unicode + visual + description + usage notes)
+- **Q4**: FULL_BLOCK, MEDIUM_SHADE, etc. - Use descriptive names that indicate visual appearance
+- **Q5**: Option A - Include common box-drawing characters (HORIZONTAL_LINE, VERTICAL_LINE, CORNERS, etc.)
+- **Q6**: Option B - Simple object map for reverse lookup
+- **Q7**: Option A - Single file (`glyphMap.js`) with comments organizing by category
+- **Q8**: Option B - Basic tests (verify exports exist, values are correct)
 
