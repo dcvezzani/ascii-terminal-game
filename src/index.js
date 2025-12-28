@@ -9,18 +9,20 @@ import { Renderer } from './render/Renderer.js';
 import { InputHandler } from './input/InputHandler.js';
 import { validateTerminalSize } from './utils/terminal.js';
 import { gameConfig } from './config/gameConfig.js';
+import { serverConfig } from './config/serverConfig.js';
+import { WebSocketClient } from './network/WebSocketClient.js';
 
 /**
- * Main game function
+ * Run game in local (single-player) mode
  */
-async function main() {
+async function runLocalMode() {
   let game = null;
   let renderer = null;
   let inputHandler = null;
-  let showingHelp = false; // Track if help screen is currently displayed
+  let showingHelp = false;
 
   try {
-    // Step 8.2: Terminal Size Validation
+    // Terminal Size Validation
     const sizeCheck = validateTerminalSize(
       gameConfig.terminal.minRows,
       gameConfig.terminal.minColumns
@@ -37,7 +39,6 @@ async function main() {
     inputHandler = new InputHandler({
       onMoveUp: () => {
         if (showingHelp) {
-          // Return to game from help screen
           showingHelp = false;
           if (renderer && game) {
             renderer.renderFull(game);
@@ -54,7 +55,6 @@ async function main() {
       },
       onMoveDown: () => {
         if (showingHelp) {
-          // Return to game from help screen
           showingHelp = false;
           if (renderer && game) {
             renderer.renderFull(game);
@@ -71,7 +71,6 @@ async function main() {
       },
       onMoveLeft: () => {
         if (showingHelp) {
-          // Return to game from help screen
           showingHelp = false;
           if (renderer && game) {
             renderer.renderFull(game);
@@ -88,7 +87,6 @@ async function main() {
       },
       onMoveRight: () => {
         if (showingHelp) {
-          // Return to game from help screen
           showingHelp = false;
           if (renderer && game) {
             renderer.renderFull(game);
@@ -104,18 +102,15 @@ async function main() {
         }
       },
       onQuit: () => {
-        // Stop input handler immediately to prevent further keypresses
         if (inputHandler) {
           inputHandler.stop();
         }
-        // Then stop the game
         if (game) {
           game.stop();
         }
       },
       onRestart: () => {
         if (showingHelp) {
-          // Close help first if it's displayed
           showingHelp = false;
         }
         if (game && renderer) {
@@ -126,11 +121,9 @@ async function main() {
       onHelp: () => {
         if (renderer && game) {
           if (showingHelp) {
-            // Return to game - close help and redraw game
             showingHelp = false;
             renderer.renderFull(game);
           } else {
-            // Show help
             showingHelp = true;
             renderer.renderHelp();
           }
@@ -157,17 +150,14 @@ async function main() {
 
     // Wait for game to stop
     while (game.isRunning()) {
-      // Small delay to prevent CPU spinning
       await new Promise(resolve => setTimeout(resolve, 10));
     }
   } catch (error) {
-    // Step 8.3: Error Handling
     console.error('\nAn error occurred:', error.message);
     if (error.stack) {
       console.error(error.stack);
     }
   } finally {
-    // Step 8.4: Cleanup on exit
     try {
       if (inputHandler) {
         inputHandler.stop();
@@ -178,6 +168,206 @@ async function main() {
     } catch (cleanupError) {
       console.error('Error during cleanup:', cleanupError.message);
     }
+  }
+}
+
+/**
+ * Run game in networked (multiplayer) mode
+ */
+async function runNetworkedMode() {
+  let game = null;
+  let renderer = null;
+  let inputHandler = null;
+  let wsClient = null;
+  let showingHelp = false;
+  let currentState = null;
+  let localPlayerId = null;
+  let running = true;
+
+  try {
+    // Terminal Size Validation
+    const sizeCheck = validateTerminalSize(
+      gameConfig.terminal.minRows,
+      gameConfig.terminal.minColumns
+    );
+    if (!sizeCheck.valid) {
+      console.error(`\n${sizeCheck.message}`);
+      console.error('Please resize your terminal and try again.\n');
+      process.exit(1);
+    }
+
+    // Initialize components
+    game = new Game(); // Keep for compatibility, but state comes from server
+    renderer = new Renderer();
+    wsClient = new WebSocketClient();
+
+    // Set up WebSocket callbacks
+    wsClient.onConnect(() => {
+      console.log('Connected to server');
+      // Send CONNECT message to join game
+      wsClient.sendConnect();
+    });
+
+    wsClient.onStateUpdate(gameState => {
+      currentState = gameState;
+      if (renderer && localPlayerId) {
+        renderer.renderFull(game, gameState, localPlayerId);
+      }
+    });
+
+    wsClient.onPlayerJoined(payload => {
+      if (payload.clientId === wsClient.getClientId()) {
+        localPlayerId = payload.playerId;
+      }
+    });
+
+    wsClient.onError(error => {
+      console.error('WebSocket error:', error);
+    });
+
+    wsClient.onDisconnect(() => {
+      console.log('Disconnected from server');
+      running = false;
+      if (game) {
+        game.stop();
+      }
+    });
+
+    // Set up input handler for networked mode
+    inputHandler = new InputHandler({
+      onMoveUp: () => {
+        if (showingHelp) {
+          showingHelp = false;
+          if (renderer && currentState) {
+            renderer.renderFull(game, currentState, localPlayerId);
+          }
+          return;
+        }
+        if (wsClient && wsClient.isConnected()) {
+          wsClient.sendMove(0, -1);
+        }
+      },
+      onMoveDown: () => {
+        if (showingHelp) {
+          showingHelp = false;
+          if (renderer && currentState) {
+            renderer.renderFull(game, currentState, localPlayerId);
+          }
+          return;
+        }
+        if (wsClient && wsClient.isConnected()) {
+          wsClient.sendMove(0, 1);
+        }
+      },
+      onMoveLeft: () => {
+        if (showingHelp) {
+          showingHelp = false;
+          if (renderer && currentState) {
+            renderer.renderFull(game, currentState, localPlayerId);
+          }
+          return;
+        }
+        if (wsClient && wsClient.isConnected()) {
+          wsClient.sendMove(-1, 0);
+        }
+      },
+      onMoveRight: () => {
+        if (showingHelp) {
+          showingHelp = false;
+          if (renderer && currentState) {
+            renderer.renderFull(game, currentState, localPlayerId);
+          }
+          return;
+        }
+        if (wsClient && wsClient.isConnected()) {
+          wsClient.sendMove(1, 0);
+        }
+      },
+      onQuit: () => {
+        if (inputHandler) {
+          inputHandler.stop();
+        }
+        if (wsClient) {
+          wsClient.sendDisconnect();
+          wsClient.disconnect();
+        }
+        running = false;
+        if (game) {
+          game.stop();
+        }
+      },
+      onRestart: () => {
+        // Restart not supported in networked mode
+        if (showingHelp) {
+          showingHelp = false;
+        }
+        if (renderer && currentState) {
+          renderer.renderFull(game, currentState, localPlayerId);
+        }
+      },
+      onHelp: () => {
+        if (renderer && currentState) {
+          if (showingHelp) {
+            showingHelp = false;
+            renderer.renderFull(game, currentState, localPlayerId);
+          } else {
+            showingHelp = true;
+            renderer.renderHelp();
+          }
+        }
+      },
+      onUnsupportedKey: () => {
+        if (renderer && currentState) {
+          renderer.renderFull(game, currentState, localPlayerId);
+        }
+      },
+    });
+
+    // Initialize renderer
+    renderer.initialize();
+
+    // Connect to server
+    console.log('Connecting to server...');
+    await wsClient.connect();
+
+    // Start input handling
+    inputHandler.start();
+
+    // Wait for disconnect or quit
+    while (running) {
+      await new Promise(resolve => setTimeout(resolve, 10));
+    }
+  } catch (error) {
+    console.error('\nAn error occurred:', error.message);
+    if (error.stack) {
+      console.error(error.stack);
+    }
+  } finally {
+    try {
+      if (inputHandler) {
+        inputHandler.stop();
+      }
+      if (wsClient) {
+        wsClient.disconnect();
+      }
+      if (renderer) {
+        renderer.cleanup();
+      }
+    } catch (cleanupError) {
+      console.error('Error during cleanup:', cleanupError.message);
+    }
+  }
+}
+
+/**
+ * Main game function
+ */
+async function main() {
+  // Check if networked mode is enabled
+  if (serverConfig.websocket.enabled) {
+    await runNetworkedMode();
+  } else {
+    await runLocalMode();
   }
 }
 
