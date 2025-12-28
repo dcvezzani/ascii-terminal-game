@@ -434,6 +434,10 @@ function handlePingMessage(ws, clientId) {
  * @param {string} clientId - Client ID
  */
 function handleDisconnect(clientId) {
+  if (!connectionManager) {
+    return;
+  }
+
   const connection = connectionManager.getConnection(clientId);
   if (!connection) {
     return;
