@@ -1,9 +1,11 @@
 # Game Brainstorm
 
 ## Overview
+
 A simple terminal-based game where the player can move a character around on a board.
 
 ## Core Concept
+
 - Terminal/console-based game
 - Character movement (arrow keys or WASD)
 - Board/grid display
@@ -12,24 +14,26 @@ A simple terminal-based game where the player can move a character around on a b
 ## Questions & Ideas
 
 ### Game Mechanics
+
 - [ ] What is the goal of the game? (exploration, collect items, reach destination, survive, etc.)
-exploration; this is a proof of concept and is intended to be MVP
+      exploration; this is a proof of concept and is intended to be MVP
 
 - [ ] Is there an end condition? (win/lose states)
-no
+      no
 
 - [ ] Are there obstacles on the board?
-not yet
+      not yet
 
 - [ ] Are there collectibles or items?
-not yet
+      not yet
 
 - [ ] Is there an enemy or AI opponent?
-not yet
+      not yet
 
 ### Board/Grid
+
 - [ ] What size should the board be? (fixed size, dynamic, scrollable viewport?)
-fixed size for now
+      fixed size for now
 
 - [x] What characters/symbols represent:
   - [x] Player character: `@` (classic roguelike character)
@@ -38,12 +42,13 @@ fixed size for now
   - [x] Items/collectibles: (none for MVP)
 
 - [ ] Should the board be randomly generated or predefined?
-the board should be blank
+      the board should be blank
 
 - [ ] Should there be borders around the board?
-outer walls would be fine
+      outer walls would be fine
 
 ### Controls
+
 - [ ] Movement controls:
   - [ ] Arrow keys (↑ ↓ ← →)
   - [ ] WASD keys
@@ -55,6 +60,7 @@ outer walls would be fine
   - [x] Help/info (h, ?)
 
 ### Display
+
 - [x] How should the board be rendered?
   - [x] Update only changed cells (minimizes flickering)
   - [x] Use cursor positioning to update specific cells
@@ -62,16 +68,17 @@ outer walls would be fine
   - [x] Initial full render, then incremental updates
 
 - [ ] Should there be a status bar? (score, position, instructions)
-yes; score should be 0 for now
+      yes; score should be 0 for now
 
 - [ ] Should there be a title/header?
-yes
+      yes
 
 ### Technical Considerations
 
 #### Node.js Library Options
 
 **Option 1: Simple/Lightweight (Recommended for MVP)**
+
 - **`terminal-game-io`** - Specifically designed for simple terminal games
   - Handles keyboard input and ASCII frame output
   - Works in Node.js and browser
@@ -91,6 +98,7 @@ yes
   - Good for: Custom rendering logic
 
 **Option 2: Medium Complexity (More Features)**
+
 - **`neo-blessed`** - Enhanced fork of blessed
   - High-level terminal interface library
   - Widgets, layouts, event handling
@@ -109,6 +117,7 @@ yes
   - Good for: Rich terminal applications
 
 **Option 3: Overkill (Not Recommended for Simple Game)**
+
 - **`ink`** - React for CLI
   - React-based terminal UI
   - Too complex for simple game
@@ -119,9 +128,11 @@ yes
   - Overkill for single-player terminal game
 
 #### Recommendation
+
 **Selected: Built-in `readline` + `ansi-escapes` + `chalk` + `cli-cursor`**
 
 Rationale:
+
 - **No external game-specific dependencies** - uses standard Node.js + lightweight utilities
 - **Full control** over rendering for minimal flickering (cursor positioning)
 - **Good learning experience** - understand how terminal games work
@@ -129,6 +140,7 @@ Rationale:
 - **Perfect for MVP** - simple, clean, extensible
 
 Libraries to install:
+
 - `ansi-escapes` - cursor positioning, screen clearing
 - `chalk` - colors and styling
 - `cli-cursor` - hide/show cursor
@@ -136,12 +148,14 @@ Libraries to install:
 If we need more UI features later, we can migrate to `neo-blessed`.
 
 #### Additional Libraries to Consider
+
 - **`ansi-escapes`** - ANSI escape codes for cursor control, clearing screen
 - **`chalk`** - Terminal string styling (colors, bold, etc.)
 - **`cli-cursor`** - Show/hide terminal cursor
 - **`readline-sync`** - Synchronous readline (if needed)
 
 #### Other Technical Questions
+
 - [x] How to handle terminal size changes?
   - For MVP: Fixed board size, check terminal size on startup, show error if too small
 - [x] Should we support color/ANSI codes?
@@ -152,6 +166,7 @@ If we need more UI features later, we can migrate to `neo-blessed`.
   - Yes, hide cursor for cleaner display
 
 ### Game Loop
+
 - [x] Event-driven (wait for keypress) or time-based (tick every X ms)?
   - Event-driven: Wait for keypress, update on input (simpler for MVP)
 - [x] Should there be animations or just instant movement?
@@ -162,12 +177,14 @@ If we need more UI features later, we can migrate to `neo-blessed`.
 ### MVP Specifications
 
 **Board:**
+
 - Fixed size: 20x20 (400 cells total)
 - Blank interior (all `.` except walls)
 - Outer walls (`#`) around perimeter
 - Player starts at center (10, 10)
 
 **Display:**
+
 - Title/header at top
 - Game board in middle
 - Status bar at bottom showing:
@@ -176,18 +193,21 @@ If we need more UI features later, we can migrate to `neo-blessed`.
   - Instructions: Arrow/WASD to move, Q/ESC to quit, R to restart, H/? for help
 
 **Controls:**
+
 - Movement: Arrow keys (↑ ↓ ← →) and WASD
 - Quit: Q or ESC
 - Restart: R
 - Help: H or ?
 
 **Rendering:**
+
 - Initial full render
 - Update only changed cells using cursor positioning
 - Hide cursor during gameplay
 - Use colors: player (green), walls (gray), empty (white)
 
 ### Potential Enhancements (Future)
+
 - Multiple levels
 - Score system
 - Enemies that move
@@ -197,7 +217,7 @@ If we need more UI features later, we can migrate to `neo-blessed`.
 - Pathfinding for AI
 
 ## Notes
+
 - Keep it simple for the first version
 - Focus on core movement mechanics first
 - Can add features incrementally
-

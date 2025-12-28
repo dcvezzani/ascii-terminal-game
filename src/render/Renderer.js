@@ -51,7 +51,7 @@ export class Renderer {
   renderTitle() {
     const title = 'Terminal Game';
     const centerOffset = getHorizontalCenter(title.length);
-    
+
     process.stdout.write(ansiEscapes.cursorTo(centerOffset, this.titleOffset));
     process.stdout.write(chalk.bold.cyan(title));
   }
@@ -64,13 +64,13 @@ export class Renderer {
    */
   renderBoard(board, playerX, playerY) {
     const boardStartX = getHorizontalCenter(this.boardWidth);
-    
+
     for (let y = 0; y < this.boardHeight; y++) {
       process.stdout.write(ansiEscapes.cursorTo(boardStartX, this.boardOffset + y));
-      
+
       for (let x = 0; x < this.boardWidth; x++) {
         let glyph;
-        
+
         if (x === playerX && y === playerY) {
           // Player position
           glyph = PLAYER_CHAR;
@@ -84,7 +84,7 @@ export class Renderer {
             glyph = EMPTY_SPACE_CHAR;
           }
         }
-        
+
         const colorFn = this.getColorFunction(glyph.color);
         process.stdout.write(colorFn(glyph.char));
       }
@@ -100,7 +100,7 @@ export class Renderer {
   renderStatusBar(score, x, y) {
     const statusText = `Score: ${score} | Position: (${x}, ${y}) | Controls: Arrow/WASD to move, Q/ESC to quit, R to restart, H/? for help`;
     const centerOffset = getHorizontalCenter(statusText.length);
-    
+
     process.stdout.write(ansiEscapes.cursorTo(centerOffset, this.statusBarOffset));
     // Clear the line first to remove any trailing characters
     process.stdout.write(ansiEscapes.eraseEndLine);
@@ -114,11 +114,11 @@ export class Renderer {
   renderFull(game) {
     this.clearScreen();
     this.renderTitle();
-    
+
     const position = game.getPlayerPosition();
     this.renderBoard(game.board, position.x, position.y);
     this.renderStatusBar(game.getScore(), position.x, position.y);
-    
+
     // Move cursor out of the way
     process.stdout.write(ansiEscapes.cursorTo(0, this.statusBarOffset + 2));
   }
@@ -134,7 +134,7 @@ export class Renderer {
     const boardStartX = getHorizontalCenter(this.boardWidth);
     const screenX = boardStartX + x;
     const screenY = this.boardOffset + y;
-    
+
     process.stdout.write(ansiEscapes.cursorTo(screenX, screenY));
     process.stdout.write(colorFn(char));
   }
@@ -155,20 +155,20 @@ export class Renderer {
     const boardStartX = getHorizontalCenter(this.boardWidth);
     const oldScreenX = boardStartX + oldX;
     const oldScreenY = this.boardOffset + oldY;
-    
+
     process.stdout.write(ansiEscapes.cursorTo(oldScreenX, oldScreenY));
     process.stdout.write(oldColorFn(oldGlyph.char));
-    
+
     // Draw new position
     const newScreenX = boardStartX + newX;
     const newScreenY = this.boardOffset + newY;
     const playerColorFn = this.getColorFunction(PLAYER_CHAR.color);
     process.stdout.write(ansiEscapes.cursorTo(newScreenX, newScreenY));
     process.stdout.write(playerColorFn(PLAYER_CHAR.char));
-    
+
     // Update status bar position
     this.renderStatusBar(0, newX, newY);
-    
+
     // Move cursor out of the way to prevent scrolling
     process.stdout.write(ansiEscapes.cursorTo(0, this.statusBarOffset + 1));
   }
@@ -178,7 +178,7 @@ export class Renderer {
    */
   renderHelp() {
     this.clearScreen();
-    
+
     const helpLines = [
       'Terminal Game - Help',
       '',
@@ -193,10 +193,10 @@ export class Renderer {
       '',
       'Press any key to return to game...',
     ];
-    
+
     const centerOffset = getHorizontalCenter(Math.max(...helpLines.map(l => l.length)));
     const startRow = Math.floor((process.stdout.rows || 24) / 2) - Math.floor(helpLines.length / 2);
-    
+
     helpLines.forEach((line, index) => {
       process.stdout.write(ansiEscapes.cursorTo(centerOffset, startRow + index));
       if (index === 0) {
@@ -213,7 +213,7 @@ export class Renderer {
         process.stdout.write(chalk.yellow(line));
       }
     });
-    
+
     // Move cursor out of the way
     process.stdout.write(ansiEscapes.cursorTo(0, startRow + helpLines.length + 1));
   }
@@ -228,4 +228,3 @@ export class Renderer {
     process.stdout.write(ansiEscapes.cursorTo(0, 0));
   }
 }
-

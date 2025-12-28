@@ -21,7 +21,7 @@ export function getTerminalSize() {
  */
 export function validateTerminalSize(minRows = 25, minColumns = 30) {
   const size = getTerminalSize();
-  
+
   if (size.rows < minRows || size.columns < minColumns) {
     return {
       valid: false,
@@ -30,7 +30,7 @@ export function validateTerminalSize(minRows = 25, minColumns = 30) {
       message: `Terminal size too small. Required: ${minRows}x${minColumns}, Current: ${size.rows}x${size.columns}`,
     };
   }
-  
+
   return {
     valid: true,
     rows: size.rows,
@@ -59,4 +59,3 @@ export function getVerticalCenter(contentHeight, terminalHeight = null) {
   const height = terminalHeight || getTerminalSize().rows;
   return Math.max(0, Math.floor((height - contentHeight) / 2));
 }
-

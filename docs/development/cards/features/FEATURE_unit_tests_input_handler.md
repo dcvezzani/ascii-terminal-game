@@ -3,16 +3,19 @@
 ## Context
 
 We have implemented the input handling system (Phase 4) with:
+
 - `InputHandler` class (`src/input/InputHandler.js`) - Keyboard input handling using readline with raw mode
 
 Currently, this class has been manually tested but lacks automated unit tests. We need comprehensive test coverage to ensure reliability and catch regressions as we continue development.
 
 **Location**: Test file will be created in:
+
 - `src/input/InputHandler.test.js`
 
 ## Problem
 
 Without automated unit tests, we risk:
+
 - Introducing bugs when modifying input handling code
 - Not catching edge cases in key detection
 - Difficulty verifying behavior after refactoring
@@ -23,9 +26,11 @@ We need automated tests to ensure the input handler works correctly and continue
 ## Desired Feature
 
 Comprehensive unit test suite using Vitest for:
+
 1. **InputHandler class** - Test all methods and key detection
 
 Tests should cover:
+
 - Happy path scenarios
 - Edge cases (all key types, callback handling)
 - Error conditions
@@ -38,6 +43,7 @@ Tests should cover:
 **Note**: InputHandler tests will require mocking `readline`, `process.stdin`, and terminal functions since they interact with the terminal directly.
 
 #### Test Suite: InputHandler Initialization
+
 - [x] InputHandler is created with callbacks object
 - [x] Constructor accepts empty callbacks object (optional)
 - [x] Constructor stores callbacks correctly
@@ -45,6 +51,7 @@ Tests should cover:
 - [x] rl property is null initially
 
 #### Test Suite: `start()` Method
+
 - [x] Creates readline interface
 - [x] Enables keypress events (readline.emitKeypressEvents)
 - [x] Sets raw mode on stdin (if TTY)
@@ -56,6 +63,7 @@ Tests should cover:
 - [x] Handles non-TTY stdin gracefully
 
 #### Test Suite: `stop()` Method
+
 - [x] Closes readline interface
 - [x] Sets raw mode to false (if TTY)
 - [x] Pauses stdin
@@ -66,6 +74,7 @@ Tests should cover:
 - [x] Handles non-TTY stdin gracefully
 
 #### Test Suite: `handleKeypress()` - Arrow Keys
+
 - [x] Calls onMoveUp callback when up arrow pressed
 - [x] Calls onMoveDown callback when down arrow pressed
 - [x] Calls onMoveLeft callback when left arrow pressed
@@ -74,6 +83,7 @@ Tests should cover:
 - [x] Handles arrow keys via key.name property
 
 #### Test Suite: `handleKeypress()` - WASD Keys
+
 - [x] Calls onMoveUp callback when 'w' pressed
 - [x] Calls onMoveDown callback when 's' pressed
 - [x] Calls onMoveLeft callback when 'a' pressed
@@ -82,6 +92,7 @@ Tests should cover:
 - [x] Does not call callbacks if not provided
 
 #### Test Suite: `handleKeypress()` - Quit Keys
+
 - [x] Calls onQuit callback when 'q' pressed
 - [x] Calls onQuit callback when 'Q' pressed
 - [x] Calls onQuit callback when ESC pressed (key.name === 'escape')
@@ -90,17 +101,20 @@ Tests should cover:
 - [x] Handles all quit methods correctly
 
 #### Test Suite: `handleKeypress()` - Restart Key
+
 - [x] Calls onRestart callback when 'r' pressed
 - [x] Calls onRestart callback when 'R' pressed
 - [x] Does not call callback if not provided
 
 #### Test Suite: `handleKeypress()` - Help Key
+
 - [x] Calls onHelp callback when 'h' pressed
 - [x] Calls onHelp callback when 'H' pressed
 - [x] Calls onHelp callback when '?' pressed
 - [x] Does not call callback if not provided
 
 #### Test Suite: `handleKeypress()` - Edge Cases
+
 - [x] Handles unknown keys gracefully (no crash)
 - [x] Handles empty string input
 - [x] Handles null/undefined key object
@@ -109,12 +123,14 @@ Tests should cover:
 - [x] Does not crash on invalid input
 
 #### Test Suite: Integration - Start/Stop Cycle
+
 - [x] Can start and stop multiple times
 - [x] State is correct after start/stop cycle
 - [x] Event listeners are properly cleaned up
 - [x] No memory leaks from event listeners
 
 #### Test Suite: Integration - Callback Execution
+
 - [x] All callbacks are called with correct timing
 - [x] Callbacks receive no arguments
 - [x] Multiple callbacks can be called in sequence
@@ -123,17 +139,20 @@ Tests should cover:
 ## Technical Requirements
 
 ### Test Framework
+
 - Use **Vitest** (already configured)
 - Use ES Modules (import/export)
 - Tests should run in non-interactive mode (`npm test`)
 
 ### Test Structure
+
 - Use `describe()` blocks to group related tests
 - Use `test()` or `it()` for individual test cases
 - Use descriptive test names that explain what is being tested
 - Use `expect()` assertions from Vitest
 
 ### Mocking Strategy
+
 - Mock `readline` module
 - Mock `process.stdin` (setRawMode, resume, pause, setEncoding, on, removeAllListeners)
 - Mock `readline.emitKeypressEvents`
@@ -141,12 +160,14 @@ Tests should cover:
 - Simulate keypress events by calling the handler directly with mock key objects
 
 ### Test Data
+
 - Create fresh InputHandler instances for each test (avoid shared state)
 - Test with various key objects (matching readline keypress format)
 - Test with and without callbacks
 - Test state transitions
 
 ### Code Coverage Goals
+
 - Aim for 100% coverage of InputHandler class methods
 - Cover all branches (if/else conditions)
 - Cover edge cases and error conditions
@@ -180,7 +201,8 @@ Tests should cover:
 
 **Status**: ✅ COMPLETE
 
-**Test Results**: 
+**Test Results**:
+
 - InputHandler tests: 61 tests passing
 - All tests run in non-interactive mode (`npm test`)
 - Fixed InputHandler to handle invalid input gracefully (added type check for str)
@@ -200,4 +222,3 @@ Tests should cover:
 - Focus on testing key detection logic and callback execution
 - Some tests may need to simulate keypress events manually
 - Consider testing state management (listening state, cleanup)
-

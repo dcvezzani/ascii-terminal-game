@@ -50,6 +50,7 @@ This gameplan implements a simple terminal-based game where players can move a c
 ```
 
 **Verification**:
+
 - [x] `package.json` created with `"type": "module"`
 - [x] Scripts defined for start and test
 
@@ -63,6 +64,7 @@ npm install -D vitest
 ```
 
 **Verification**:
+
 - [x] `node_modules` directory created
 - [x] `package-lock.json` created
 - [x] Dependencies listed in `package.json`
@@ -86,6 +88,7 @@ src/
 ```
 
 **Verification**:
+
 - [x] All directories created
 - [x] File structure matches plan
 
@@ -104,6 +107,7 @@ src/
 - [x] Implement `isValidPosition(x, y)` - Check if position is within bounds
 
 **Verification**:
+
 - [x] Board class created
 - [x] 20x20 grid initialized correctly
 - [x] Outer walls present on all sides
@@ -127,6 +131,7 @@ src/
 - [x] Implement `stop()` - Stop the game
 
 **Verification**:
+
 - [x] Game class created
 - [x] Player starts at center (10, 10)
 - [x] Score initialized to 0
@@ -146,6 +151,7 @@ src/
 - [x] Implement helper functions for terminal operations
 
 **Verification**:
+
 - [x] Terminal utilities created
 - [x] Can check terminal size
 - [x] Can validate minimum terminal size
@@ -169,11 +175,13 @@ src/
 - [x] Implement `cleanup()` - Restore terminal state
 
 **Color Scheme**:
+
 - Player (`@`): green
 - Walls (`#`): gray
 - Empty (`.`): white
 
 **Verification**:
+
 - [x] Renderer class created
 - [x] Can clear screen
 - [x] Can render title
@@ -204,6 +212,7 @@ src/
 - [x] Implement `handleKeypress(key)` - Process keypress and call appropriate callback
 
 **Verification**:
+
 - [x] Input handler created
 - [x] Can detect arrow keys (via key.name)
 - [x] Can detect WASD keys
@@ -226,6 +235,7 @@ src/
   - [x] Returns success/failure
 
 **Verification**:
+
 - [x] Movement works with arrow keys (tested in Game tests)
 - [x] Movement works with WASD (tested in Game tests)
 - [x] Cannot move into walls (tested in Game tests)
@@ -243,6 +253,7 @@ src/
   - [x] Update status bar position
 
 **Verification**:
+
 - [x] Only changed cells are updated (tested in Renderer tests)
 - [x] No flickering during movement (updatePlayerPosition method implemented)
 - [x] Old position is cleared correctly (tested in Renderer tests)
@@ -262,6 +273,7 @@ src/
 - [x] Exit gracefully (Renderer.cleanup() handles this)
 
 **Verification**:
+
 - [x] Q key quits game (InputHandler tested)
 - [x] ESC key quits game (InputHandler tested)
 - [x] Terminal state restored on quit (Renderer.cleanup() tested)
@@ -277,6 +289,7 @@ src/
 - [x] Re-render board (Renderer.renderFull() exists)
 
 **Verification**:
+
 - [x] R key restarts game (InputHandler tested)
 - [x] Player returns to center (10, 10) (Game.reset() tested)
 - [x] Score resets to 0 (Game.reset() tested)
@@ -292,6 +305,7 @@ src/
 - [x] Return to game after displaying help (will be handled in Phase 8.4)
 
 **Verification**:
+
 - [x] H key shows help (InputHandler tested)
 - [x] ? key shows help (InputHandler tested)
 - [x] Help information is clear (renderHelp() implemented)
@@ -313,6 +327,7 @@ src/
 - [x] Update status bar on position change (updatePlayerPosition() calls renderStatusBar())
 
 **Verification**:
+
 - [x] Status bar displays at bottom (tested in Renderer tests)
 - [x] Score shows (0 for MVP) (tested in Renderer tests)
 - [x] Position updates correctly (tested in Renderer tests)
@@ -327,6 +342,7 @@ src/
 - [x] Keep title visible during gameplay (renderFull() includes renderTitle())
 
 **Verification**:
+
 - [x] Title displays at top (tested in Renderer tests)
 - [x] Title is visible and clear (tested in Renderer tests)
 - [x] Title doesn't interfere with board (tested in Renderer tests)
@@ -348,6 +364,7 @@ src/
   - [x] `src/integration/movement-rendering.test.js` - Integration tests (17 tests)
 
 **Verification**:
+
 - [x] Tests created
 - [x] All tests pass (`npm test`) - 250 tests passing
 - [x] Good test coverage for core logic
@@ -363,6 +380,7 @@ src/
 - [x] Exit gracefully if terminal too small
 
 **Verification**:
+
 - [x] Terminal size checked on startup
 - [x] Error shown if terminal too small
 - [x] Game doesn't start if terminal too small
@@ -377,6 +395,7 @@ src/
 - [x] Terminal cleanup on errors
 
 **Verification**:
+
 - [x] Errors handled gracefully
 - [x] Terminal state restored on errors
 - [x] User-friendly error messages
@@ -394,6 +413,7 @@ src/
 - [x] Handle cleanup on exit
 
 **Verification**:
+
 - [x] Game starts correctly
 - [x] All features work together
 - [x] Clean exit works
@@ -428,4 +448,3 @@ src/
 - Pause for review after each phase completion
 - Keep code simple and maintainable
 - Focus on MVP functionality first
-

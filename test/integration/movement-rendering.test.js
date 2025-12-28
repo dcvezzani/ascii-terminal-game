@@ -24,7 +24,7 @@ describe('Movement and Rendering Integration', () => {
   beforeEach(() => {
     game = new Game();
     renderer = new Renderer();
-    
+
     writeSpy = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
     process.stdout.columns = 80;
     vi.clearAllMocks();
@@ -52,7 +52,7 @@ describe('Movement and Rendering Integration', () => {
     test('Game and Renderer can work together', () => {
       const position = game.getPlayerPosition();
       renderer.renderBoard(game.board, position.x, position.y);
-      
+
       expect(writeSpy).toHaveBeenCalled();
     });
   });
@@ -62,12 +62,12 @@ describe('Movement and Rendering Integration', () => {
       const center = getCenterPosition();
       const oldPosition = game.getPlayerPosition();
       const moved = game.movePlayer(1, 0);
-      
+
       expect(moved).toBe(true);
-      
+
       const newPosition = game.getPlayerPosition();
       expect(newPosition.x).toBe(center.x + 1);
-      
+
       // Update renderer
       renderer.updatePlayerPosition(
         oldPosition.x,
@@ -76,7 +76,7 @@ describe('Movement and Rendering Integration', () => {
         newPosition.y,
         game.board
       );
-      
+
       expect(writeSpy).toHaveBeenCalled();
     });
 
@@ -84,7 +84,7 @@ describe('Movement and Rendering Integration', () => {
       const oldPosition = game.getPlayerPosition();
       game.movePlayer(1, 0);
       const newPosition = game.getPlayerPosition();
-      
+
       renderer.updatePlayerPosition(
         oldPosition.x,
         oldPosition.y,
@@ -92,7 +92,7 @@ describe('Movement and Rendering Integration', () => {
         newPosition.y,
         game.board
       );
-      
+
       // Should have called updateCell for old position
       expect(writeSpy).toHaveBeenCalled();
     });
@@ -101,7 +101,7 @@ describe('Movement and Rendering Integration', () => {
       const oldPosition = game.getPlayerPosition();
       game.movePlayer(1, 0);
       const newPosition = game.getPlayerPosition();
-      
+
       renderer.updatePlayerPosition(
         oldPosition.x,
         oldPosition.y,
@@ -109,7 +109,7 @@ describe('Movement and Rendering Integration', () => {
         newPosition.y,
         game.board
       );
-      
+
       // Should render player at new position
       const allCalls = writeSpy.mock.calls.map(call => String(call[0])).join('');
       expect(allCalls).toContain(PLAYER_CHAR.char);
@@ -119,7 +119,7 @@ describe('Movement and Rendering Integration', () => {
       const oldPosition = game.getPlayerPosition();
       game.movePlayer(1, 0);
       const newPosition = game.getPlayerPosition();
-      
+
       renderer.updatePlayerPosition(
         oldPosition.x,
         oldPosition.y,
@@ -127,7 +127,7 @@ describe('Movement and Rendering Integration', () => {
         newPosition.y,
         game.board
       );
-      
+
       // Status bar should be updated
       const allCalls = writeSpy.mock.calls.map(call => String(call[0])).join('');
       expect(allCalls).toContain(`Position: (${newPosition.x}, ${newPosition.y})`);
@@ -137,9 +137,9 @@ describe('Movement and Rendering Integration', () => {
       const oldPosition = game.getPlayerPosition();
       game.movePlayer(1, 0);
       const newPosition = game.getPlayerPosition();
-      
+
       writeSpy.mockClear();
-      
+
       renderer.updatePlayerPosition(
         oldPosition.x,
         oldPosition.y,
@@ -147,7 +147,7 @@ describe('Movement and Rendering Integration', () => {
         newPosition.y,
         game.board
       );
-      
+
       // Should only update a few cells (old position, new position, status bar)
       // Not the entire board
       expect(writeSpy.mock.calls.length).toBeLessThan(10);
@@ -158,15 +158,15 @@ describe('Movement and Rendering Integration', () => {
     test('Complete flow: movePlayer → updatePlayerPosition', () => {
       const center = getCenterPosition();
       const oldPosition = game.getPlayerPosition();
-      
+
       // Move player
       const moved = game.movePlayer(1, 0);
       expect(moved).toBe(true);
-      
+
       const newPosition = game.getPlayerPosition();
       expect(newPosition.x).toBe(center.x + 1);
       expect(newPosition.y).toBe(center.y);
-      
+
       // Update renderer
       renderer.updatePlayerPosition(
         oldPosition.x,
@@ -175,7 +175,7 @@ describe('Movement and Rendering Integration', () => {
         newPosition.y,
         game.board
       );
-      
+
       // Verify rendering happened
       expect(writeSpy).toHaveBeenCalled();
     });
@@ -183,22 +183,22 @@ describe('Movement and Rendering Integration', () => {
     test('Multiple movements work correctly', () => {
       const center = getCenterPosition();
       let position = game.getPlayerPosition();
-      
+
       // Move right
       game.movePlayer(1, 0);
       position = game.getPlayerPosition();
       expect(position).toEqual({ x: center.x + 1, y: center.y });
-      
+
       // Move down
       game.movePlayer(0, 1);
       position = game.getPlayerPosition();
       expect(position).toEqual({ x: center.x + 1, y: center.y + 1 });
-      
+
       // Move left
       game.movePlayer(-1, 0);
       position = game.getPlayerPosition();
       expect(position).toEqual({ x: center.x, y: center.y + 1 });
-      
+
       // Move up
       game.movePlayer(0, -1);
       position = game.getPlayerPosition();
@@ -212,14 +212,14 @@ describe('Movement and Rendering Integration', () => {
       const dx = nearEdgeX - center.x;
       game.movePlayer(dx, 0);
       const positionBefore = game.getPlayerPosition();
-      
+
       // Try to move into wall
       const moved = game.movePlayer(1, 0);
       expect(moved).toBe(false);
-      
+
       const positionAfter = game.getPlayerPosition();
       expect(positionAfter).toEqual(positionBefore);
-      
+
       // Renderer should not be called for failed movement
       // (In actual game, we'd check if movement succeeded before updating renderer)
     });
@@ -231,7 +231,7 @@ describe('Movement and Rendering Integration', () => {
       game.movePlayer(1, 0);
       const position = game.getPlayerPosition();
       expect(position).toEqual({ x: center.x + 1, y: center.y });
-      
+
       game.movePlayer(0, 1);
       const position2 = game.getPlayerPosition();
       expect(position2).toEqual({ x: center.x + 1, y: center.y + 1 });
@@ -241,13 +241,13 @@ describe('Movement and Rendering Integration', () => {
       const center = getCenterPosition();
       const cellBefore = game.board.getCell(center.x, center.y);
       expect(cellBefore).toBe(EMPTY_SPACE_CHAR.char);
-      
+
       game.movePlayer(1, 0);
-      
+
       // Old position should still be empty
       const oldCell = game.board.getCell(center.x, center.y);
       expect(oldCell).toBe(EMPTY_SPACE_CHAR.char);
-      
+
       // New position should be empty (player is tracked separately)
       const newCell = game.board.getCell(center.x + 1, center.y);
       expect(newCell).toBe(EMPTY_SPACE_CHAR.char);
@@ -255,13 +255,13 @@ describe('Movement and Rendering Integration', () => {
 
     test('State remains consistent after multiple operations', () => {
       const initialPosition = game.getPlayerPosition();
-      
+
       // Multiple movements
       game.movePlayer(1, 0);
       game.movePlayer(0, 1);
       game.movePlayer(-1, 0);
       game.movePlayer(0, -1);
-      
+
       // Should be back to start
       const finalPosition = game.getPlayerPosition();
       expect(finalPosition).toEqual(initialPosition);
@@ -271,7 +271,7 @@ describe('Movement and Rendering Integration', () => {
   describe('Rendering Methods Integration', () => {
     test('renderFull works with game instance', () => {
       renderer.renderFull(game);
-      
+
       // Should render title, board, and status bar
       expect(writeSpy).toHaveBeenCalled();
       const allCalls = writeSpy.mock.calls.map(call => String(call[0])).join('');
@@ -282,14 +282,14 @@ describe('Movement and Rendering Integration', () => {
     test('renderBoard works with game board and position', () => {
       const position = game.getPlayerPosition();
       renderer.renderBoard(game.board, position.x, position.y);
-      
+
       expect(writeSpy).toHaveBeenCalled();
     });
 
     test('renderStatusBar works with game state', () => {
       const position = game.getPlayerPosition();
       renderer.renderStatusBar(game.getScore(), position.x, position.y);
-      
+
       expect(writeSpy).toHaveBeenCalled();
       const allCalls = writeSpy.mock.calls.map(call => String(call[0])).join('');
       expect(allCalls).toContain('Score: 0');
@@ -297,4 +297,3 @@ describe('Movement and Rendering Integration', () => {
     });
   });
 });
-

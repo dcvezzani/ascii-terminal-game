@@ -23,7 +23,7 @@ A simple terminal-based game built with Node.js where the player can move a char
 ### Game Board
 
 - **Size**: Fixed 20x20 grid (400 cells total)
-- **Layout**: 
+- **Layout**:
   - Blank interior (all empty spaces `.`)
   - Outer walls (`#`) forming a perimeter border
   - Player starts at center position (10, 10)
@@ -38,6 +38,7 @@ A simple terminal-based game built with Node.js where the player can move a char
 ### Status Bar
 
 Shows:
+
 - Score: 0 (placeholder for future features)
 - Position: Current (x, y) coordinates
 - Instructions: Control hints
@@ -45,10 +46,12 @@ Shows:
 ## Controls
 
 ### Movement
+
 - **Arrow Keys**: ↑ ↓ ← → (up, down, left, right)
 - **WASD Keys**: W (up), S (down), A (left), D (right)
 
 ### Game Actions
+
 - **Quit/Exit**: Q or ESC
 - **Restart**: R
 - **Help**: H or ?
@@ -56,6 +59,7 @@ Shows:
 ## Technical Stack
 
 ### Technology
+
 - **Runtime**: Node.js
 - **Language**: JavaScript (ES Modules)
 - **Testing**: Vitest
@@ -66,11 +70,13 @@ Shows:
 **Selected Approach**: Built-in Node.js `readline` + lightweight utilities
 
 **Dependencies**:
+
 - `ansi-escapes` - Cursor positioning and screen control
 - `chalk` - Terminal colors and styling
 - `cli-cursor` - Hide/show terminal cursor
 
 **Rationale**:
+
 - Minimal dependencies (no game-specific frameworks)
 - Full control over rendering for optimal performance
 - Good learning experience understanding terminal games
@@ -107,12 +113,14 @@ This project follows the development process documented in `STANDARDS_AND_PROCES
 **Phase**: Planning/Brainstorming Complete
 
 **Completed**:
+
 - ✅ Project concept defined
 - ✅ Game mechanics decided
 - ✅ Technical stack selected
 - ✅ MVP specifications documented
 
 **Next Steps**:
+
 - Set up project structure (package.json, basic files)
 - Implement core game engine
 - Implement board rendering
@@ -124,6 +132,7 @@ This project follows the development process documented in `STANDARDS_AND_PROCES
 ## Future Enhancements (Post-MVP)
 
 Potential features to add after MVP:
+
 - Multiple levels
 - Score system
 - Obstacles on the board
@@ -150,5 +159,3 @@ Potential features to add after MVP:
 - `STANDARDS_AND_PROCESSES/async-await.md` - Async/await patterns
 - `ai-profile.md` - AI assistant profile and preferences
 - `me-profile.md` - Developer profile and experience
-
-

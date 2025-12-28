@@ -93,9 +93,9 @@ describe('Renderer', () => {
       // Mock getHorizontalCenter by setting terminal width
       process.stdout.columns = 80;
       const expectedCenter = Math.floor((80 - 'Terminal Game'.length) / 2);
-      
+
       renderer.renderTitle();
-      
+
       expect(writeSpy).toHaveBeenCalledWith(ansiEscapes.cursorTo(expectedCenter, 2));
     });
 
@@ -103,21 +103,21 @@ describe('Renderer', () => {
       process.stdout.columns = 100;
       const titleLength = 'Terminal Game'.length;
       const expectedCenter = Math.floor((100 - titleLength) / 2);
-      
+
       renderer.renderTitle();
-      
-      const cursorCall = writeSpy.mock.calls.find(call => 
-        call[0] === ansiEscapes.cursorTo(expectedCenter, 2)
+
+      const cursorCall = writeSpy.mock.calls.find(
+        call => call[0] === ansiEscapes.cursorTo(expectedCenter, 2)
       );
       expect(cursorCall).toBeDefined();
     });
 
     test('Applies correct styling (bold, cyan)', () => {
       renderer.renderTitle();
-      
+
       // Check that chalk styling was applied
-      const styledText = writeSpy.mock.calls.find(call => 
-        typeof call[0] === 'string' && call[0].includes('Terminal Game')
+      const styledText = writeSpy.mock.calls.find(
+        call => typeof call[0] === 'string' && call[0].includes('Terminal Game')
       );
       expect(styledText).toBeDefined();
     });
@@ -125,7 +125,7 @@ describe('Renderer', () => {
     test('Uses correct row offset', () => {
       process.stdout.columns = 80;
       renderer.renderTitle();
-      
+
       // Check that cursorTo was called (title should be rendered)
       // We verify by checking that write was called and title text is present
       expect(writeSpy).toHaveBeenCalled();
@@ -146,7 +146,7 @@ describe('Renderer', () => {
     test('Renders all board cells', () => {
       process.stdout.columns = 80;
       renderer.renderBoard(board, 10, 10);
-      
+
       // Should write cursorTo for each row (20 rows)
       // Plus characters for each cell (20x20 = 400 cells)
       expect(writeSpy).toHaveBeenCalled();
@@ -155,9 +155,9 @@ describe('Renderer', () => {
     test('Centers board horizontally', () => {
       process.stdout.columns = 80;
       const boardStartX = Math.floor((80 - 20) / 2);
-      
+
       renderer.renderBoard(board, 10, 10);
-      
+
       // Check that cursorTo was called (board rendering should happen)
       // We verify by checking that write was called multiple times
       expect(writeSpy).toHaveBeenCalled();
@@ -168,7 +168,7 @@ describe('Renderer', () => {
     test('Renders player character at correct position with color', () => {
       process.stdout.columns = 80;
       renderer.renderBoard(board, 10, 10);
-      
+
       // Player should be rendered with its associated color
       // We can't easily test the exact color, but we can verify the character
       const allCalls = writeSpy.mock.calls.map(call => call[0]).join('');
@@ -178,7 +178,7 @@ describe('Renderer', () => {
     test('Renders walls with associated color', () => {
       process.stdout.columns = 80;
       renderer.renderBoard(board, 10, 10);
-      
+
       // Walls should be rendered with their associated color
       const allCalls = writeSpy.mock.calls.map(call => call[0]).join('');
       expect(allCalls).toContain(WALL_CHAR.char);
@@ -187,7 +187,7 @@ describe('Renderer', () => {
     test('Renders empty spaces with associated color', () => {
       process.stdout.columns = 80;
       renderer.renderBoard(board, 10, 10);
-      
+
       // Empty spaces should be rendered with their associated color
       const allCalls = writeSpy.mock.calls.map(call => call[0]).join('');
       expect(allCalls).toContain(EMPTY_SPACE_CHAR.char);
@@ -197,7 +197,7 @@ describe('Renderer', () => {
       process.stdout.columns = 80;
       renderer.renderBoard(board, 0, 0);
       expect(writeSpy).toHaveBeenCalled();
-      
+
       renderer.renderBoard(board, 19, 19);
       expect(writeSpy).toHaveBeenCalled();
     });
@@ -205,11 +205,11 @@ describe('Renderer', () => {
     test('Uses correct row offsets for each board row', () => {
       process.stdout.columns = 80;
       renderer.renderBoard(board, 10, 10);
-      
+
       // Check that board was rendered (should have many write calls)
       // Board has 20 rows, so we should have at least 20 cursorTo calls
       expect(writeSpy.mock.calls.length).toBeGreaterThan(20);
-      
+
       // Verify that rendering happened (contains board characters)
       const allCalls = writeSpy.mock.calls.map(call => String(call[0])).join('');
       expect(allCalls).toContain(WALL_CHAR.char);
@@ -221,7 +221,7 @@ describe('Renderer', () => {
     test('Renders status text with score', () => {
       process.stdout.columns = 80;
       renderer.renderStatusBar(0, 10, 10);
-      
+
       const allCalls = writeSpy.mock.calls.map(call => call[0]).join('');
       expect(allCalls).toContain('Score: 0');
     });
@@ -229,7 +229,7 @@ describe('Renderer', () => {
     test('Renders status text with position coordinates', () => {
       process.stdout.columns = 80;
       renderer.renderStatusBar(0, 10, 10);
-      
+
       const allCalls = writeSpy.mock.calls.map(call => call[0]).join('');
       expect(allCalls).toContain('Position: (10, 10)');
     });
@@ -237,7 +237,7 @@ describe('Renderer', () => {
     test('Renders control instructions', () => {
       process.stdout.columns = 80;
       renderer.renderStatusBar(0, 10, 10);
-      
+
       const allCalls = writeSpy.mock.calls.map(call => call[0]).join('');
       expect(allCalls).toContain('Arrow/WASD');
     });
@@ -245,7 +245,7 @@ describe('Renderer', () => {
     test('Centers status bar horizontally', () => {
       process.stdout.columns = 80;
       renderer.renderStatusBar(0, 10, 10);
-      
+
       // Should call cursorTo with calculated center
       expect(writeSpy).toHaveBeenCalled();
     });
@@ -253,7 +253,7 @@ describe('Renderer', () => {
     test('Uses correct row offset', () => {
       process.stdout.columns = 80;
       renderer.renderStatusBar(0, 10, 10);
-      
+
       // Should use statusBarOffset (26) - check that write was called
       // Status bar should be rendered
       expect(writeSpy).toHaveBeenCalled();
@@ -264,7 +264,7 @@ describe('Renderer', () => {
     test('Applies dim styling', () => {
       process.stdout.columns = 80;
       renderer.renderStatusBar(0, 10, 10);
-      
+
       // Status bar should be rendered (we can't easily test dim, but it should be called)
       expect(writeSpy).toHaveBeenCalled();
     });
@@ -280,17 +280,17 @@ describe('Renderer', () => {
     test('Calls clearScreen()', () => {
       process.stdout.columns = 80;
       renderer.renderFull(game);
-      
+
       expect(writeSpy).toHaveBeenCalledWith(ansiEscapes.clearScreen);
     });
 
     test('Calls renderTitle()', () => {
       process.stdout.columns = 80;
       renderer.renderFull(game);
-      
+
       // Title should be rendered (we check by verifying cursorTo calls)
-      const titleCalls = writeSpy.mock.calls.filter(call => 
-        typeof call[0] === 'string' && call[0].includes('Terminal Game')
+      const titleCalls = writeSpy.mock.calls.filter(
+        call => typeof call[0] === 'string' && call[0].includes('Terminal Game')
       );
       expect(titleCalls.length).toBeGreaterThan(0);
     });
@@ -299,7 +299,7 @@ describe('Renderer', () => {
       process.stdout.columns = 80;
       const position = game.getPlayerPosition();
       renderer.renderFull(game);
-      
+
       // Board should be rendered
       expect(writeSpy).toHaveBeenCalled();
     });
@@ -307,7 +307,7 @@ describe('Renderer', () => {
     test('Calls renderStatusBar() with correct parameters', () => {
       process.stdout.columns = 80;
       renderer.renderFull(game);
-      
+
       // Status bar should be rendered
       const allCalls = writeSpy.mock.calls.map(call => call[0]).join('');
       expect(allCalls).toContain('Score:');
@@ -316,7 +316,7 @@ describe('Renderer', () => {
     test('Moves cursor out of the way after rendering', () => {
       process.stdout.columns = 80;
       renderer.renderFull(game);
-      
+
       // Should call cursorTo at the end
       const lastCall = writeSpy.mock.calls[writeSpy.mock.calls.length - 1];
       expect(lastCall[0]).toBe(ansiEscapes.cursorTo(0, 28)); // statusBarOffset + 2
@@ -325,11 +325,11 @@ describe('Renderer', () => {
     test('Renders complete game state correctly', () => {
       process.stdout.columns = 80;
       renderer.renderFull(game);
-      
+
       // Should have called multiple rendering methods
       // Should have at least: clearScreen, cursorTo, title, board, status bar
       expect(writeSpy.mock.calls.length).toBeGreaterThan(5);
-      
+
       // Verify all components were rendered
       const allCalls = writeSpy.mock.calls.map(call => String(call[0])).join('');
       expect(allCalls).toContain('Terminal Game');
@@ -341,28 +341,32 @@ describe('Renderer', () => {
     test('Calculates correct screen position from board coordinates', () => {
       process.stdout.columns = 80;
       const boardStartX = Math.floor((80 - gameConfig.board.width) / 2);
-      
+
       renderer.updateCell(5, 5, EMPTY_SPACE_CHAR.char, chalk.white);
-      
-      expect(writeSpy).toHaveBeenCalledWith(ansiEscapes.cursorTo(boardStartX + 5, gameConfig.renderer.boardOffset + 5));
+
+      expect(writeSpy).toHaveBeenCalledWith(
+        ansiEscapes.cursorTo(boardStartX + 5, gameConfig.renderer.boardOffset + 5)
+      );
     });
 
     test('Moves cursor to correct position', () => {
       process.stdout.columns = 80;
       const boardStartX = Math.floor((80 - gameConfig.board.width) / 2);
-      
+
       renderer.updateCell(10, 10, PLAYER_CHAR.char, chalk.green);
-      
-      expect(writeSpy).toHaveBeenCalledWith(ansiEscapes.cursorTo(boardStartX + 10, gameConfig.renderer.boardOffset + 10));
+
+      expect(writeSpy).toHaveBeenCalledWith(
+        ansiEscapes.cursorTo(boardStartX + 10, gameConfig.renderer.boardOffset + 10)
+      );
     });
 
     test('Writes character with correct color', () => {
       process.stdout.columns = 80;
       renderer.updateCell(10, 10, PLAYER_CHAR.char, chalk.green);
-      
+
       // Should write the colored character
-      const colorCall = writeSpy.mock.calls.find(call => 
-        typeof call[0] === 'string' && call[0].includes(PLAYER_CHAR.char)
+      const colorCall = writeSpy.mock.calls.find(
+        call => typeof call[0] === 'string' && call[0].includes(PLAYER_CHAR.char)
       );
       expect(colorCall).toBeDefined();
     });
@@ -370,18 +374,25 @@ describe('Renderer', () => {
     test('Handles all board positions', () => {
       process.stdout.columns = 80;
       renderer.updateCell(0, 0, WALL_CHAR.char, chalk.gray);
-      renderer.updateCell(gameConfig.board.width - 1, gameConfig.board.height - 1, EMPTY_SPACE_CHAR.char, chalk.white);
-      
+      renderer.updateCell(
+        gameConfig.board.width - 1,
+        gameConfig.board.height - 1,
+        EMPTY_SPACE_CHAR.char,
+        chalk.white
+      );
+
       expect(writeSpy).toHaveBeenCalledTimes(4); // 2 cursorTo + 2 characters
     });
 
     test('Uses horizontal centering offset correctly', () => {
       process.stdout.columns = 100;
       const boardStartX = Math.floor((100 - gameConfig.board.width) / 2);
-      
+
       renderer.updateCell(0, 0, WALL_CHAR.char, chalk.gray);
-      
-      expect(writeSpy).toHaveBeenCalledWith(ansiEscapes.cursorTo(boardStartX, gameConfig.renderer.boardOffset));
+
+      expect(writeSpy).toHaveBeenCalledWith(
+        ansiEscapes.cursorTo(boardStartX, gameConfig.renderer.boardOffset)
+      );
     });
   });
 
@@ -395,7 +406,7 @@ describe('Renderer', () => {
     test('Clears old position (restores cell content)', () => {
       process.stdout.columns = 80;
       renderer.updatePlayerPosition(10, 10, 11, 10, board);
-      
+
       // Should update old position
       expect(writeSpy).toHaveBeenCalled();
     });
@@ -403,7 +414,7 @@ describe('Renderer', () => {
     test('Draws new position with player character', () => {
       process.stdout.columns = 80;
       renderer.updatePlayerPosition(10, 10, 11, 10, board);
-      
+
       // Should write player character
       const allCalls = writeSpy.mock.calls.map(call => call[0]).join('');
       expect(allCalls).toContain(PLAYER_CHAR.char);
@@ -412,7 +423,7 @@ describe('Renderer', () => {
     test('Uses correct colors (green for player, gray/white for cells)', () => {
       process.stdout.columns = 80;
       renderer.updatePlayerPosition(10, 10, 11, 10, board);
-      
+
       // Should have written multiple times (old position + new position + status)
       expect(writeSpy).toHaveBeenCalled();
     });
@@ -420,7 +431,7 @@ describe('Renderer', () => {
     test('Updates status bar with new position', () => {
       process.stdout.columns = 80;
       renderer.updatePlayerPosition(10, 10, 11, 10, board);
-      
+
       // Should update status bar
       const allCalls = writeSpy.mock.calls.map(call => call[0]).join('');
       expect(allCalls).toContain('Position: (11, 10)');
@@ -429,7 +440,7 @@ describe('Renderer', () => {
     test('Handles movement correctly', () => {
       process.stdout.columns = 80;
       renderer.updatePlayerPosition(5, 5, 6, 5, board);
-      
+
       // Should update both positions
       expect(writeSpy).toHaveBeenCalled();
     });
@@ -475,28 +486,28 @@ describe('Renderer', () => {
       process.stdout.columns = 80;
       renderer.renderBoard(board, 0, 0);
       renderer.renderBoard(board, 19, 19);
-      
+
       expect(writeSpy).toHaveBeenCalled();
     });
 
     test('Handles player at (0, 0) correctly', () => {
       process.stdout.columns = 80;
       renderer.renderBoard(board, 0, 0);
-      
+
       expect(writeSpy).toHaveBeenCalled();
     });
 
     test('Handles player at (19, 19) correctly', () => {
       process.stdout.columns = 80;
       renderer.renderBoard(board, 19, 19);
-      
+
       expect(writeSpy).toHaveBeenCalled();
     });
 
     test('Handles rendering when terminal is small (graceful degradation)', () => {
       process.stdout.columns = 10; // Very small terminal
       renderer.renderBoard(board, 10, 10);
-      
+
       // Should still render (may not be centered, but shouldn't crash)
       expect(writeSpy).toHaveBeenCalled();
     });
@@ -507,7 +518,7 @@ describe('Renderer', () => {
       process.stdout.rows = 30;
       process.stdout.columns = 80;
       renderer.renderHelp();
-      
+
       expect(writeSpy).toHaveBeenCalled();
     });
 
@@ -515,7 +526,7 @@ describe('Renderer', () => {
       process.stdout.rows = 30;
       process.stdout.columns = 80;
       renderer.renderHelp();
-      
+
       expect(writeSpy).toHaveBeenCalledWith(ansiEscapes.clearScreen);
     });
 
@@ -523,7 +534,7 @@ describe('Renderer', () => {
       process.stdout.rows = 30;
       process.stdout.columns = 80;
       renderer.renderHelp();
-      
+
       const allCalls = writeSpy.mock.calls.map(call => String(call[0])).join('');
       expect(allCalls).toContain('Terminal Game - Help');
     });
@@ -532,7 +543,7 @@ describe('Renderer', () => {
       process.stdout.rows = 30;
       process.stdout.columns = 80;
       renderer.renderHelp();
-      
+
       const allCalls = writeSpy.mock.calls.map(call => String(call[0])).join('');
       expect(allCalls).toContain('Arrow Keys');
       expect(allCalls).toContain('WASD');
@@ -542,7 +553,7 @@ describe('Renderer', () => {
       process.stdout.rows = 30;
       process.stdout.columns = 80;
       renderer.renderHelp();
-      
+
       const allCalls = writeSpy.mock.calls.map(call => String(call[0])).join('');
       expect(allCalls).toContain('Q or ESC');
       expect(allCalls).toContain('R - Restart');
@@ -553,7 +564,7 @@ describe('Renderer', () => {
       process.stdout.rows = 30;
       process.stdout.columns = 80;
       renderer.renderHelp();
-      
+
       // Should call cursorTo with calculated center positions
       expect(writeSpy).toHaveBeenCalled();
     });
@@ -562,7 +573,7 @@ describe('Renderer', () => {
       process.stdout.rows = 30;
       process.stdout.columns = 80;
       renderer.renderHelp();
-      
+
       // Should calculate vertical center
       expect(writeSpy).toHaveBeenCalled();
     });
@@ -571,7 +582,7 @@ describe('Renderer', () => {
       process.stdout.rows = 30;
       process.stdout.columns = 80;
       renderer.renderHelp();
-      
+
       // Colors are applied via chalk, verify rendering happened
       expect(writeSpy).toHaveBeenCalled();
       const allCalls = writeSpy.mock.calls.map(call => String(call[0])).join('');
@@ -582,7 +593,7 @@ describe('Renderer', () => {
       process.stdout.rows = 30;
       process.stdout.columns = 80;
       renderer.renderHelp();
-      
+
       const allCalls = writeSpy.mock.calls.map(call => String(call[0])).join('');
       expect(allCalls).toContain('Movement:');
       expect(allCalls).toContain('Controls:');
@@ -592,7 +603,7 @@ describe('Renderer', () => {
       process.stdout.rows = 30;
       process.stdout.columns = 80;
       renderer.renderHelp();
-      
+
       // Should call cursorTo at the end
       expect(writeSpy).toHaveBeenCalled();
     });
@@ -601,7 +612,7 @@ describe('Renderer', () => {
       process.stdout.rows = 30;
       process.stdout.columns = 80;
       renderer.renderHelp();
-      
+
       const allCalls = writeSpy.mock.calls.map(call => String(call[0])).join('');
       expect(allCalls).toContain('Arrow Keys');
       expect(allCalls).toContain('W (up)');
@@ -614,7 +625,7 @@ describe('Renderer', () => {
       process.stdout.rows = 30;
       process.stdout.columns = 80;
       renderer.renderHelp();
-      
+
       const allCalls = writeSpy.mock.calls.map(call => String(call[0])).join('');
       expect(allCalls).toContain('Quit game');
       expect(allCalls).toContain('Restart game');
@@ -625,7 +636,7 @@ describe('Renderer', () => {
       process.stdout.rows = 30;
       process.stdout.columns = 80;
       renderer.renderHelp();
-      
+
       const allCalls = writeSpy.mock.calls.map(call => String(call[0])).join('');
       // Should contain key information
       expect(allCalls.length).toBeGreaterThan(100); // Substantial content
@@ -635,7 +646,7 @@ describe('Renderer', () => {
       process.stdout.rows = 30;
       process.stdout.columns = 80;
       renderer.renderHelp();
-      
+
       const allCalls = writeSpy.mock.calls.map(call => String(call[0])).join('');
       expect(allCalls).toContain('↑ ↓ ← →');
       expect(allCalls).toContain('W');
@@ -650,4 +661,3 @@ describe('Renderer', () => {
     });
   });
 });
-

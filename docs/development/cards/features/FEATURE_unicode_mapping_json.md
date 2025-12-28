@@ -5,24 +5,28 @@
 The project uses the **PxPlus IBM EGA 8x14** font in iTerm when running the application. This font maps CP437 byte values (0-255) to specific Unicode code points. We have a reference file (`docs/development/data/unicode-mappings.txt`) that contains the mapping of CP437 byte positions to Unicode hex codes and descriptions.
 
 **Current State**:
+
 - `docs/development/data/unicode-mappings.txt` exists with 256 lines (CP437 bytes 0-255)
 - Format: `{unicode_hex}\t{description}` (tab-separated)
 - Example: `00B0	DEGREE SIGN`
 - Line number corresponds to CP437 byte value (line 1 = byte 0, line 2 = byte 1, etc.)
 
 **Location**: Implementation will be in:
+
 - `docs/development/data/unicode-mappings.json` - New JSON file mapping labels to Unicode hex values
 - Script or tool to generate the JSON from the text file
 
 ## Problem
 
 **Current State**:
+
 - Unicode mappings exist only in text format
 - Not easily consumable by JavaScript/Node.js code
 - Descriptions need to be converted to consistent label format
 - No programmatic access to Unicode mappings
 
 **Desired State**:
+
 - JSON file with label-to-Unicode mappings
 - Easy to import and use in JavaScript code
 - Consistent label naming (UPPER_SNAKE_CASE)
@@ -120,16 +124,16 @@ const lines = fs.readFileSync(textFile, 'utf-8').split('\n');
 
 lines.forEach((line, index) => {
   if (!line.trim()) return; // Skip empty lines
-  
+
   const [unicodeHex, ...descriptionParts] = line.split('\t');
   const description = descriptionParts.join(' ').trim();
-  
+
   if (unicodeHex && description) {
     const label = description
       .toUpperCase()
       .replace(/[^A-Z0-9]+/g, '_')
       .replace(/^_+|_+$/g, ''); // Remove leading/trailing underscores
-    
+
     mappings[label] = unicodeHex.toUpperCase();
   }
 });
@@ -139,11 +143,13 @@ fs.writeFileSync(jsonFile, JSON.stringify(mappings, null, 2));
 ```
 
 **Pros**:
+
 - Simple one-time generation
 - Can be run manually or as part of build
 - Easy to understand and modify
 
 **Cons**:
+
 - Requires manual execution
 - Not automatically updated if source changes
 
@@ -160,11 +166,13 @@ Add to `package.json` scripts:
 ```
 
 **Pros**:
+
 - Easy to run: `npm run generate:unicode-mapping`
 - Can be integrated into build process
 - Standardized approach
 
 **Cons**:
+
 - Still requires manual execution
 
 ### Option 3: Runtime Generation
@@ -182,6 +190,7 @@ Generate JSON on-the-fly when needed (not recommended for this use case).
 5. **Handle Multiple Underscores**: Collapse to single underscore
 
 **Examples**:
+
 - "DEGREE SIGN" → "DEGREE_SIGN"
 - "WHITE SMILING FACE" → "WHITE_SMILING_FACE"
 - "FULL BLOCK 100 FILL" → "FULL_BLOCK_100_FILL"
@@ -270,4 +279,3 @@ Generate JSON on-the-fly when needed (not recommended for this use case).
   - **Answer**: _[To be answered by user]_
 - [ ] Should we create a reverse mapping (Unicode hex → label)?
   - **Answer**: _[To be answered by user]_
-

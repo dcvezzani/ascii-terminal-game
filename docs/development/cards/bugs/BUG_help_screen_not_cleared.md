@@ -4,13 +4,15 @@
 
 When the user presses H or ? to display the help screen, the help information is shown correctly. However, when the user wants to return to the game, the help screen is not replaced cleanly. The user must press R (restart) to refresh the screen and return to the game view.
 
-**Location**: 
+**Location**:
+
 - Help display: `src/render/Renderer.js` - `renderHelp()` method
 - Help control: `src/index.js` - `onHelp` callback
 
 ## Problem
 
 **Current Behavior**:
+
 1. User presses H or ? during gameplay
 2. Help screen is displayed correctly
 3. User wants to return to game (no clear way to do this)
@@ -18,6 +20,7 @@ When the user presses H or ? to display the help screen, the help information is
 5. User must press R (restart) to refresh and see the game again
 
 **Expected Behavior**:
+
 1. User presses H or ? during gameplay
 2. Help screen is displayed correctly
 3. User presses any key (or specific key) to return to game
@@ -27,6 +30,7 @@ When the user presses H or ? to display the help screen, the help information is
 ## Root Cause
 
 The help screen is displayed but there's no mechanism to:
+
 1. Detect when user wants to return from help screen
 2. Clear the help screen
 3. Redraw the game board after help is dismissed
@@ -50,6 +54,7 @@ The `onHelp` callback only calls `renderer.renderHelp()` but doesn't set up a wa
 ## Requirements
 
 ### Help Screen Return
+
 - [ ] Add mechanism to detect when user wants to return from help
 - [ ] Allow any key press (or specific key like ESC, Enter, or Space) to return
 - [ ] Clear help screen properly
@@ -59,16 +64,19 @@ The `onHelp` callback only calls `renderer.renderHelp()` but doesn't set up a wa
 ### Implementation Options
 
 **Option 1: Any key press returns from help**
+
 - When help is displayed, any key press (except quit) returns to game
 - Simple and intuitive
 - May conflict with other controls
 
 **Option 2: Specific key to return**
+
 - ESC, Enter, or Space returns from help
 - More explicit control
 - Requires user to know which key to press
 
 **Option 3: Toggle help on/off**
+
 - Pressing H or ? again toggles help off
 - Consistent with help activation
 - Requires tracking help state
@@ -198,4 +206,3 @@ onMoveUp: () => {
 - Game still works, but user experience is poor
 - Fix should be straightforward - mainly adding state tracking and return logic
 - Consider making help toggleable (press H/? again to close)
-

@@ -29,6 +29,7 @@ This gameplan implements comprehensive unit tests for the Board and Game classes
 - [x] Import test functions from Vitest (describe, test, expect)
 
 **Verification**:
+
 - [x] Test file created
 - [x] Imports are correct
 - [x] File structure is ready
@@ -42,6 +43,7 @@ This gameplan implements comprehensive unit tests for the Board and Game classes
 - [x] Test: Corner cells are walls
 
 **Verification**:
+
 - [x] All initialization tests pass
 - [x] Tests verify board structure correctly
 
@@ -57,6 +59,7 @@ This gameplan implements comprehensive unit tests for the Board and Game classes
 - [x] Test: Returns `null` for both coordinates invalid
 
 **Verification**:
+
 - [x] All getCell() tests pass
 - [x] Edge cases handled correctly
 
@@ -72,6 +75,7 @@ This gameplan implements comprehensive unit tests for the Board and Game classes
 - [x] Test: Can set different values (not just `.` and `#`)
 
 **Verification**:
+
 - [x] All setCell() tests pass
 - [x] Cell updates are verified
 
@@ -86,6 +90,7 @@ This gameplan implements comprehensive unit tests for the Board and Game classes
 - [x] Test: Returns `false` for invalid positions (handles gracefully)
 
 **Verification**:
+
 - [x] All isWall() tests pass
 - [x] All wall positions identified correctly
 
@@ -102,6 +107,7 @@ This gameplan implements comprehensive unit tests for the Board and Game classes
 - [x] Test: Returns `false` for Y coordinate greater than height
 
 **Verification**:
+
 - [x] All isValidPosition() tests pass
 - [x] All boundary conditions tested
 
@@ -116,6 +122,7 @@ This gameplan implements comprehensive unit tests for the Board and Game classes
 - [x] Import test functions from Vitest
 
 **Verification**:
+
 - [x] Test file created
 - [x] Imports are correct
 
@@ -129,6 +136,7 @@ This gameplan implements comprehensive unit tests for the Board and Game classes
 - [x] Test: `getScore()` returns 0
 
 **Verification**:
+
 - [x] All initialization tests pass
 
 ### Step 2.3: start() and stop() Method Tests
@@ -140,6 +148,7 @@ This gameplan implements comprehensive unit tests for the Board and Game classes
 - [x] Test: Can start and stop multiple times
 
 **Verification**:
+
 - [x] All start/stop tests pass
 
 ### Step 2.4: movePlayer() - Successful Movement Tests
@@ -154,6 +163,7 @@ This gameplan implements comprehensive unit tests for the Board and Game classes
 - [x] Test: Can move multiple times in sequence
 
 **Verification**:
+
 - [x] All successful movement tests pass
 
 ### Step 2.5: movePlayer() - Wall Collision Tests
@@ -167,6 +177,7 @@ This gameplan implements comprehensive unit tests for the Board and Game classes
 - [x] Test: Can move to edge of board but not into wall
 
 **Verification**:
+
 - [x] All wall collision tests pass
 
 ### Step 2.6: movePlayer() - Boundary Check Tests
@@ -177,6 +188,7 @@ This gameplan implements comprehensive unit tests for the Board and Game classes
 - [x] Test: Player position does not change when out of bounds
 
 **Verification**:
+
 - [x] All boundary check tests pass
 
 ### Step 2.7: movePlayer() - Edge Case Tests
@@ -186,6 +198,7 @@ This gameplan implements comprehensive unit tests for the Board and Game classes
 - [x] Test: Moving from center to near wall, then trying to move into wall
 
 **Verification**:
+
 - [x] All edge case tests pass
 
 ### Step 2.8: reset() Method Tests
@@ -198,6 +211,7 @@ This gameplan implements comprehensive unit tests for the Board and Game classes
 - [x] Test: Can reset multiple times
 
 **Verification**:
+
 - [x] All reset() tests pass
 
 ### Step 2.9: State Consistency Tests
@@ -208,6 +222,7 @@ This gameplan implements comprehensive unit tests for the Board and Game classes
 - [x] Test: Game state is consistent after reset
 
 **Verification**:
+
 - [x] All state consistency tests pass
 
 ---
@@ -235,4 +250,3 @@ This gameplan implements comprehensive unit tests for the Board and Game classes
 - Mark off tests in the feature card as they pass
 - Keep tests simple and focused on one thing
 - Use descriptive test names
-

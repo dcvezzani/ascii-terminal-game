@@ -20,7 +20,7 @@ This is fine when order matters, but inefficient for independent operations.
 
 ```js
 // ❌ Returns array of promises, not results
-const results = users.map(async (id) => {
+const results = users.map(async id => {
   const user = await fetchUser(id);
   return user;
 });
@@ -32,7 +32,7 @@ The promises are created but not awaited, so `results` contains `[Promise, Promi
 
 ```js
 // ❌ forEach doesn't wait for async callbacks
-users.forEach(async (id) => {
+users.forEach(async id => {
   const user = await fetchUser(id); // Not awaited properly
 });
 ```
@@ -68,7 +68,7 @@ Use when:
 - All operations must succeed
 
 ```js
-const usersData = await Promise.all(users.map((id) => fetchUser(id)));
+const usersData = await Promise.all(users.map(id => fetchUser(id)));
 ```
 
 **Pros:** Much faster for I/O-heavy tasks  
@@ -81,9 +81,9 @@ const usersData = await Promise.all(users.map((id) => fetchUser(id)));
 **Option 1: Use `Promise.allSettled()`**
 
 ```js
-const results = await Promise.allSettled(users.map((id) => fetchUser(id)));
+const results = await Promise.allSettled(users.map(id => fetchUser(id)));
 
-results.forEach((result) => {
+results.forEach(result => {
   if (result.status === 'fulfilled') {
     console.log('✅ User:', result.value);
   } else {
@@ -96,7 +96,7 @@ results.forEach((result) => {
 
 ```js
 const results = await Promise.all(
-  users.map(async (id) => {
+  users.map(async id => {
     try {
       return await fetchUser(id);
     } catch (err) {
@@ -117,7 +117,7 @@ Use tools like `p-limit` when you need speed but must respect API limits:
 import pLimit from 'p-limit';
 
 const limit = pLimit(2); // Run 2 fetches at a time
-const limitedFetches = users.map((id) => limit(() => fetchUser(id)));
+const limitedFetches = users.map(id => limit(() => fetchUser(id)));
 
 const results = await Promise.all(limitedFetches);
 ```

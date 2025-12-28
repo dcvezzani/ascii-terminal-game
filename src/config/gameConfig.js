@@ -20,8 +20,8 @@ export const gameConfig = {
 
   // Renderer offsets
   renderer: {
-    titleOffset: 2,        // Rows from top for title
-    boardOffset: 5,       // Rows from top for board
+    titleOffset: 2, // Rows from top for title
+    boardOffset: 5, // Rows from top for board
     // statusBarOffset is calculated dynamically: boardOffset + boardHeight + 1
   },
 
@@ -38,6 +38,4 @@ export const gameConfig = {
 };
 
 // Calculate derived values
-gameConfig.renderer.statusBarOffset = 
-  gameConfig.renderer.boardOffset + gameConfig.board.height + 1;
-
+gameConfig.renderer.statusBarOffset = gameConfig.renderer.boardOffset + gameConfig.board.height + 1;

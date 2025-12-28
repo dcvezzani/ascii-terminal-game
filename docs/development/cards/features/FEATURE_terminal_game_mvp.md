@@ -96,6 +96,7 @@ A simple terminal-based game where the player can move a character (`@`) around 
 All major questions have been answered in the brainstorming phase. See `BRAINSTORM.md` for details.
 
 **Resolved**:
+
 - ✅ Game mechanics (exploration, no win/lose)
 - ✅ Board size and layout (20x20, blank with walls)
 - ✅ Controls (arrow keys + WASD, quit, restart, help)
@@ -117,6 +118,7 @@ All major questions have been answered in the brainstorming phase. See `BRAINSTO
 **Status**: ✅ COMPLETE
 
 **Implementation Summary**:
+
 - All 8 phases of the gameplan completed
 - Game fully functional and playable
 - All features implemented and tested
@@ -142,4 +144,3 @@ All major questions have been answered in the brainstorming phase. See `BRAINSTO
 - Keep it simple for the first version
 - Can add features incrementally after MVP is complete
 - Follow development process: Card → SPECS → GAMEPLAN → Implementation
-

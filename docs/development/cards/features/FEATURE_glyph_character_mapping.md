@@ -5,6 +5,7 @@
 Currently, the game uses character constants directly in code (e.g., `'☺'`, `'#'`, `' '`). When we move to CP437 byte values, we'll be using raw byte numbers (e.g., `1`, `219`, `32`) which makes the code less readable. We need a mapping file that provides human-readable names for each font glyph/character.
 
 **Location**: Implementation will be in:
+
 - `src/constants/glyphMap.js` - New file mapping glyph names to character values
 - `src/constants/gameConstants.js` - Updated to use glyph map
 - Other files using characters - Updated to use glyph map constants
@@ -12,6 +13,7 @@ Currently, the game uses character constants directly in code (e.g., `'☺'`, `'
 ## Problem
 
 **Current State**:
+
 - Characters are defined directly as strings or will be byte values
 - Code like `PLAYER_CHAR = 1` or `WALL_CHAR = 219` is not self-documenting
 - Hard to understand what character a byte value represents
@@ -19,12 +21,14 @@ Currently, the game uses character constants directly in code (e.g., `'☺'`, `'
 - No centralized reference for all available glyphs
 
 **Future State (with CP437)**:
+
 - Will use raw byte values like `1`, `219`, `32`
 - Code becomes less readable: `const char = 219;` vs `const char = FULL_BLOCK;`
 - Developers need to remember or look up CP437 byte values
 - No clear mapping between glyph names and byte values
 
 **Desired State**:
+
 - Human-readable constant names for each glyph
 - Clear mapping between glyph names and their values
 - Easy to understand code: `const char = FULL_BLOCK;`
@@ -101,21 +105,21 @@ Create a mapping object with glyph names as keys and values as character/byte:
  */
 export const GLYPH_MAP = {
   // Player characters
-  SMILEY_FACE: 1,        // CP437: 1, ☺
-  PLAYER_ARROW: 16,      // CP437: 16, ►
-  PLAYER_AT: 64,         // CP437: 64, @
-  
+  SMILEY_FACE: 1, // CP437: 1, ☺
+  PLAYER_ARROW: 16, // CP437: 16, ►
+  PLAYER_AT: 64, // CP437: 64, @
+
   // Walls and blocks
-  FULL_BLOCK: 219,       // CP437: 219, █
-  MEDIUM_SHADE: 178,     // CP437: 178, ▓
-  LIGHT_SHADE: 177,      // CP437: 177, ▒
-  LIGHTEST_SHADE: 176,   // CP437: 176, ░
-  
+  FULL_BLOCK: 219, // CP437: 219, █
+  MEDIUM_SHADE: 178, // CP437: 178, ▓
+  LIGHT_SHADE: 177, // CP437: 177, ▒
+  LIGHTEST_SHADE: 176, // CP437: 176, ░
+
   // Empty/space
-  SPACE: 32,             // CP437: 32, ' '
-  DOT: 46,               // CP437: 46, '.'
-  MIDDLE_DOT: 250,       // CP437: 250, ·
-  
+  SPACE: 32, // CP437: 32, ' '
+  DOT: 46, // CP437: 46, '.'
+  MIDDLE_DOT: 250, // CP437: 250, ·
+
   // Box drawing (future)
   // HORIZONTAL_LINE: 196,  // CP437: 196, ─
   // VERTICAL_LINE: 179,     // CP437: 179, │
@@ -129,12 +133,14 @@ export const SPACE = GLYPH_MAP.SPACE;
 ```
 
 **Pros**:
+
 - Simple and straightforward
 - Easy to understand
 - Easy to extend
 - Clear mapping
 
 **Cons**:
+
 - Need to export individual constants if desired
 
 ### Option 2: Individual Named Exports
@@ -163,12 +169,14 @@ export const SPACE = 32;
 ```
 
 **Pros**:
+
 - Direct imports: `import { SMILEY_FACE } from './glyphMap.js'`
 - No need for object lookup
 - Very clear and explicit
 - Good for tree-shaking
 
 **Cons**:
+
 - More verbose file
 - Need to maintain individual exports
 
@@ -195,11 +203,13 @@ export const SPACE = GLYPH_MAP.SPACE;
 ```
 
 **Pros**:
+
 - Best of both worlds
 - Flexible usage
 - Can use object or individual imports
 
 **Cons**:
+
 - Slight duplication
 - More code to maintain
 
@@ -210,6 +220,7 @@ export const SPACE = GLYPH_MAP.SPACE;
 ### Glyph Mapping Structure
 
 Each glyph mapping should include:
+
 - **Constant Name**: Human-readable name (e.g., `SMILEY_FACE`)
 - **Value**: Character value (string or byte)
 - **Comment**: CP437 code point and visual representation
@@ -218,36 +229,38 @@ Each glyph mapping should include:
 
 ```javascript
 // Player characters
-export const SMILEY_FACE = 1;      // CP437: 1, ☺
-export const PLAYER_ARROW = 16;    // CP437: 16, ►
-export const PLAYER_AT = 64;       // CP437: 64, @
+export const SMILEY_FACE = 1; // CP437: 1, ☺
+export const PLAYER_ARROW = 16; // CP437: 16, ►
+export const PLAYER_AT = 64; // CP437: 64, @
 
 // Walls and blocks
-export const FULL_BLOCK = 219;     // CP437: 219, █
-export const MEDIUM_SHADE = 178;   // CP437: 178, ▓
-export const LIGHT_SHADE = 177;    // CP437: 177, ▒
+export const FULL_BLOCK = 219; // CP437: 219, █
+export const MEDIUM_SHADE = 178; // CP437: 178, ▓
+export const LIGHT_SHADE = 177; // CP437: 177, ▒
 export const LIGHTEST_SHADE = 176; // CP437: 176, ░
 
 // Empty/space
-export const SPACE = 32;           // CP437: 32, ' '
-export const DOT = 46;             // CP437: 46, '.'
-export const MIDDLE_DOT = 250;     // CP437: 250, ·
+export const SPACE = 32; // CP437: 32, ' '
+export const DOT = 46; // CP437: 46, '.'
+export const MIDDLE_DOT = 250; // CP437: 250, ·
 ```
 
 ### Usage in Code
 
 **Before**:
+
 ```javascript
-const PLAYER_CHAR = 1;      // What is 1?
-const WALL_CHAR = 219;      // What is 219?
+const PLAYER_CHAR = 1; // What is 1?
+const WALL_CHAR = 219; // What is 219?
 ```
 
 **After**:
+
 ```javascript
 import { SMILEY_FACE, FULL_BLOCK } from './glyphMap.js';
 
-const PLAYER_CHAR = SMILEY_FACE;  // Clear: smiley face
-const WALL_CHAR = FULL_BLOCK;     // Clear: full block
+const PLAYER_CHAR = SMILEY_FACE; // Clear: smiley face
+const WALL_CHAR = FULL_BLOCK; // Clear: full block
 ```
 
 ### Integration with gameConstants.js
@@ -316,4 +329,3 @@ export const EMPTY_SPACE_CHAR = SPACE;
   - **Answer**: Yes, include Unicode character in comment for reference
 - [ ] Should we create a lookup function for reverse mapping (value → name)?
   - **Answer**: Not needed for initial implementation, can add later if needed
-

@@ -3,6 +3,7 @@
 ## Context
 
 We have implemented all the core components:
+
 - `Game` class - Game state and player movement
 - `Renderer` class - Terminal rendering
 - `InputHandler` class - Keyboard input handling
@@ -10,6 +11,7 @@ We have implemented all the core components:
 Phase 5 involves integrating these components together. While the individual components are unit tested, we need integration tests to verify they work together correctly in the game loop.
 
 **Location**: Test file will be created in:
+
 - `src/index.test.js` (or integration test file)
 
 **Note**: These tests will be created after Phase 8.4 (Final Integration) when the main game loop is implemented.
@@ -17,6 +19,7 @@ Phase 5 involves integrating these components together. While the individual com
 ## Problem
 
 Without integration tests, we risk:
+
 - Components not working together correctly
 - Game loop not functioning properly
 - Input not triggering movement correctly
@@ -28,12 +31,14 @@ We need integration tests to ensure all components work together correctly in th
 ## Desired Feature
 
 Comprehensive integration test suite using Vitest for:
+
 1. **Game Loop Integration** - Test how Game, Renderer, and InputHandler work together
 2. **Input to Movement Flow** - Verify input triggers movement correctly
 3. **Movement to Rendering Flow** - Verify movement triggers rendering updates
 4. **State Synchronization** - Verify game state stays consistent
 
 Tests should cover:
+
 - Complete game loop flow
 - Input → Game → Renderer chain
 - State consistency across components
@@ -44,6 +49,7 @@ Tests should cover:
 ### Game Loop Integration Tests
 
 #### Test Suite: Game Initialization and Setup
+
 - [x] Game initializes correctly
 - [x] Renderer initializes correctly
 - [ ] InputHandler initializes correctly (will be tested in full game loop)
@@ -51,6 +57,7 @@ Tests should cover:
 - [x] Game state is correct after initialization
 
 #### Test Suite: Input to Movement Integration
+
 - [ ] Arrow key input triggers player movement (will be tested in full game loop)
 - [ ] WASD input triggers player movement (will be tested in full game loop)
 - [x] Movement updates game state correctly
@@ -59,6 +66,7 @@ Tests should cover:
 - [x] Multiple movements in sequence work correctly
 
 #### Test Suite: Movement to Rendering Integration
+
 - [x] Player movement triggers renderer update
 - [x] Old position is cleared correctly
 - [x] New position is rendered correctly
@@ -66,6 +74,7 @@ Tests should cover:
 - [x] Only changed cells are updated (efficiency)
 
 #### Test Suite: Complete Input → Movement → Render Flow
+
 - [x] Complete flow: game.movePlayer → renderer.updatePlayerPosition
 - [x] All components stay in sync
 - [x] Game state matches rendered state
@@ -73,6 +82,7 @@ Tests should cover:
 - [ ] Rapid keypresses are handled correctly (will be tested in full game loop)
 
 #### Test Suite: Game Controls Integration
+
 - [ ] Quit key (Q/ESC) stops the game (will be tested in full game loop)
 - [ ] Restart key (R) resets game state (will be tested in full game loop)
 - [ ] Help key (H/?) displays help (if implemented) (will be tested in full game loop)
@@ -80,12 +90,14 @@ Tests should cover:
 - [ ] Terminal cleanup happens on quit (will be tested in full game loop)
 
 #### Test Suite: State Consistency
+
 - [x] Game position matches renderer position
 - [x] Game score matches renderer score
 - [x] Board state is consistent across components
 - [x] State remains consistent after multiple operations
 
 #### Test Suite: Error Handling
+
 - [ ] Handles terminal size errors gracefully (will be tested in full game loop)
 - [ ] Handles input errors gracefully (will be tested in full game loop)
 - [ ] Handles rendering errors gracefully (will be tested in full game loop)
@@ -94,17 +106,20 @@ Tests should cover:
 ## Technical Requirements
 
 ### Test Framework
+
 - Use **Vitest** (already configured)
 - Use ES Modules (import/export)
 - Tests should run in non-interactive mode (`npm test`)
 
 ### Test Structure
+
 - Use `describe()` blocks to group related tests
 - Use `test()` or `it()` for individual test cases
 - Use descriptive test names
 - Use `expect()` assertions from Vitest
 
 ### Mocking Strategy
+
 - Mock `process.stdout.write` for rendering tests
 - Mock `process.stdin` for input tests
 - Mock terminal size functions if needed
@@ -112,12 +127,14 @@ Tests should cover:
 - May need to mock some terminal I/O to avoid actual terminal interaction
 
 ### Test Data
+
 - Create fresh game instances for each test
 - Test with known game states
 - Test various movement scenarios
 - Test edge cases (walls, boundaries)
 
 ### Code Coverage Goals
+
 - Test complete integration flows
 - Test all component interactions
 - Test error handling paths
@@ -153,6 +170,7 @@ Tests should cover:
 **Status**: ✅ COMPLETE
 
 **Completed**:
+
 - Movement to Rendering integration tests (17 tests passing)
 - Game and Renderer integration verified
 - State consistency tests complete
@@ -160,13 +178,15 @@ Tests should cover:
 - Input to Movement integration verified
 - Game controls integration verified
 
-**Test Results**: 
+**Test Results**:
+
 - Movement-Rendering integration tests: 17 tests passing
 - Game loop integration tests: 21 tests passing
 - Total integration tests: 38 tests passing
 - All tests run in non-interactive mode (`npm test`)
 
-**Test Results**: 
+**Test Results**:
+
 - Movement-Rendering integration tests: 17 tests passing
 - Tests verify Game.movePlayer() and Renderer.updatePlayerPosition() work together
 - All tests run in non-interactive mode (`npm test`)
@@ -186,4 +206,3 @@ Tests should cover:
 - May require more setup than unit tests
 - Some tests may need to be adjusted based on actual implementation
 - Consider testing the actual game loop once it's implemented
-

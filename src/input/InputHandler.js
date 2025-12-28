@@ -36,11 +36,11 @@ export class InputHandler {
 
     // Enable raw mode to capture individual keypresses
     readline.emitKeypressEvents(process.stdin);
-    
+
     if (process.stdin.isTTY) {
       process.stdin.setRawMode(true);
     }
-    
+
     process.stdin.resume();
     process.stdin.setEncoding('utf8');
 
@@ -125,7 +125,7 @@ export class InputHandler {
     // Handle character keys
     if (str && typeof str === 'string') {
       const lowerStr = str.toLowerCase();
-      
+
       switch (lowerStr) {
         case 'w':
           if (this.callbacks.onMoveUp) {
@@ -172,4 +172,3 @@ export class InputHandler {
     }
   }
 }
-

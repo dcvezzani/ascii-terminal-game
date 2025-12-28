@@ -9,6 +9,7 @@ This gameplan addresses the bug where the help screen is not cleared properly af
 ## Goal
 
 Implement a mechanism where:
+
 1. When help is displayed, any key press (except quit) returns to the game
 2. Help screen is properly cleared
 3. Game board is redrawn after help is dismissed
@@ -32,6 +33,7 @@ Implement a mechanism where:
 - [x] Initialize to `false` in main function
 
 **Verification**:
+
 - [x] Variable declared and initialized
 - [x] Variable accessible in all callback functions
 
@@ -47,6 +49,7 @@ Implement a mechanism where:
 - [x] If `true`: Set `showingHelp = false` and call `renderer.renderFull(game)`
 
 **Verification**:
+
 - [x] Help toggles on/off with H or ? key (implemented)
 - [x] Game redraws when help is closed (renderFull called)
 - [x] Game state preserved when returning from help (no reset called)
@@ -78,6 +81,7 @@ Implement a mechanism where:
 - [x] If false: Execute normal movement logic
 
 **Verification**:
+
 - [x] Any movement key closes help and returns to game (implemented)
 - [x] Player doesn't move when closing help (early return)
 - [x] Game board redraws correctly (renderFull called)
@@ -90,6 +94,7 @@ Implement a mechanism where:
 - [x] If false: Execute normal restart logic
 
 **Verification**:
+
 - [x] R key closes help if displayed, then restarts (implemented)
 - [x] Restart works correctly when help is not displayed (no change to existing logic)
 
@@ -100,6 +105,7 @@ Implement a mechanism where:
 - [x] No changes needed if quit already works correctly
 
 **Verification**:
+
 - [x] Q/ESC quits game even when help is displayed (no changes needed - quit works regardless)
 - [x] Cleanup happens correctly (existing cleanup logic sufficient)
 
@@ -118,6 +124,7 @@ Implement a mechanism where:
 - [x] Verify game state preserved when returning from help
 
 **Verification**:
+
 - [x] All scenarios work correctly
 - [x] No visual artifacts
 - [x] Game state preserved
@@ -129,6 +136,7 @@ Implement a mechanism where:
 - [x] Verify all existing tests still pass
 
 **Verification**:
+
 - [x] All 271 tests still pass (tests don't need updates - help functionality is integration-level)
 - [x] No test failures introduced (existing tests unaffected)
 
@@ -144,6 +152,7 @@ Implement a mechanism where:
 - [x] Add any notes about the fix
 
 **Verification**:
+
 - [x] Bug card updated
 - [x] Solution documented
 
@@ -153,6 +162,7 @@ Implement a mechanism where:
 - [x] Include reference to bug card
 
 **Verification**:
+
 - [x] Changes committed
 - [x] Commit message clear and descriptive
 
@@ -201,4 +211,3 @@ Implement a mechanism where:
 - ✅ **Phase 3: Update Input Callbacks** - COMPLETE
 - ✅ **Phase 4: Testing** - COMPLETE
 - ✅ **Phase 5: Documentation and Cleanup** - COMPLETE
-

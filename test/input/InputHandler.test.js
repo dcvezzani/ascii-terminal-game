@@ -46,7 +46,7 @@ describe('InputHandler', () => {
 
     mockCreateInterface.mockReturnValue(mockRl);
     mockClose.mockClear();
-    
+
     // Replace process.stdin for testing
     Object.defineProperty(process, 'stdin', {
       value: mockStdin,
@@ -309,17 +309,17 @@ describe('InputHandler', () => {
       const onMoveDown = vi.fn();
       const onMoveLeft = vi.fn();
       const onMoveRight = vi.fn();
-      
+
       inputHandler.callbacks.onMoveUp = onMoveUp;
       inputHandler.callbacks.onMoveDown = onMoveDown;
       inputHandler.callbacks.onMoveLeft = onMoveLeft;
       inputHandler.callbacks.onMoveRight = onMoveRight;
-      
+
       inputHandler.handleKeypress('W', {});
       inputHandler.handleKeypress('S', {});
       inputHandler.handleKeypress('A', {});
       inputHandler.handleKeypress('D', {});
-      
+
       expect(onMoveUp).toHaveBeenCalled();
       expect(onMoveDown).toHaveBeenCalled();
       expect(onMoveLeft).toHaveBeenCalled();
@@ -375,11 +375,11 @@ describe('InputHandler', () => {
     test('Handles all quit methods correctly', () => {
       const onQuit = vi.fn();
       inputHandler.callbacks.onQuit = onQuit;
-      
+
       inputHandler.handleKeypress('q', {});
       inputHandler.handleKeypress('', { name: 'escape' });
       inputHandler.handleKeypress('', { ctrl: true, name: 'c' });
-      
+
       expect(onQuit).toHaveBeenCalledTimes(3);
     });
   });
@@ -479,11 +479,11 @@ describe('InputHandler', () => {
     test('Handles multiple rapid keypresses', () => {
       const onMoveUp = vi.fn();
       inputHandler.callbacks.onMoveUp = onMoveUp;
-      
+
       inputHandler.handleKeypress('w', {});
       inputHandler.handleKeypress('w', {});
       inputHandler.handleKeypress('w', {});
-      
+
       expect(onMoveUp).toHaveBeenCalledTimes(3);
     });
 
@@ -503,7 +503,7 @@ describe('InputHandler', () => {
       inputHandler.stop();
       inputHandler.start();
       inputHandler.stop();
-      
+
       expect(mockCreateInterface).toHaveBeenCalledTimes(2);
       expect(mockClose).toHaveBeenCalledTimes(2);
     });
@@ -511,10 +511,10 @@ describe('InputHandler', () => {
     test('State is correct after start/stop cycle', () => {
       inputHandler = new InputHandler();
       expect(inputHandler.listening).toBe(false);
-      
+
       inputHandler.start();
       expect(inputHandler.listening).toBe(true);
-      
+
       inputHandler.stop();
       expect(inputHandler.listening).toBe(false);
       expect(inputHandler.rl).toBeNull();
@@ -524,10 +524,10 @@ describe('InputHandler', () => {
       inputHandler = new InputHandler();
       inputHandler.start();
       const listenerCount = mockStdin.on.mock.calls.length;
-      
+
       inputHandler.stop();
       expect(mockStdin.removeAllListeners).toHaveBeenCalledWith('keypress');
-      
+
       inputHandler.start();
       // Should be able to register new listeners
       expect(mockStdin.on).toHaveBeenCalledTimes(listenerCount + 1);
@@ -535,12 +535,12 @@ describe('InputHandler', () => {
 
     test('No memory leaks from event listeners', () => {
       inputHandler = new InputHandler();
-      
+
       for (let i = 0; i < 5; i++) {
         inputHandler.start();
         inputHandler.stop();
       }
-      
+
       // Each stop should clean up
       expect(mockStdin.removeAllListeners).toHaveBeenCalledTimes(5);
     });
@@ -557,27 +557,27 @@ describe('InputHandler', () => {
         onRestart: vi.fn(),
         onHelp: vi.fn(),
       };
-      
+
       inputHandler = new InputHandler(callbacks);
-      
+
       inputHandler.handleKeypress('w', {});
       expect(callbacks.onMoveUp).toHaveBeenCalledTimes(1);
-      
+
       inputHandler.handleKeypress('s', {});
       expect(callbacks.onMoveDown).toHaveBeenCalledTimes(1);
-      
+
       inputHandler.handleKeypress('a', {});
       expect(callbacks.onMoveLeft).toHaveBeenCalledTimes(1);
-      
+
       inputHandler.handleKeypress('d', {});
       expect(callbacks.onMoveRight).toHaveBeenCalledTimes(1);
-      
+
       inputHandler.handleKeypress('q', {});
       expect(callbacks.onQuit).toHaveBeenCalledTimes(1);
-      
+
       inputHandler.handleKeypress('r', {});
       expect(callbacks.onRestart).toHaveBeenCalledTimes(1);
-      
+
       inputHandler.handleKeypress('h', {});
       expect(callbacks.onHelp).toHaveBeenCalledTimes(1);
     });
@@ -585,9 +585,9 @@ describe('InputHandler', () => {
     test('Callbacks receive no arguments', () => {
       const onMoveUp = vi.fn();
       inputHandler = new InputHandler({ onMoveUp });
-      
+
       inputHandler.handleKeypress('w', {});
-      
+
       expect(onMoveUp).toHaveBeenCalledWith();
     });
 
@@ -595,11 +595,11 @@ describe('InputHandler', () => {
       const onMoveUp = vi.fn();
       const onMoveRight = vi.fn();
       inputHandler = new InputHandler({ onMoveUp, onMoveRight });
-      
+
       inputHandler.handleKeypress('w', {});
       inputHandler.handleKeypress('d', {});
       inputHandler.handleKeypress('w', {});
-      
+
       expect(onMoveUp).toHaveBeenCalledTimes(2);
       expect(onMoveRight).toHaveBeenCalledTimes(1);
     });
@@ -607,11 +607,11 @@ describe('InputHandler', () => {
     test('Callbacks work correctly after restart', () => {
       const onMoveUp = vi.fn();
       inputHandler = new InputHandler({ onMoveUp });
-      
+
       inputHandler.start();
       inputHandler.handleKeypress('w', {});
       expect(onMoveUp).toHaveBeenCalledTimes(1);
-      
+
       inputHandler.stop();
       inputHandler.start();
       inputHandler.handleKeypress('w', {});
@@ -619,4 +619,3 @@ describe('InputHandler', () => {
     });
   });
 });
-

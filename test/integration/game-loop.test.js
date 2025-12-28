@@ -61,7 +61,7 @@ describe('Game Loop Integration', () => {
     test('Shows error if terminal too small (rows)', () => {
       process.stdout.rows = 20;
       process.stdout.columns = 80;
-      
+
       const result = validateTerminalSize(25, 30);
       expect(result.valid).toBe(false);
       expect(result.message).toContain('too small');
@@ -71,7 +71,7 @@ describe('Game Loop Integration', () => {
     test('Shows error if terminal too small (columns)', () => {
       process.stdout.rows = 30;
       process.stdout.columns = 20;
-      
+
       const result = validateTerminalSize(25, 30);
       expect(result.valid).toBe(false);
       expect(result.message).toContain('too small');
@@ -80,7 +80,7 @@ describe('Game Loop Integration', () => {
     test('Continues if terminal size is valid', () => {
       process.stdout.rows = 30;
       process.stdout.columns = 80;
-      
+
       const result = validateTerminalSize(25, 30);
       expect(result.valid).toBe(true);
       expect(result.rows).toBe(30);
@@ -90,15 +90,15 @@ describe('Game Loop Integration', () => {
     test('Uses correct minimum size (25x30)', () => {
       process.stdout.rows = 24;
       process.stdout.columns = 80;
-      
+
       const result = validateTerminalSize(25, 30);
       expect(result.valid).toBe(false);
-      
+
       process.stdout.rows = 25;
       process.stdout.columns = 29;
       const result2 = validateTerminalSize(25, 30);
       expect(result2.valid).toBe(false);
-      
+
       process.stdout.rows = 25;
       process.stdout.columns = 30;
       const result3 = validateTerminalSize(25, 30);
@@ -140,13 +140,7 @@ describe('Game Loop Integration', () => {
           const oldPos = game.getPlayerPosition();
           if (game.movePlayer(0, -1)) {
             const newPos = game.getPlayerPosition();
-            renderer.updatePlayerPosition(
-              oldPos.x,
-              oldPos.y,
-              newPos.x,
-              newPos.y,
-              game.board
-            );
+            renderer.updatePlayerPosition(oldPos.x, oldPos.y, newPos.x, newPos.y, game.board);
           }
         },
       });
@@ -163,10 +157,10 @@ describe('Game Loop Integration', () => {
     test('Initial render happens', () => {
       const game = new Game();
       const renderer = new Renderer();
-      
+
       renderer.initialize();
       renderer.renderFull(game);
-      
+
       expect(mockWrite).toHaveBeenCalled();
     });
   });
@@ -177,21 +171,15 @@ describe('Game Loop Integration', () => {
       const renderer = new Renderer();
       const center = getCenterPosition();
       const oldPos = game.getPlayerPosition();
-      
+
       const moved = game.movePlayer(1, 0);
       expect(moved).toBe(true);
-      
+
       const newPos = game.getPlayerPosition();
       expect(newPos.x).toBe(center.x + 1);
-      
-      renderer.updatePlayerPosition(
-        oldPos.x,
-        oldPos.y,
-        newPos.x,
-        newPos.y,
-        game.board
-      );
-      
+
+      renderer.updatePlayerPosition(oldPos.x, oldPos.y, newPos.x, newPos.y, game.board);
+
       expect(mockWrite).toHaveBeenCalled();
     });
 
@@ -199,7 +187,7 @@ describe('Game Loop Integration', () => {
       const game = new Game();
       game.start();
       expect(game.isRunning()).toBe(true);
-      
+
       game.stop();
       expect(game.isRunning()).toBe(false);
     });
@@ -207,19 +195,19 @@ describe('Game Loop Integration', () => {
     test('Restart control works', () => {
       const game = new Game();
       const renderer = new Renderer();
-      
+
       // Move player
       const center = getCenterPosition();
       game.movePlayer(5, 5);
       const pos1 = game.getPlayerPosition();
       expect(pos1).not.toEqual({ x: center.x, y: center.y });
-      
+
       // Reset
       game.reset();
       const pos2 = game.getPlayerPosition();
       expect(pos2).toEqual({ x: center.x, y: center.y });
       expect(game.getScore()).toBe(0);
-      
+
       // Re-render
       renderer.renderFull(game);
       expect(mockWrite).toHaveBeenCalled();
@@ -228,7 +216,7 @@ describe('Game Loop Integration', () => {
     test('Help control works', () => {
       const renderer = new Renderer();
       renderer.renderHelp();
-      
+
       expect(mockWrite).toHaveBeenCalled();
       const allCalls = mockWrite.mock.calls.map(call => String(call[0])).join('');
       expect(allCalls).toContain('Terminal Game - Help');
@@ -240,7 +228,7 @@ describe('Game Loop Integration', () => {
       const inputHandler = new InputHandler();
       inputHandler.start();
       expect(inputHandler.listening).toBe(true);
-      
+
       inputHandler.stop();
       expect(inputHandler.listening).toBe(false);
       expect(inputHandler.rl).toBeNull();
@@ -250,17 +238,17 @@ describe('Game Loop Integration', () => {
       const renderer = new Renderer();
       renderer.initialize();
       renderer.cleanup();
-      
+
       expect(mockWrite).toHaveBeenCalled();
     });
 
     test('Terminal state restored', () => {
       const renderer = new Renderer();
       renderer.initialize();
-      
+
       mockWrite.mockClear();
       renderer.cleanup();
-      
+
       // Should clear screen and restore cursor
       expect(mockWrite).toHaveBeenCalled();
     });
@@ -270,7 +258,7 @@ describe('Game Loop Integration', () => {
     test('Handles errors gracefully', () => {
       // Test that components handle errors
       const game = new Game();
-      
+
       // Invalid movement should return false, not throw
       const result = game.movePlayer(100, 100);
       expect(result).toBe(false);
@@ -280,14 +268,14 @@ describe('Game Loop Integration', () => {
     test('Components can be cleaned up even if errors occur', () => {
       const renderer = new Renderer();
       const inputHandler = new InputHandler();
-      
+
       inputHandler.start();
       renderer.initialize();
-      
+
       // Cleanup should work even if there were errors
       inputHandler.stop();
       renderer.cleanup();
-      
+
       expect(inputHandler.listening).toBe(false);
     });
   });
@@ -296,22 +284,16 @@ describe('Game Loop Integration', () => {
     test('Game state stays consistent during movement', () => {
       const game = new Game();
       const renderer = new Renderer();
-      
+
       const initialPos = game.getPlayerPosition();
-      
+
       // Simulate movement
       const oldPos = game.getPlayerPosition();
       game.movePlayer(1, 0);
       const newPos = game.getPlayerPosition();
-      
-      renderer.updatePlayerPosition(
-        oldPos.x,
-        oldPos.y,
-        newPos.x,
-        newPos.y,
-        game.board
-      );
-      
+
+      renderer.updatePlayerPosition(oldPos.x, oldPos.y, newPos.x, newPos.y, game.board);
+
       // State should be consistent
       expect(newPos.x).toBe(initialPos.x + 1);
       expect(newPos.y).toBe(initialPos.y);
@@ -320,27 +302,26 @@ describe('Game Loop Integration', () => {
     test('Multiple movements work correctly', () => {
       const game = new Game();
       const renderer = new Renderer();
-      
+
       let position = game.getPlayerPosition();
-      
+
       // Multiple movements
       const center = getCenterPosition();
       game.movePlayer(1, 0);
       position = game.getPlayerPosition();
       expect(position).toEqual({ x: center.x + 1, y: center.y });
-      
+
       game.movePlayer(0, 1);
       position = game.getPlayerPosition();
       expect(position).toEqual({ x: center.x + 1, y: center.y + 1 });
-      
+
       game.movePlayer(-1, 0);
       position = game.getPlayerPosition();
       expect(position).toEqual({ x: center.x, y: center.y + 1 });
-      
+
       game.movePlayer(0, -1);
       position = game.getPlayerPosition();
       expect(position).toEqual({ x: center.x, y: center.y });
     });
   });
 });
-

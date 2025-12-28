@@ -87,4 +87,3 @@ export class Game {
     this.running = false;
   }
 }
-

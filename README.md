@@ -11,12 +11,14 @@ A simple terminal-based game built with Node.js where the player can move a char
 The game uses IBM Code Page 437 (CP437) characters to display authentic ZZT-style graphics. Without a CP437-compatible font, characters will not display correctly.
 
 **Recommended Fonts**:
+
 - **Perfect DOS VGA** - Best match for ZZT aesthetic
 - **IBM VGA** - Original IBM CP437 font
 - **Terminus** - Modern CP437-compatible font
 - **Unifont** - Unicode font with CP437 support
 
 **How to Configure**:
+
 1. Download and install a CP437-compatible font (TTF format)
 2. Configure your terminal to use the font:
    - **iTerm2**: Preferences → Profiles → Text → Change Font
@@ -26,6 +28,7 @@ The game uses IBM Code Page 437 (CP437) characters to display authentic ZZT-styl
 
 **Verification**:
 Run this command to test CP437 character display:
+
 ```bash
 node -e "process.stdout.write(Buffer.from([1, 219, 178, 177]))"
 ```
@@ -45,6 +48,7 @@ If these characters don't display correctly, verify your terminal font is set to
 1. **Clone or download this repository**
 
 2. **Install dependencies**:
+
    ```bash
    npm install
    ```
@@ -58,6 +62,7 @@ npm start
 ```
 
 Or directly:
+
 ```bash
 node src/index.js
 ```
@@ -74,7 +79,7 @@ node src/index.js
 ### Game Board
 
 - **Size**: Fixed 40x20 grid
-- **Layout**: 
+- **Layout**:
   - Blank interior (empty spaces)
   - Outer walls forming a perimeter border
   - Player starts at center position
@@ -89,6 +94,7 @@ node src/index.js
 ### Status Bar
 
 Shows:
+
 - Score: Current score
 - Position: Current (x, y) coordinates
 - Instructions: Control hints
@@ -96,10 +102,12 @@ Shows:
 ## Controls
 
 ### Movement
+
 - **Arrow Keys**: ↑ ↓ ← → (up, down, left, right)
 - **WASD Keys**: W (up), S (down), A (left), D (right)
 
 ### Game Actions
+
 - **Quit/Exit**: Q or ESC
 - **Restart**: R
 - **Help**: H or ?
@@ -107,6 +115,7 @@ Shows:
 ## Technical Stack
 
 ### Technology
+
 - **Runtime**: Node.js
 - **Language**: JavaScript (ES Modules)
 - **Testing**: Vitest
@@ -115,11 +124,13 @@ Shows:
 ### Libraries
 
 **Dependencies**:
+
 - `ansi-escapes` - Cursor positioning and screen control
 - `chalk` - Terminal colors and styling
 - `cli-cursor` - Hide/show terminal cursor
 
 **Dev Dependencies**:
+
 - `vitest` - Testing framework
 
 ### Rendering Strategy
@@ -209,4 +220,3 @@ npm run test:watch
 ## License
 
 ISC
-

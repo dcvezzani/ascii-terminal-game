@@ -1,6 +1,6 @@
 /**
  * Game constants - centralized character and symbol definitions
- * 
+ *
  * Uses Unicode hex values that map to PxPlus IBM EGA 8x14 font glyphs.
  * See src/config/unicode-mappings.json for the full mapping.
  */
@@ -33,27 +33,27 @@ const glyphCache = new Map();
 export function toGlyph(hexString, color = null) {
   // Remove any leading "U+" or "0x" prefix if present
   const cleanHex = hexString.replace(/^[Uu]\+?|^0[xX]/, '');
-  
+
   // Create cache key from unicode hex and color
   const cacheKey = `${cleanHex}|${color}`;
-  
+
   // Check cache first
   if (glyphCache.has(cacheKey)) {
     return glyphCache.get(cacheKey);
   }
-  
+
   // Parse hex string to code point
   const codePoint = parseInt(cleanHex, 16);
-  
+
   // Convert code point to Unicode character
   const char = String.fromCodePoint(codePoint);
-  
+
   // Create new Glyph instance
   const glyph = new Glyph(char, cleanHex, color);
-  
+
   // Cache it for future use
   glyphCache.set(cacheKey, glyph);
-  
+
   // Return Glyph instance
   return glyph;
 }
@@ -68,10 +68,10 @@ export function toColorHexValue(color) {
   if (!color || typeof color !== 'string') {
     return fontColorMappings.WHITE;
   }
-  
+
   // Transform to uppercase for lookup
   const upperColor = color.toUpperCase();
-  
+
   // Look up in font color mappings, default to white if not found
   return fontColorMappings[upperColor] || fontColorMappings.WHITE;
 }
@@ -88,24 +88,24 @@ export function toZZTCharacterGlyph(characterName, color = null) {
   if (!characterName || typeof characterName !== 'string') {
     return null;
   }
-  
+
   // Transform to uppercase for lookup (game-character-mappings.json uses uppercase keys)
   const upperName = characterName.toUpperCase();
-  
+
   // Look up ZZT character name in game-character-mappings.json
   const unicodeLabel = gameCharacterMappings[upperName];
-  
+
   if (!unicodeLabel) {
     return null;
   }
-  
+
   // Look up Unicode label in unicode-mappings.json (fontSet)
   const unicodeHex = fontSet[unicodeLabel];
-  
+
   if (!unicodeHex) {
     return null;
   }
-  
+
   // Use toGlyph to create and return the Glyph instance
   return toGlyph(unicodeHex, color);
 }
@@ -126,5 +126,4 @@ export const WALL_CHAR = toGlyph(fontSet.NUMBER_SIGN, toColorHexValue('gray'));
  * Character representing the player
  * Unicode: U+263A (WHITE SMILING FACE)
  */
-export const PLAYER_CHAR = toZZTCharacterGlyph("ruffian", toColorHexValue('white'));
-
+export const PLAYER_CHAR = toZZTCharacterGlyph('ruffian', toColorHexValue('white'));

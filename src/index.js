@@ -48,13 +48,7 @@ async function main() {
           const oldPos = game.getPlayerPosition();
           if (game.movePlayer(0, -1)) {
             const newPos = game.getPlayerPosition();
-            renderer.updatePlayerPosition(
-              oldPos.x,
-              oldPos.y,
-              newPos.x,
-              newPos.y,
-              game.board
-            );
+            renderer.updatePlayerPosition(oldPos.x, oldPos.y, newPos.x, newPos.y, game.board);
           }
         }
       },
@@ -71,13 +65,7 @@ async function main() {
           const oldPos = game.getPlayerPosition();
           if (game.movePlayer(0, 1)) {
             const newPos = game.getPlayerPosition();
-            renderer.updatePlayerPosition(
-              oldPos.x,
-              oldPos.y,
-              newPos.x,
-              newPos.y,
-              game.board
-            );
+            renderer.updatePlayerPosition(oldPos.x, oldPos.y, newPos.x, newPos.y, game.board);
           }
         }
       },
@@ -94,13 +82,7 @@ async function main() {
           const oldPos = game.getPlayerPosition();
           if (game.movePlayer(-1, 0)) {
             const newPos = game.getPlayerPosition();
-            renderer.updatePlayerPosition(
-              oldPos.x,
-              oldPos.y,
-              newPos.x,
-              newPos.y,
-              game.board
-            );
+            renderer.updatePlayerPosition(oldPos.x, oldPos.y, newPos.x, newPos.y, game.board);
           }
         }
       },
@@ -117,13 +99,7 @@ async function main() {
           const oldPos = game.getPlayerPosition();
           if (game.movePlayer(1, 0)) {
             const newPos = game.getPlayerPosition();
-            renderer.updatePlayerPosition(
-              oldPos.x,
-              oldPos.y,
-              newPos.x,
-              newPos.y,
-              game.board
-            );
+            renderer.updatePlayerPosition(oldPos.x, oldPos.y, newPos.x, newPos.y, game.board);
           }
         }
       },
@@ -184,7 +160,6 @@ async function main() {
       // Small delay to prevent CPU spinning
       await new Promise(resolve => setTimeout(resolve, 10));
     }
-
   } catch (error) {
     // Step 8.3: Error Handling
     console.error('\nAn error occurred:', error.message);
@@ -220,4 +195,3 @@ main().catch(error => {
   console.error('Fatal error:', error);
   process.exit(1);
 });
-

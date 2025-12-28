@@ -2,10 +2,10 @@
 
 /**
  * Script to generate unicode-mappings.json from unicode-mappings.txt
- * 
+ *
  * Reads the tab-separated text file and converts it to JSON format:
  * { "LABEL": "unicode_hex", ... }
- * 
+ *
  * Labels are converted to UPPER_SNAKE_CASE from descriptions.
  */
 
@@ -29,9 +29,9 @@ const jsonFile = path.join(projectRoot, 'src/config/unicode-mappings.json');
 function descriptionToLabel(description) {
   return description
     .toUpperCase()
-    .replace(/[^A-Z0-9]+/g, '_')  // Replace non-alphanumeric with underscore
-    .replace(/^_+|_+$/g, '')        // Remove leading/trailing underscores
-    .replace(/_+/g, '_');           // Collapse multiple underscores
+    .replace(/[^A-Z0-9]+/g, '_') // Replace non-alphanumeric with underscore
+    .replace(/^_+|_+$/g, '') // Remove leading/trailing underscores
+    .replace(/_+/g, '_'); // Collapse multiple underscores
 }
 
 /**
@@ -39,7 +39,7 @@ function descriptionToLabel(description) {
  */
 function generateJson() {
   console.log('Reading unicode-mappings.txt...');
-  
+
   if (!fs.existsSync(textFile)) {
     console.error(`Error: File not found: ${textFile}`);
     process.exit(1);
@@ -50,7 +50,7 @@ function generateJson() {
   // Keep all lines including empty ones for line number tracking
   const allLines = content.split(/\r?\n/);
   const lines = allLines;
-  
+
   const mappings = {};
   const duplicateLabels = new Map();
   let lineNumber = 0;
@@ -59,7 +59,7 @@ function generateJson() {
   for (const line of lines) {
     lineNumber++;
     const trimmed = line.trim();
-    
+
     // Skip empty lines
     if (!trimmed) {
       continue;
@@ -67,7 +67,7 @@ function generateJson() {
 
     // Parse tab-separated values
     const parts = trimmed.split('\t');
-    
+
     if (parts.length < 2) {
       console.warn(`Warning: Line ${lineNumber} has invalid format, skipping`);
       skipped++;
@@ -92,7 +92,9 @@ function generateJson() {
         duplicateLabels.set(label, [mappings[label]]);
       }
       duplicateLabels.get(label).push(unicodeHex);
-      console.warn(`Warning: Duplicate label "${label}" at line ${lineNumber}. Using first occurrence.`);
+      console.warn(
+        `Warning: Duplicate label "${label}" at line ${lineNumber}. Using first occurrence.`
+      );
     } else {
       mappings[label] = unicodeHex;
     }
@@ -120,7 +122,7 @@ function generateJson() {
   // Write JSON file
   const jsonContent = JSON.stringify(mappings, null, 2);
   fs.writeFileSync(jsonFile, jsonContent, 'utf-8');
-  
+
   console.log(`\n✓ Generated: ${jsonFile}`);
   console.log(`  File size: ${jsonContent.length} bytes`);
 }
@@ -133,4 +135,3 @@ try {
   console.error('\n✗ Error:', error.message);
   process.exit(1);
 }
-
