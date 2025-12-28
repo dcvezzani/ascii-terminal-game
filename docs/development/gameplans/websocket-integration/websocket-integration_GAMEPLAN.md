@@ -374,38 +374,39 @@ const wss = new WebSocketServer({
 
 ### Step 5.1: Implement State Update Broadcasting
 
-- [ ] Update `src/server/GameServer.js`
-- [ ] Implement periodic state broadcasting:
+- [x] Update `src/server/index.js`
+- [x] Implement periodic state broadcasting:
   - Use setInterval with configured update interval (250ms)
   - Get current game state
   - Create STATE_UPDATE message
   - Broadcast to all connected clients
-- [ ] Implement immediate state updates:
+- [x] Implement immediate state updates:
   - Broadcast on player join
   - Broadcast on player leave
-  - Broadcast on player move (if not using periodic updates)
+  - Broadcast on player name change
 - [ ] Optimize state updates:
-  - Only send changed data if possible
-  - Compress large state objects if needed
+  - Only send changed data if possible (future enhancement)
+  - Compress large state objects if needed (future enhancement)
 
 **Verification**:
 
-- [ ] State updates are broadcast at configured interval
-- [ ] All connected clients receive updates
-- [ ] State updates include all player positions
-- [ ] State updates include board state
+- [x] State updates are broadcast at configured interval
+- [x] All connected clients receive updates
+- [x] State updates include all player positions
+- [x] State updates include board state
 
 ### Step 5.2: Implement Action Validation
 
-- [ ] Update `src/server/GameServer.js`
-- [ ] Implement comprehensive validation for MOVE actions:
+- [x] Update `src/server/index.js`
+- [x] Implement comprehensive validation for MOVE actions:
   - Validate action type
   - Validate required fields (playerId, dx, dy)
   - Validate player exists
   - Validate game rules (can't move into walls, can't move outside bounds)
   - Validate player permissions
-- [ ] Return structured error messages on validation failure
-- [ ] Apply action only if validation passes
+  - Validate game is running
+- [x] Return structured error messages on validation failure
+- [x] Apply action only if validation passes
 
 **Validation Checks**:
 
@@ -418,33 +419,33 @@ const wss = new WebSocketServer({
 
 **Verification**:
 
-- [ ] Invalid actions are rejected
-- [ ] Error messages are sent to client
-- [ ] Valid actions are applied
-- [ ] Game state remains consistent
+- [x] Invalid actions are rejected
+- [x] Error messages are sent to client
+- [x] Valid actions are applied
+- [x] Game state remains consistent
 
 ### Step 5.3: Implement Player Management
 
-- [ ] Update `src/server/GameServer.js`
-- [ ] Implement player addition:
+- [x] Update `src/server/index.js`
+- [x] Implement player addition:
   - Assign starting position (center or random)
   - Create player object with playerId, playerName, clientId
   - Add to players array
   - Broadcast PLAYER_JOINED message
-- [ ] Implement player removal:
+- [x] Implement player removal:
   - Remove from players array
   - Broadcast PLAYER_LEFT message
   - Clean up player resources
-- [ ] Implement player name setting:
+- [x] Implement player name setting:
   - Update player name
   - Broadcast name change to other clients
 
 **Verification**:
 
-- [ ] Players can be added to game
-- [ ] Players can be removed from game
-- [ ] Player names can be set
-- [ ] Other clients are notified of player changes
+- [x] Players can be added to game
+- [x] Players can be removed from game
+- [x] Player names can be set
+- [x] Other clients are notified of player changes
 
 ---
 
