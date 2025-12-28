@@ -51,8 +51,8 @@ export class GameServer {
     }
 
     // Use provided position or default to center
-    const startX = x !== null ? x : gameConfig.player.initialX;
-    const startY = y !== null ? y : gameConfig.player.initialY;
+    let startX = x !== null ? x : gameConfig.player.initialX;
+    let startY = y !== null ? y : gameConfig.player.initialY;
 
     // Validate position
     if (
@@ -68,6 +68,9 @@ export class GameServer {
       ) {
         return false;
       }
+      // Use center position as fallback
+      startX = centerX;
+      startY = centerY;
     }
 
     const player = {

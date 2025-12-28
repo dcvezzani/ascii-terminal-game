@@ -190,13 +190,13 @@ export const serverConfig = {
 
 ### Step 3.1: Create Server Entry Point
 
-- [ ] Create `src/server/index.js`
-- [ ] Import WebSocketServer from 'ws'
-- [ ] Import serverConfig
-- [ ] Create WebSocket server instance
-- [ ] Start server on configured port and host
-- [ ] Handle server startup errors
-- [ ] Implement graceful shutdown (SIGINT, SIGTERM)
+- [x] Create `src/server/index.js`
+- [x] Import WebSocketServer from 'ws'
+- [x] Import serverConfig
+- [x] Create WebSocket server instance
+- [x] Start server on configured port and host
+- [x] Handle server startup errors
+- [x] Implement graceful shutdown (SIGINT, SIGTERM)
 
 **Server Setup**:
 
@@ -212,26 +212,26 @@ const wss = new WebSocketServer({
 
 **Verification**:
 
-- [ ] `src/server/index.js` file created
-- [ ] Server starts successfully
-- [ ] Server listens on configured port
-- [ ] Server handles shutdown gracefully
-- [ ] Can be run as standalone: `node src/server/index.js`
+- [x] `src/server/index.js` file created
+- [x] Server starts successfully
+- [x] Server listens on configured port
+- [x] Server handles shutdown gracefully
+- [x] Can be run as standalone: `node src/server/index.js`
 
 ### Step 3.2: Create Connection Manager
 
-- [ ] Create `src/server/ConnectionManager.js`
-- [ ] Implement connection tracking:
+- [x] Create `src/server/ConnectionManager.js`
+- [x] Implement connection tracking:
   - Store active connections (Map or object)
   - Generate unique client IDs using UUID v4
   - Track connection metadata (connectedAt, lastActivity, playerId, playerName)
-- [ ] Implement connection methods:
+- [x] Implement connection methods:
   - `addConnection(ws)` - Add new connection, return client ID
   - `removeConnection(clientId)` - Remove connection
   - `getConnection(clientId)` - Get connection by ID
   - `getAllConnections()` - Get all active connections
   - `updateActivity(clientId)` - Update last activity timestamp
-- [ ] Implement player management:
+- [x] Implement player management:
   - `setPlayerId(clientId, playerId)` - Set player ID for connection
   - `setPlayerName(clientId, playerName)` - Set player name
   - `getPlayerInfo(clientId)` - Get player info
@@ -251,21 +251,21 @@ const wss = new WebSocketServer({
 
 **Verification**:
 
-- [ ] `ConnectionManager.js` file created
-- [ ] Can add connections
-- [ ] Can remove connections
-- [ ] Can retrieve connections by ID
-- [ ] Client IDs are UUID v4 format
-- [ ] Player info can be set and retrieved
+- [x] `ConnectionManager.js` file created
+- [x] Can add connections
+- [x] Can remove connections
+- [x] Can retrieve connections by ID
+- [x] Client IDs are UUID v4 format
+- [x] Player info can be set and retrieved
 
 ### Step 3.3: Create Game Server
 
-- [ ] Create `src/server/GameServer.js`
-- [ ] Implement server-side game state:
+- [x] Create `src/server/GameServer.js`
+- [x] Implement server-side game state:
   - Maintain single Game instance
   - Track all player positions (separate from client connections)
   - Map player IDs to positions
-- [ ] Implement game state methods:
+- [x] Implement game state methods:
   - `getGameState()` - Get current game state
   - `addPlayer(playerId, playerName, x, y)` - Add player to game
   - `removePlayer(playerId)` - Remove player from game
@@ -297,13 +297,13 @@ const wss = new WebSocketServer({
 
 **Verification**:
 
-- [ ] `GameServer.js` file created
-- [ ] Can create game instance
-- [ ] Can add players to game
-- [ ] Can remove players from game
-- [ ] Can move players (with validation)
-- [ ] Can get game state
-- [ ] Can broadcast state updates
+- [x] `GameServer.js` file created
+- [x] Can create game instance
+- [x] Can add players to game
+- [x] Can remove players from game
+- [x] Can move players (with validation)
+- [x] Can get game state
+- [ ] Can broadcast state updates (deferred to Phase 4)
 
 ---
 
