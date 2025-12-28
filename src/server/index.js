@@ -293,9 +293,9 @@ function handleConnectMessage(ws, clientId, payload) {
     })
   );
 
-  // Send updated game state
-  const stateMessage = createStateUpdateMessage(gameServer.getGameState(), clientId);
-  sendMessage(ws, stateMessage);
+  // Broadcast immediate state update to all clients
+  const stateMessage = createStateUpdateMessage(gameServer.getGameState());
+  broadcastMessage(stateMessage);
 }
 
 /**
