@@ -61,8 +61,10 @@ export class Renderer {
    * @param {Board} board - Board instance
    * @param {number} playerX - Player X position
    * @param {number} playerY - Player Y position
+   * @param {Array} [players] - Optional array of all players for multiplayer mode
+   * @param {string} [localPlayerId] - Optional local player ID to highlight
    */
-  renderBoard(board, playerX, playerY) {
+  renderBoard(board, playerX, playerY, players = null, localPlayerId = null) {
     const boardStartX = getHorizontalCenter(this.boardWidth);
 
     for (let y = 0; y < this.boardHeight; y++) {
@@ -71,8 +73,17 @@ export class Renderer {
       for (let x = 0; x < this.boardWidth; x++) {
         let glyph;
 
-        if (x === playerX && y === playerY) {
-          // Player position
+        // Check if any player is at this position
+        let playerAtPosition = null;
+        if (players && Array.isArray(players)) {
+          playerAtPosition = players.find(p => p.x === x && p.y === y);
+        }
+
+        if (playerAtPosition) {
+          // Player position (use local player position if no players array provided)
+          glyph = PLAYER_CHAR;
+        } else if (x === playerX && y === playerY && !players) {
+          // Single player mode - use provided position
           glyph = PLAYER_CHAR;
         } else {
           const cell = board.getCell(x, y);
