@@ -23,6 +23,12 @@ export class WebSocketClient {
     this.playerId = null;
     this.playerName = null;
 
+    // Reconnection state
+    this.reconnecting = false;
+    this.reconnectAttempts = 0;
+    this.reconnectTimer = null;
+    this.manualDisconnect = false;
+
     // Callbacks
     this.callbacks = {
       onConnect: null,
@@ -31,6 +37,8 @@ export class WebSocketClient {
       onError: null,
       onPlayerJoined: null,
       onPlayerLeft: null,
+      onReconnecting: null,
+      onReconnected: null,
     };
   }
 
@@ -49,6 +57,7 @@ export class WebSocketClient {
 
         this.ws.on('open', () => {
           this.connected = true;
+          this.manualDisconnect = false; // Reset on successful connection
           if (this.callbacks.onConnect) {
             this.callbacks.onConnect();
           }
@@ -61,8 +70,19 @@ export class WebSocketClient {
 
         this.ws.on('close', () => {
           this.connected = false;
-          if (this.callbacks.onDisconnect) {
-            this.callbacks.onDisconnect();
+          this.ws = null;
+
+          // Attempt reconnection if enabled and not manually disconnected
+          if (
+            !this.manualDisconnect &&
+            serverConfig.reconnection.enabled &&
+            this.reconnectAttempts < serverConfig.reconnection.maxAttempts
+          ) {
+            this.attemptReconnect();
+          } else {
+            if (this.callbacks.onDisconnect) {
+              this.callbacks.onDisconnect();
+            }
           }
         });
 
@@ -82,14 +102,72 @@ export class WebSocketClient {
    * Disconnect from the WebSocket server
    */
   disconnect() {
+    this.manualDisconnect = true;
+    this.reconnecting = false;
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
     if (this.ws) {
       this.ws.close();
       this.ws = null;
     }
     this.connected = false;
-    this.clientId = null;
-    this.playerId = null;
-    this.playerName = null;
+    this.reconnectAttempts = 0;
+    // Don't clear clientId, playerId, playerName on manual disconnect
+    // They may be needed for reconnection
+  }
+
+  /**
+   * Attempt to reconnect to the server with exponential backoff
+   */
+  async attemptReconnect() {
+    if (this.reconnecting) {
+      return;
+    }
+
+    this.reconnecting = true;
+    this.reconnectAttempts++;
+
+    if (this.callbacks.onReconnecting) {
+      this.callbacks.onReconnecting(this.reconnectAttempts);
+    }
+
+    // Calculate delay with exponential backoff
+    const baseDelay = serverConfig.reconnection.retryDelay;
+    const delay = Math.min(baseDelay * Math.pow(2, this.reconnectAttempts - 1), 30000); // Max 30 seconds
+
+    this.reconnectTimer = setTimeout(async () => {
+      try {
+        await this.connect();
+        // On successful reconnect, send player ID if we have one
+        if (this.playerId) {
+          this.sendConnect(this.playerName, this.playerId);
+        }
+        this.reconnecting = false;
+        this.reconnectAttempts = 0;
+        if (this.callbacks.onReconnected) {
+          this.callbacks.onReconnected();
+        }
+      } catch (error) {
+        this.reconnecting = false;
+        // Will trigger another reconnect attempt if maxAttempts not reached
+        if (this.reconnectAttempts < serverConfig.reconnection.maxAttempts) {
+          this.attemptReconnect();
+        } else {
+          // Max attempts reached
+          if (this.callbacks.onError) {
+            this.callbacks.onError({
+              code: 'RECONNECTION_FAILED',
+              message: `Failed to reconnect after ${this.reconnectAttempts} attempts`,
+            });
+          }
+          if (this.callbacks.onDisconnect) {
+            this.callbacks.onDisconnect();
+          }
+        }
+      }
+    }, delay);
   }
 
   /**
@@ -112,6 +190,12 @@ export class WebSocketClient {
     switch (type) {
       case MessageTypes.CONNECT:
         this.clientId = payload.clientId;
+        // If we have a playerId, this is a reconnection
+        if (this.playerId && payload.playerId === this.playerId) {
+          // Reconnection successful - player state restored
+          this.reconnecting = false;
+          this.reconnectAttempts = 0;
+        }
         if (payload.gameState) {
           if (this.callbacks.onStateUpdate) {
             this.callbacks.onStateUpdate(payload.gameState);
@@ -126,6 +210,13 @@ export class WebSocketClient {
         break;
 
       case MessageTypes.PLAYER_JOINED:
+        // Store player ID if this is our player
+        if (payload.clientId === this.clientId) {
+          this.playerId = payload.playerId;
+          if (payload.playerName) {
+            this.playerName = payload.playerName;
+          }
+        }
         if (this.callbacks.onPlayerJoined) {
           this.callbacks.onPlayerJoined(payload);
         }
@@ -272,6 +363,22 @@ export class WebSocketClient {
    */
   onPlayerLeft(callback) {
     this.callbacks.onPlayerLeft = callback;
+  }
+
+  /**
+   * Set callback for reconnecting event
+   * @param {Function} callback - Callback function (receives attempt number)
+   */
+  onReconnecting(callback) {
+    this.callbacks.onReconnecting = callback;
+  }
+
+  /**
+   * Set callback for reconnected event
+   * @param {Function} callback - Callback function
+   */
+  onReconnected(callback) {
+    this.callbacks.onReconnected = callback;
   }
 
   /**
