@@ -35,13 +35,13 @@ This gameplan implements WebSocket support for the terminal game application, en
 
 ### Step 1.1: Install Dependencies
 
-- [ ] Install WebSocket library:
+- [x] Install WebSocket library:
 
   ```bash
   npm install ws
   ```
 
-- [ ] Install UUID library for client ID generation:
+- [x] Install UUID library for client ID generation:
   ```bash
   npm install uuid
   ```
