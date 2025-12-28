@@ -311,62 +311,62 @@ const wss = new WebSocketServer({
 
 ### Step 4.1: Integrate Connection Manager with Server
 
-- [ ] Update `src/server/index.js`
-- [ ] Import ConnectionManager
-- [ ] Create ConnectionManager instance
-- [ ] Handle 'connection' event:
+- [x] Update `src/server/index.js`
+- [x] Import ConnectionManager
+- [x] Create ConnectionManager instance
+- [x] Handle 'connection' event:
   - Create new connection via ConnectionManager
   - Assign client ID
   - Send CONNECT message with initial game state
   - Set up message handlers
   - Set up disconnect handler
-- [ ] Handle 'close' event:
+- [x] Handle 'close' event:
   - Remove connection from ConnectionManager
   - Remove player from game
   - Broadcast player left to other clients
 
 **Verification**:
 
-- [ ] Server accepts new connections
-- [ ] Clients receive unique client IDs
-- [ ] Clients receive initial game state on connect
-- [ ] Connections are tracked correctly
-- [ ] Disconnections are handled and cleaned up
+- [x] Server accepts new connections
+- [x] Clients receive unique client IDs
+- [x] Clients receive initial game state on connect
+- [x] Connections are tracked correctly
+- [x] Disconnections are handled and cleaned up
 
 ### Step 4.2: Implement Message Routing
 
-- [ ] Update `src/server/index.js`
-- [ ] Import MessageHandler and MessageTypes
-- [ ] Route incoming messages based on type:
+- [x] Update `src/server/index.js`
+- [x] Import MessageHandler and MessageTypes
+- [x] Route incoming messages based on type:
   - `CONNECT` → Handle player connection
   - `DISCONNECT` → Handle player disconnection
   - `MOVE` → Handle player movement
   - `SET_PLAYER_NAME` → Handle player name setting
   - `PING` → Respond with PONG
-- [ ] Call appropriate GameServer methods
-- [ ] Send responses/acknowledgments
+- [x] Call appropriate GameServer methods
+- [x] Send responses/acknowledgments
 
 **Verification**:
 
-- [ ] Messages are parsed correctly
-- [ ] Messages are routed to correct handlers
-- [ ] Invalid messages return error responses
-- [ ] All message types are handled
+- [x] Messages are parsed correctly
+- [x] Messages are routed to correct handlers
+- [x] Invalid messages return error responses
+- [x] All message types are handled
 
 ### Step 4.3: Implement WebSocket Built-in Ping/Pong
 
-- [ ] Configure WebSocket server to use built-in ping/pong
-- [ ] Set ping interval (if configurable)
-- [ ] Handle pong responses
-- [ ] Detect dead connections (no pong response)
-- [ ] Clean up dead connections
+- [x] Configure WebSocket server to use built-in ping/pong
+- [x] Set ping interval (if configurable)
+- [x] Handle pong responses
+- [x] Detect dead connections (no pong response)
+- [x] Clean up dead connections
 
 **Verification**:
 
-- [ ] Ping/pong frames are sent/received
-- [ ] Dead connections are detected
-- [ ] Dead connections are cleaned up
-- [ ] Connection health is maintained
+- [x] Ping/pong frames are sent/received
+- [x] Dead connections are detected
+- [x] Dead connections are cleaned up
+- [x] Connection health is maintained
 
 ---
 
