@@ -19,6 +19,8 @@ import { randomUUID } from 'crypto';
 let wss = null;
 let connectionManager = null;
 let gameServer = null;
+let pingInterval = null;
+let stateUpdateInterval = null;
 
 /**
  * Start the WebSocket server
@@ -65,7 +67,7 @@ export async function startServer() {
       });
 
       // Ping clients periodically
-      const pingInterval = setInterval(() => {
+      pingInterval = setInterval(() => {
         wss.clients.forEach(ws => {
           if (ws.isAlive === false) {
             return ws.terminate();
@@ -76,7 +78,7 @@ export async function startServer() {
       }, 30000); // Ping every 30 seconds
 
       // Broadcast state updates periodically
-      const stateUpdateInterval = setInterval(() => {
+      stateUpdateInterval = setInterval(() => {
         if (gameServer.getPlayerCount() > 0) {
           const stateMessage = createStateUpdateMessage(gameServer.getGameState());
           broadcastMessage(stateMessage);
@@ -85,8 +87,14 @@ export async function startServer() {
 
       // Clean up intervals on server close
       wss.on('close', () => {
-        clearInterval(pingInterval);
-        clearInterval(stateUpdateInterval);
+        if (pingInterval) {
+          clearInterval(pingInterval);
+          pingInterval = null;
+        }
+        if (stateUpdateInterval) {
+          clearInterval(stateUpdateInterval);
+          stateUpdateInterval = null;
+        }
       });
     } catch (error) {
       console.error('Failed to start WebSocket server:', error);
@@ -105,6 +113,16 @@ export async function stopServer() {
   }
 
   return new Promise((resolve, reject) => {
+    // Clear intervals first
+    if (pingInterval) {
+      clearInterval(pingInterval);
+      pingInterval = null;
+    }
+    if (stateUpdateInterval) {
+      clearInterval(stateUpdateInterval);
+      stateUpdateInterval = null;
+    }
+
     // Close all connections
     wss.clients.forEach(ws => {
       ws.close();

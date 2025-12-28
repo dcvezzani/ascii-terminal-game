@@ -1,27 +1,8 @@
-import { describe, test, expect, beforeEach, afterEach } from 'vitest';
-import { startServer, stopServer } from '../../src/server/index.js';
+import { describe, test, expect } from 'vitest';
 import WebSocket from 'ws';
 
 describe('Action Validation', () => {
-  beforeEach(async () => {
-    try {
-      await stopServer();
-    } catch (error) {
-      // Ignore errors
-    }
-  });
-
-  afterEach(async () => {
-    try {
-      await stopServer();
-    } catch (error) {
-      // Ignore errors
-    }
-  });
-
   test('should reject MOVE with invalid dx/dy values (out of range)', async () => {
-    await startServer();
-
     return new Promise((resolve, reject) => {
       const ws = new WebSocket('ws://localhost:3000');
       let connected = false;
@@ -69,8 +50,6 @@ describe('Action Validation', () => {
   });
 
   test('should reject MOVE with non-numeric dx/dy', async () => {
-    await startServer();
-
     return new Promise((resolve, reject) => {
       const ws = new WebSocket('ws://localhost:3000');
       let connected = false;
@@ -118,8 +97,6 @@ describe('Action Validation', () => {
   });
 
   test('should reject MOVE when player not connected', async () => {
-    await startServer();
-
     return new Promise((resolve, reject) => {
       const ws = new WebSocket('ws://localhost:3000');
       let connected = false;

@@ -1,29 +1,8 @@
-import { describe, test, expect, beforeEach, afterEach } from 'vitest';
-import { startServer, stopServer } from '../../src/server/index.js';
+import { describe, test, expect } from 'vitest';
 import WebSocket from 'ws';
 
 describe('Server Integration', () => {
-  beforeEach(async () => {
-    // Ensure server is stopped before each test
-    try {
-      await stopServer();
-    } catch (error) {
-      // Ignore errors if server wasn't running
-    }
-  });
-
-  afterEach(async () => {
-    // Clean up after each test
-    try {
-      await stopServer();
-    } catch (error) {
-      // Ignore errors
-    }
-  });
-
   test('should accept new connections', async () => {
-    await startServer();
-
     return new Promise((resolve, reject) => {
       const ws = new WebSocket('ws://localhost:3000');
 
@@ -43,8 +22,6 @@ describe('Server Integration', () => {
   });
 
   test('should send CONNECT message with client ID and game state', async () => {
-    await startServer();
-
     return new Promise((resolve, reject) => {
       const ws = new WebSocket('ws://localhost:3000');
       let messageReceived = false;
@@ -76,8 +53,6 @@ describe('Server Integration', () => {
   });
 
   test('should handle MOVE message', async () => {
-    await startServer();
-
     return new Promise((resolve, reject) => {
       const ws = new WebSocket('ws://localhost:3000');
       let connected = false;
@@ -87,21 +62,31 @@ describe('Server Integration', () => {
         const message = JSON.parse(data.toString());
         if (message.type === 'CONNECT') {
           connected = true;
-          // Send MOVE message
+          // Send CONNECT to join as player first
           ws.send(
             JSON.stringify({
-              type: 'MOVE',
-              payload: { dx: 1, dy: 0 },
+              type: 'CONNECT',
+              payload: { playerName: 'TestPlayer' },
             })
           );
         } else if (message.type === 'STATE_UPDATE') {
-          // State update received after move
-          moveProcessed = true;
-          ws.close();
-          resolve();
+          // Player joined, now send MOVE message
+          if (!moveProcessed) {
+            ws.send(
+              JSON.stringify({
+                type: 'MOVE',
+                payload: { dx: 1, dy: 0 },
+              })
+            );
+            moveProcessed = true;
+            // Wait for next state update
+          } else {
+            // Second state update after move
+            ws.close();
+            resolve();
+          }
         } else if (message.type === 'ERROR') {
-          // Move might fail if player not added yet, that's okay
-          moveProcessed = true;
+          // Move might fail, that's okay for this test
           ws.close();
           resolve();
         }
@@ -122,8 +107,6 @@ describe('Server Integration', () => {
   });
 
   test('should handle PING message with PONG response', async () => {
-    await startServer();
-
     return new Promise((resolve, reject) => {
       const ws = new WebSocket('ws://localhost:3000');
       let pongReceived = false;
@@ -158,8 +141,6 @@ describe('Server Integration', () => {
   });
 
   test('should handle disconnect and cleanup', async () => {
-    await startServer();
-
     return new Promise((resolve, reject) => {
       const ws = new WebSocket('ws://localhost:3000');
 
