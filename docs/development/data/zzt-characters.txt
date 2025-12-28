@@ -1,0 +1,220 @@
+### Items
+Player
+#char 2 ☻ (0x02)
+
+Ammo
+#char 132 ä (0x84)
+
+Torch
+#char 157 ¥ (0x9D)
+
+Gem
+#char 4 ♦ (0x04)
+
+Key
+#char 12 ♀ (0x0C)
+
+Door
+#char 10 ◙ (0x0A)
+
+Scroll
+#char 232 Φ (0xE8)
+
+Passage
+#char 240 ≡ (0xF0)
+
+Duplicator
+this item is animated by rotating through a series of glyphs
+1	#char 250 · (0xFA)
+2	#char 249 ∙ (0xF9)
+3	#char 248 ° (0xF8)
+4	#char 111 o (0x6F)
+5	#char  79 O (0x4F)
+Default	#char 250 · (0xFA)
+
+Bomb
+this item is animated by rotating through a series of glyphs
+#char  	11 ♂ (0x0B)
+#char  	49 0 (0x30)
+#char  	50 1 (0x31)
+#char  	51 2 (0x32)
+...
+#char  	58 2 (0x39)
+
+Energizer
+#char 47 / (0x2F)
+
+Conveyors - Clockwise and Counter-clockwise
+this item is animated by rotating through a series of glyphs and colors
+#char 179 │ (0xB3)	0	3
+#char  47 / (0x2F)	1	2
+#char 196 ─ (0xC4)	2	1
+#char  92 \ (0x5C)	3	0
+
+### Creatures
+Bear
+#char 153 Ö (0x99)
+
+Ruffian
+#char 5 ♣ (0x05)
+
+Object
+can use any glyph
+default #char 1 ☺ (0x01)
+
+Slime
+#char 42 * (0x2A)
+
+Shark
+#char 94 ^ (0x5E)
+has a background color
+
+Spinning Gun
+this item is animated by rotating through a series of glyphs
+#char 24 ↑ (0x18) 
+#char 25   (0x19) 
+#char 26   (0x1A) 
+#char 27 ← (0x1B)
+
+Pusher
+#char 16 ► (0x10)
+#char 17 ◄ (0x11)
+#char 30 ▲ (0x1E)
+#char 31 ▼ (0x1F)
+
+Lion
+#char 234 Ω (0xEA)
+
+Tiger
+#char 227 π (0xE3)
+
+Bullet
+#char 248 ° (0xF8)
+
+Star
+#char 83 S (0x53)
+#char 179 │ (0xB3)
+#char 47 / (0x2F)
+#char 196 ─ (0xC4)
+#char 92 \ (0x5C)
+
+Centipede; a centipede consists of one head and 0 or more segments
+
+Centipede Head
+#char 233 ϴ (0xE9)
+
+Centipede Segment
+#char 79 O (0x4F)
+
+### Terrain
+Empty
+#char 32  (0x20)
+
+Water
+should always be blue on light gray
+#char 176 ░ (0xB0)
+
+Forest
+should always be green in color
+#char 176 ░ (0xB0)
+
+Walls - Solid
+#char 219 █ (0xDB)
+
+Walls - Normal
+#char 178 ▓ (0xB2)
+
+Linewalls
+depending on the shape of the walls, different glyphs should be used
+                    E W S N
+#char 249 ∙ (0xF9)	N	N	N	N
+#char 208 ╨ (0xD0)	N	N	N	Y
+#char 210 ╥ (0xD2)	N	N	Y	N
+#char 186 ║ (0xBA)	N	N	Y	Y
+#char 181 ╡ (0xB5)	N	Y	N	N
+#char 188 ╝ (0xBC)	N	Y	N	Y
+#char 187 ╗ (0xBB)	N	Y	Y	N
+#char 185 ╣ (0xB9)	N	Y	Y	Y
+#char 198 ╞ (0xC6)	Y	N	N	N
+#char 200 ╚ (0xC8)	Y	N	N	Y
+#char 201 ╔ (0xC9)	Y	N	Y	N
+#char 204 ╠ (0xCC)	Y	N	Y	Y
+#char 205 ═ (0xCD)	Y	Y	N	N
+#char 202 ╩ (0xCA)	Y	Y	N	Y
+#char 203 ╦ (0xCB)	Y	Y	Y	N
+#char 206 ╬ (0xCE)	Y	Y	Y	Y
+
+Walls- Breakable
+#char 177 ▒ (0xB1)
+
+Boulder
+#char 254 ■ (0xFE)
+
+Sliders - Sliderns and Sliderew
+ns; vertical
+#char 18 ↕ (0x12)
+ew; horizontal
+#char 29 ↔ (0x1D)
+
+Walls - Fake
+#char 178 ▓ (0xB2)
+
+Walls - Invisible
+when rendered in a game, use
+#char 32  (0x20)
+when rendered in an editor, use
+#char 176 ░ (0xB0)
+
+Walls - Blinkwall (Blinkwall Rays - Horizontal and Vertical)
+this item is animated by "blinking" on/off, alternating between being visible and hidden
+#char 205 ═ (0xCD)
+#char 186 ║ (0xBA)
+when veritical and horizontal walls intersect, this glyph should be used
+#char 206 ╬ (0xCE)
+
+Transporter
+this item is animated by rotating through a series of glyphs
+
+north facing
+#char 94 ^ (0x5E)	
+#char 126 ~ (0x7E)	
+#char 94 ^ (0x5E)	
+#char 45 - (0x2D)	
+
+south facing
+#char 118 v (0x76)	
+#char 95 _ (0x5F)	
+#char 118 v (0x76)	
+#char 45 - (0x2D)	
+
+east facing
+#char 40 ( (0x28)	
+#char 60 < (0x3C)	
+#char 40 ( (0x28)	
+#char 179 │ (0xB3)	
+
+west facing
+#char 41 ) (0x29)
+#char 62 > (0x3E)
+#char 41 ) (0x29)
+#char 179 │ (0xB3)
+
+Ricochet
+#char 42 * (0x2A)
+
+Text
+should have a foreground and background color
+
+### Special Elements
+Board Edge
+#char 32  (0x20)
+
+Messenger/Message Timer
+should have a foreground and background color
+text is usually rendered on in this region
+#char 32  (0x20)
+
+Monitor
+#char 32  (0x20)
+
+Element 46

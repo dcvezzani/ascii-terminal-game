@@ -6,7 +6,7 @@
  */
 
 import unicodeMappings from '../config/unicode-mappings.json' with { type: 'json' };
-import fontColorMappings from '../config/font-color.json' with { type: 'json' };
+import fontColorMappings from '../config/font-color-mappings.json' with { type: 'json' };
 
 import { Glyph } from '../game/Glyph.js';
 
