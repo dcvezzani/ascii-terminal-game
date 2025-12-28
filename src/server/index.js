@@ -349,6 +349,18 @@ function handleMoveMessage(ws, clientId, payload) {
     return;
   }
 
+  // Validate game is running
+  if (!gameServer.getGameState().running) {
+    const errorMessage = createErrorMessage(
+      'GAME_NOT_RUNNING',
+      'Game is not running',
+      { action: 'MOVE', playerId: connection.playerId },
+      clientId
+    );
+    sendMessage(ws, errorMessage);
+    return;
+  }
+
   const moved = gameServer.movePlayer(connection.playerId, dx, dy);
   if (!moved) {
     const errorMessage = createErrorMessage(
@@ -402,7 +414,9 @@ function handleSetPlayerNameMessage(ws, clientId, payload) {
     player.playerName = playerName;
   }
 
-  // Broadcast name change (state update will include new name)
+  // Broadcast immediate state update with name change
+  const stateMessage = createStateUpdateMessage(gameServer.getGameState());
+  broadcastMessage(stateMessage);
 }
 
 /**
@@ -441,6 +455,10 @@ function handleDisconnect(clientId) {
       );
     }
     gameServer.removePlayer(connection.playerId);
+
+    // Broadcast immediate state update after player removal
+    const stateMessage = createStateUpdateMessage(gameServer.getGameState());
+    broadcastMessage(stateMessage);
   }
 
   // Remove connection
