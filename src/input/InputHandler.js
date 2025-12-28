@@ -91,67 +91,42 @@ export class InputHandler {
       return;
     }
 
-    // Handle escape sequence (arrow keys)
-    if (key && key.name) {
-      switch (key.name) {
+    // Get readable string from key input or character string
+    const keyNameOrSequence = (key && (key.name || key.sequence)) || str;
+
+    if (keyNameOrSequence) {
+      const keyString = String(keyNameOrSequence).toLowerCase();
+      switch (keyString) {
+        case 'w':
         case 'up':
           if (this.callbacks.onMoveUp) {
             this.callbacks.onMoveUp();
           }
           return;
+        case 's':
         case 'down':
           if (this.callbacks.onMoveDown) {
             this.callbacks.onMoveDown();
           }
           return;
-        case 'left':
-          if (this.callbacks.onMoveLeft) {
-            this.callbacks.onMoveLeft();
-          }
-          return;
+        case 'd':
         case 'right':
           if (this.callbacks.onMoveRight) {
             this.callbacks.onMoveRight();
           }
           return;
+        case 'a':
+        case 'left':
+          if (this.callbacks.onMoveLeft) {
+            this.callbacks.onMoveLeft();
+          }
+          return;
+        case 'q':
         case 'escape':
           if (this.callbacks.onQuit) {
             this.callbacks.onQuit();
           }
           return;
-      }
-    }
-
-    // Handle character keys
-    if (str && typeof str === 'string') {
-      const lowerStr = str.toLowerCase();
-
-      switch (lowerStr) {
-        case 'w':
-          if (this.callbacks.onMoveUp) {
-            this.callbacks.onMoveUp();
-          }
-          break;
-        case 's':
-          if (this.callbacks.onMoveDown) {
-            this.callbacks.onMoveDown();
-          }
-          break;
-        case 'a':
-          if (this.callbacks.onMoveLeft) {
-            this.callbacks.onMoveLeft();
-          }
-          break;
-        case 'd':
-          if (this.callbacks.onMoveRight) {
-            this.callbacks.onMoveRight();
-          }
-          break;
-        case 'q':
-          if (this.callbacks.onQuit) {
-            this.callbacks.onQuit();
-          }
-          return; // Return immediately to prevent any further processing
         case 'r':
           if (this.callbacks.onRestart) {
             this.callbacks.onRestart();
