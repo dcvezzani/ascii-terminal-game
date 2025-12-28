@@ -453,20 +453,20 @@ const wss = new WebSocketServer({
 
 ### Step 6.1: Create WebSocket Client Wrapper
 
-- [ ] Create `src/network/WebSocketClient.js`
-- [ ] Implement client connection:
+- [x] Create `src/network/WebSocketClient.js`
+- [x] Implement client connection:
   - Connect to WebSocket server
   - Handle connection events
   - Store connection state
-- [ ] Implement message sending:
+- [x] Implement message sending:
   - `sendMessage(message)` - Send message to server
   - `sendMove(dx, dy)` - Send movement action
   - `sendSetPlayerName(name)` - Send player name
-- [ ] Implement message receiving:
+- [x] Implement message receiving:
   - Handle incoming messages
   - Parse messages
   - Call appropriate callbacks
-- [ ] Implement callbacks:
+- [x] Implement callbacks:
   - `onConnect` - Called when connected
   - `onDisconnect` - Called when disconnected
   - `onStateUpdate` - Called when state update received
@@ -476,25 +476,25 @@ const wss = new WebSocketServer({
 
 **Verification**:
 
-- [ ] `WebSocketClient.js` file created
-- [ ] Can connect to server
-- [ ] Can send messages
-- [ ] Can receive messages
-- [ ] Callbacks are called correctly
+- [x] `WebSocketClient.js` file created
+- [x] Can connect to server
+- [x] Can send messages
+- [x] Can receive messages
+- [x] Callbacks are called correctly
 
 ### Step 6.2: Modify Client Entry Point for Networked Mode
 
-- [ ] Update `src/index.js`
-- [ ] Add mode detection (local vs networked):
+- [x] Update `src/index.js`
+- [x] Add mode detection (local vs networked):
   - Check `serverConfig.websocket.enabled`
   - Branch logic based on mode
-- [ ] Implement networked mode:
+- [x] Implement networked mode:
   - Create WebSocketClient instance
   - Connect to server
   - Send input actions to server
   - Receive state updates from server
   - Render state updates
-- [ ] Maintain local mode:
+- [x] Maintain local mode:
   - Keep existing single-player logic
   - No breaking changes
 
@@ -508,32 +508,32 @@ const wss = new WebSocketServer({
 
 **Verification**:
 
-- [ ] Local mode still works (no breaking changes)
-- [ ] Networked mode can be enabled via config
-- [ ] Client connects to server in networked mode
-- [ ] Client receives and renders state updates
-- [ ] Client sends actions to server
+- [x] Local mode still works (no breaking changes)
+- [x] Networked mode can be enabled via config
+- [x] Client connects to server in networked mode
+- [x] Client receives and renders state updates
+- [x] Client sends actions to server
 
 ### Step 6.3: Integrate Input with Networked Mode
 
-- [ ] Update input callbacks in networked mode
-- [ ] Instead of directly updating game state:
+- [x] Update input callbacks in networked mode
+- [x] Instead of directly updating game state:
   - Send MOVE message to server
   - Wait for state update from server
   - Render updated state
 - [ ] Handle player name input:
   - Allow player to set name on connect
-  - Send SET_PLAYER_NAME message
+  - Send SET_PLAYER_NAME message (basic support added, UI enhancement deferred)
 - [ ] Handle reconnection:
   - Attempt to reconnect on disconnect
-  - Restore player state if reconnection succeeds
+  - Restore player state if reconnection succeeds (deferred to Phase 7)
 
 **Verification**:
 
-- [ ] Input actions are sent to server
-- [ ] State updates trigger rendering
-- [ ] Player names can be set
-- [ ] Reconnection works correctly
+- [x] Input actions are sent to server
+- [x] State updates trigger rendering
+- [ ] Player names can be set (basic support added)
+- [ ] Reconnection works correctly (deferred to Phase 7)
 
 ---
 
