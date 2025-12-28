@@ -75,9 +75,18 @@ export async function startServer() {
         });
       }, 30000); // Ping every 30 seconds
 
-      // Clean up interval on server close
+      // Broadcast state updates periodically
+      const stateUpdateInterval = setInterval(() => {
+        if (gameServer.getPlayerCount() > 0) {
+          const stateMessage = createStateUpdateMessage(gameServer.getGameState());
+          broadcastMessage(stateMessage);
+        }
+      }, serverConfig.websocket.updateInterval);
+
+      // Clean up intervals on server close
       wss.on('close', () => {
         clearInterval(pingInterval);
+        clearInterval(stateUpdateInterval);
       });
     } catch (error) {
       console.error('Failed to start WebSocket server:', error);
