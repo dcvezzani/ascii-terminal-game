@@ -121,14 +121,42 @@ export class Renderer {
   /**
    * Render complete game state (initial render)
    * @param {Game} game - Game instance
+   * @param {object} [networkState] - Optional network game state for multiplayer mode
+   * @param {string} [localPlayerId] - Optional local player ID for multiplayer mode
    */
-  renderFull(game) {
+  renderFull(game, networkState = null, localPlayerId = null) {
     this.clearScreen();
     this.renderTitle();
 
-    const position = game.getPlayerPosition();
-    this.renderBoard(game.board, position.x, position.y);
-    this.renderStatusBar(game.getScore(), position.x, position.y);
+    if (networkState) {
+      // Networked mode - render from server state
+      const board = {
+        width: networkState.board.width,
+        height: networkState.board.height,
+        grid: networkState.board.grid,
+        getCell: (x, y) => {
+          if (
+            y >= 0 &&
+            y < networkState.board.grid.length &&
+            x >= 0 &&
+            x < networkState.board.grid[y].length
+          ) {
+            return networkState.board.grid[y][x];
+          }
+          return null;
+        },
+      };
+      const localPlayer = networkState.players.find(p => p.playerId === localPlayerId);
+      const playerX = localPlayer ? localPlayer.x : 0;
+      const playerY = localPlayer ? localPlayer.y : 0;
+      this.renderBoard(board, playerX, playerY, networkState.players, localPlayerId);
+      this.renderStatusBar(networkState.score || 0, playerX, playerY);
+    } else {
+      // Local mode - render from game instance
+      const position = game.getPlayerPosition();
+      this.renderBoard(game.board, position.x, position.y);
+      this.renderStatusBar(game.getScore(), position.x, position.y);
+    }
 
     // Move cursor out of the way
     process.stdout.write(ansiEscapes.cursorTo(0, this.statusBarOffset + 2));
