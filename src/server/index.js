@@ -263,35 +263,75 @@ function routeMessage(ws, clientId, message) {
  * @param {object} payload - Message payload
  */
 function handleConnectMessage(ws, clientId, payload) {
-  // Generate player ID if not provided
-  const playerId = payload.playerId || randomUUID();
-  const playerName = payload.playerName || `Player-${playerId.slice(0, 8)}`;
+  const existingPlayerId = payload.playerId;
+  const isReconnection = existingPlayerId && gameServer.hasPlayer(existingPlayerId);
 
-  // Set player info in connection manager
-  connectionManager.setPlayerId(clientId, playerId);
-  connectionManager.setPlayerName(clientId, playerName);
+  let playerId;
+  let playerName;
 
-  // Add player to game
-  const added = gameServer.addPlayer(playerId, playerName, clientId);
-  if (!added) {
-    const errorMessage = createErrorMessage(
-      'PLAYER_ADD_FAILED',
-      'Failed to add player to game',
-      { action: 'CONNECT', playerId },
-      clientId
-    );
-    sendMessage(ws, errorMessage);
-    return;
+  if (isReconnection) {
+    // Reconnection: restore existing player
+    playerId = existingPlayerId;
+    const existingPlayer = gameServer.getPlayer(playerId);
+    playerName =
+      payload.playerName || existingPlayer?.playerName || `Player-${playerId.slice(0, 8)}`;
+
+    // Update connection mapping (new clientId, same playerId)
+    connectionManager.setPlayerId(clientId, playerId);
+    connectionManager.setPlayerName(clientId, playerName);
+
+    // Update player's clientId in game server
+    if (existingPlayer) {
+      existingPlayer.clientId = clientId;
+      existingPlayer.playerName = playerName;
+    }
+
+    console.log(`Player reconnected: ${playerId} (client: ${clientId})`);
+  } else {
+    // New connection: create new player
+    playerId = randomUUID();
+    playerName = payload.playerName || `Player-${playerId.slice(0, 8)}`;
+
+    // Set player info in connection manager
+    connectionManager.setPlayerId(clientId, playerId);
+    connectionManager.setPlayerName(clientId, playerName);
+
+    // Add player to game
+    const added = gameServer.addPlayer(playerId, playerName, clientId);
+    if (!added) {
+      const errorMessage = createErrorMessage(
+        'PLAYER_ADD_FAILED',
+        'Failed to add player to game',
+        { action: 'CONNECT', playerId },
+        clientId
+      );
+      sendMessage(ws, errorMessage);
+      return;
+    }
+
+    console.log(`Player joined: ${playerId} (client: ${clientId})`);
   }
 
-  // Broadcast player joined to all clients
-  broadcastMessage(
-    createMessage(MessageTypes.PLAYER_JOINED, {
-      playerId,
-      playerName,
-      clientId,
-    })
-  );
+  // Send CONNECT response with player info and game state
+  const connectResponse = createMessage(MessageTypes.CONNECT, {
+    clientId,
+    playerId,
+    playerName,
+    gameState: gameServer.getGameState(),
+    isReconnection,
+  });
+  sendMessage(ws, connectResponse);
+
+  if (!isReconnection) {
+    // Only broadcast PLAYER_JOINED for new players
+    broadcastMessage(
+      createMessage(MessageTypes.PLAYER_JOINED, {
+        playerId,
+        playerName,
+        clientId,
+      })
+    );
+  }
 
   // Broadcast immediate state update to all clients
   const stateMessage = createStateUpdateMessage(gameServer.getGameState());
