@@ -7,6 +7,7 @@
 
 import unicodeMappings from '../config/unicode-mappings.json' with { type: 'json' };
 import fontColorMappings from '../config/font-color-mappings.json' with { type: 'json' };
+import gameCharacterMappings from '../config/game-character-mappings.json' with { type: 'json' };
 
 import { Glyph } from '../game/Glyph.js';
 
@@ -76,6 +77,40 @@ export function toColorHexValue(color) {
 }
 
 /**
+ * Resolves a ZZT character name to its corresponding Glyph instance
+ * Uses game-character-mappings.json to map ZZT names to Unicode labels,
+ * then uses unicode-mappings.json to get the Unicode hex value
+ * @param {string} characterName - ZZT character name (e.g., "player", "PLAYER", "door", "gem")
+ * @param {string|null} color - Optional color for the glyph
+ * @returns {Glyph} A Glyph instance with the Unicode character, or null if character not found
+ */
+export function toZZTCharacterGlyph(characterName, color = null) {
+  if (!characterName || typeof characterName !== 'string') {
+    return null;
+  }
+  
+  // Transform to uppercase for lookup (game-character-mappings.json uses uppercase keys)
+  const upperName = characterName.toUpperCase();
+  
+  // Look up ZZT character name in game-character-mappings.json
+  const unicodeLabel = gameCharacterMappings[upperName];
+  
+  if (!unicodeLabel) {
+    return null;
+  }
+  
+  // Look up Unicode label in unicode-mappings.json (fontSet)
+  const unicodeHex = fontSet[unicodeLabel];
+  
+  if (!unicodeHex) {
+    return null;
+  }
+  
+  // Use toGlyph to create and return the Glyph instance
+  return toGlyph(unicodeHex, color);
+}
+
+/**
  * Character representing empty space on the board
  * Unicode: U+0020 (SPACE)
  */
@@ -91,5 +126,5 @@ export const WALL_CHAR = toGlyph(fontSet.NUMBER_SIGN, toColorHexValue('gray'));
  * Character representing the player
  * Unicode: U+263A (WHITE SMILING FACE)
  */
-export const PLAYER_CHAR = toGlyph(fontSet.SMILING_FACE, toColorHexValue('white'));
+export const PLAYER_CHAR = toZZTCharacterGlyph("ruffian", toColorHexValue('white'));
 
