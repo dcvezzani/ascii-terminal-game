@@ -31,7 +31,15 @@ describe('Action Validation', () => {
         const message = JSON.parse(data.toString());
         if (message.type === 'CONNECT') {
           connected = true;
-          // Send invalid move (dx = 2, which is invalid)
+          // Send CONNECT to join as player
+          ws.send(
+            JSON.stringify({
+              type: 'CONNECT',
+              payload: { playerName: 'TestPlayer' },
+            })
+          );
+        } else if (message.type === 'STATE_UPDATE') {
+          // Player joined, now send invalid move
           ws.send(
             JSON.stringify({
               type: 'MOVE',
@@ -72,7 +80,15 @@ describe('Action Validation', () => {
         const message = JSON.parse(data.toString());
         if (message.type === 'CONNECT') {
           connected = true;
-          // Send invalid move (dx is string)
+          // Send CONNECT to join as player
+          ws.send(
+            JSON.stringify({
+              type: 'CONNECT',
+              payload: { playerName: 'TestPlayer' },
+            })
+          );
+        } else if (message.type === 'STATE_UPDATE') {
+          // Player joined, now send invalid move
           ws.send(
             JSON.stringify({
               type: 'MOVE',
@@ -113,7 +129,7 @@ describe('Action Validation', () => {
         const message = JSON.parse(data.toString());
         if (message.type === 'CONNECT') {
           connected = true;
-          // Send MOVE without adding player first
+          // Send MOVE without joining as player first
           ws.send(
             JSON.stringify({
               type: 'MOVE',
@@ -123,11 +139,6 @@ describe('Action Validation', () => {
         } else if (message.type === 'ERROR' && message.payload.code === 'NOT_CONNECTED') {
           errorReceived = true;
           expect(message.payload.message).toContain('Player not connected');
-          ws.close();
-          resolve();
-        } else if (message.type === 'ERROR' && message.payload.code === 'MOVE_FAILED') {
-          // This might also happen if player was added but move failed
-          errorReceived = true;
           ws.close();
           resolve();
         }
