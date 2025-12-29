@@ -6,7 +6,9 @@
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",
+    "server": "node src/server/server.js",
     "test": "vitest run",
+    "test:debug": "vitest --reporter=hanging-process run",
     "test:watch": "vitest",
     "format": "prettier --write \"**/*.{js,json,md}\"",
     "format:check": "prettier --check \"**/*.{js,json,md}\"",

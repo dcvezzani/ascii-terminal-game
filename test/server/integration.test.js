@@ -1,21 +1,34 @@
-import { describe, test, expect } from 'vitest';
+import { describe, test, expect, beforeAll, afterAll } from 'vitest';
+import { ensureServerRunning, ensureServerStopped } from '../helpers/server.js';
 import WebSocket from 'ws';
 
 describe('Server Integration', () => {
+  beforeAll(async () => {
+    await ensureServerRunning();
+  });
+
+  afterAll(async () => {
+    await ensureServerStopped();
+  });
   test('should accept new connections', async () => {
     return new Promise((resolve, reject) => {
       const ws = new WebSocket('ws://localhost:3000');
+      let timeoutId;
 
       ws.on('open', () => {
+        clearTimeout(timeoutId);
         ws.close();
+        console.log('Connection accepted');
         resolve();
       });
 
       ws.on('error', error => {
+        clearTimeout(timeoutId);
         reject(error);
       });
 
-      setTimeout(() => {
+      timeoutId = setTimeout(() => {
+        ws.close();
         reject(new Error('Connection timeout'));
       }, 5000);
     });
@@ -57,6 +70,7 @@ describe('Server Integration', () => {
       const ws = new WebSocket('ws://localhost:3000');
       let connected = false;
       let moveProcessed = false;
+      let timeoutId;
 
       ws.on('message', data => {
         const message = JSON.parse(data.toString());
@@ -82,21 +96,25 @@ describe('Server Integration', () => {
             // Wait for next state update
           } else {
             // Second state update after move
+            clearTimeout(timeoutId);
             ws.close();
             resolve();
           }
         } else if (message.type === 'ERROR') {
           // Move might fail, that's okay for this test
+          clearTimeout(timeoutId);
           ws.close();
           resolve();
         }
       });
 
       ws.on('error', error => {
+        clearTimeout(timeoutId);
         reject(error);
       });
 
-      setTimeout(() => {
+      timeoutId = setTimeout(() => {
+        ws.close();
         if (!connected) {
           reject(new Error('Connection not established'));
         } else if (!moveProcessed) {
@@ -110,6 +128,7 @@ describe('Server Integration', () => {
     return new Promise((resolve, reject) => {
       const ws = new WebSocket('ws://localhost:3000');
       let pongReceived = false;
+      let timeoutId;
 
       ws.on('message', data => {
         const message = JSON.parse(data.toString());
@@ -123,16 +142,19 @@ describe('Server Integration', () => {
           );
         } else if (message.type === 'PONG') {
           pongReceived = true;
+          clearTimeout(timeoutId);
           ws.close();
           resolve();
         }
       });
 
       ws.on('error', error => {
+        clearTimeout(timeoutId);
         reject(error);
       });
 
-      setTimeout(() => {
+      timeoutId = setTimeout(() => {
+        ws.close();
         if (!pongReceived) {
           reject(new Error('PONG not received'));
         }
@@ -143,21 +165,28 @@ describe('Server Integration', () => {
   test('should handle disconnect and cleanup', async () => {
     return new Promise((resolve, reject) => {
       const ws = new WebSocket('ws://localhost:3000');
+      let timeoutId;
+      let cleanupTimeoutId;
 
       ws.on('open', () => {
         // Close connection immediately
         ws.close();
         // Give server time to clean up
-        setTimeout(() => {
+        cleanupTimeoutId = setTimeout(() => {
+          clearTimeout(timeoutId);
           resolve();
         }, 1000);
       });
 
       ws.on('error', error => {
+        clearTimeout(timeoutId);
+        clearTimeout(cleanupTimeoutId);
         reject(error);
       });
 
-      setTimeout(() => {
+      timeoutId = setTimeout(() => {
+        clearTimeout(cleanupTimeoutId);
+        ws.close();
         reject(new Error('Test timeout'));
       }, 5000);
     });

@@ -1,10 +1,18 @@
-import { describe, test, expect } from 'vitest';
+import { describe, test, expect, beforeAll, afterAll } from 'vitest';
+import { ensureServerRunning, ensureServerStopped } from '../helpers/server.js';
 import { serverConfig } from '../../src/config/serverConfig.js';
 import WebSocket from 'ws';
 
 describe('Server Entry Point', () => {
+  beforeAll(async () => {
+    await ensureServerRunning();
+  });
+
+  afterAll(async () => {
+    await ensureServerStopped();
+  });
+
   test('should have server running and accepting connections', async () => {
-    // Server is started in global setup, verify it accepts connections
     return new Promise((resolve, reject) => {
       const ws = new WebSocket('ws://localhost:3000');
 
@@ -24,7 +32,6 @@ describe('Server Entry Point', () => {
   });
 
   test('should have server listening on configured port', () => {
-    // Server is running from global setup
     expect(serverConfig.websocket.port).toBe(3000);
     expect(serverConfig.websocket.host).toBe('0.0.0.0');
   });

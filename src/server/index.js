@@ -41,6 +41,7 @@ export async function startServer() {
       wss = new WebSocketServer({
         port: serverConfig.websocket.port,
         host: serverConfig.websocket.host,
+        perMessageDeflate: false, // Disable compression for better test performance
       });
 
       wss.on('listening', () => {
@@ -113,7 +114,7 @@ export async function stopServer() {
   }
 
   return new Promise((resolve, reject) => {
-    // Clear intervals first
+    // Clear intervals first to prevent new operations
     if (pingInterval) {
       clearInterval(pingInterval);
       pingInterval = null;
@@ -123,23 +124,71 @@ export async function stopServer() {
       stateUpdateInterval = null;
     }
 
-    // Close all connections
-    wss.clients.forEach(ws => {
-      ws.close();
-    });
-
-    wss.close(error => {
-      if (error) {
-        console.error('Error closing WebSocket server:', error);
-        reject(error);
-      } else {
-        console.log('WebSocket server stopped');
-        wss = null;
-        connectionManager = null;
-        gameServer = null;
-        resolve();
+    // Terminate all connections forcefully
+    const clients = Array.from(wss.clients);
+    clients.forEach(ws => {
+      if (ws.readyState === ws.OPEN || ws.readyState === ws.CONNECTING) {
+        ws.terminate();
       }
     });
+
+    // Wait for all clients to close, then close the server
+    const checkClients = () => {
+      if (wss.clients.size === 0) {
+        // All clients closed, now close the server
+        wss.close(error => {
+          if (error) {
+            console.error('Error closing WebSocket server:', error);
+            reject(error);
+          } else {
+            console.log('WebSocket server stopped');
+            wss = null;
+            connectionManager = null;
+            gameServer = null;
+            resolve();
+          }
+        });
+      } else {
+        // Still have clients, wait a bit and check again
+        setTimeout(checkClients, 10);
+      }
+    };
+
+    // Start checking for client closure
+    // If no clients, close immediately
+    if (wss.clients.size === 0) {
+      wss.close(error => {
+        if (error) {
+          console.error('Error closing WebSocket server:', error);
+          reject(error);
+        } else {
+          console.log('WebSocket server stopped');
+          wss = null;
+          connectionManager = null;
+          gameServer = null;
+          resolve();
+        }
+      });
+    } else {
+      // Wait for clients to close (with timeout)
+      const timeout = setTimeout(() => {
+        // Force close even if clients haven't closed
+        wss.close(error => {
+          if (error) {
+            console.error('Error closing WebSocket server:', error);
+            reject(error);
+          } else {
+            console.log('WebSocket server stopped (forced)');
+            wss = null;
+            connectionManager = null;
+            gameServer = null;
+            resolve();
+          }
+        });
+      }, 1000);
+
+      checkClients();
+    }
   });
 }
 
