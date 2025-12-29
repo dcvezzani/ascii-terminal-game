@@ -391,7 +391,7 @@ Client: Receives STATE_UPDATE → Processes state → (Future) Client may emit l
 
 ## Status
 
-**Status**: ✅ COMPLETE
+**Status**: 📋 NOT STARTED
 
 **Priority**: MEDIUM-HIGH
 
