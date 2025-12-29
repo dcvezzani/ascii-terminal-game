@@ -193,6 +193,12 @@ docs/development/
    - Card status updated to COMPLETE in the card content
    - **Card file renamed with "X_" prefix** to visually indicate completion
    - Example: `FEATURE_navigation_menu.md` → `X_FEATURE_navigation_menu.md`
+   - **Gameplan directory renamed with "X_" prefix** to visually indicate completion
+   - Example: `docs/development/gameplans/event-system/` → `docs/development/gameplans/X_event-system/`
+
+**Note**: Cards and gameplans use different completion markers:
+- **Cards**: Rename the **file** with "X_" prefix (e.g., `FEATURE_name.md` → `X_FEATURE_name.md`)
+- **Gameplans**: Rename the **directory** with "X_" prefix (e.g., `gameplans/event-system/` → `gameplans/X_event-system/`)
 
 ---
 
@@ -726,8 +732,13 @@ During review:
 9. **Feature Complete**:
    - Update card status to COMPLETE in card content
    - **Rename card file with "X_" prefix** (e.g., `FEATURE_name.md` → `X_FEATURE_name.md`)
-   - Update gameplan progress
+   - **Rename gameplan directory with "X_" prefix** (e.g., `gameplans/event-system/` → `gameplans/X_event-system/`)
+   - Update gameplan progress to mark all phases complete
    - Final documentation update
+
+**Completion Markers**:
+- **Cards**: File renamed with "X_" prefix (e.g., `FEATURE_name.md` → `X_FEATURE_name.md`)
+- **Gameplans**: Directory renamed with "X_" prefix (e.g., `gameplans/event-system/` → `gameplans/X_event-system/`)
 
 ---
 
@@ -811,6 +822,7 @@ During review:
 6. **Feature Complete**: 
    - Card status updated to COMPLETE in card content
    - Card file renamed: `FEATURE_navigation_menu.md` → `X_FEATURE_navigation_menu.md`
+   - Gameplan directory renamed: `gameplans/navigation-menu/` → `gameplans/X_navigation-menu/`
 
 ### Example: Enhancement Development
 
@@ -832,6 +844,7 @@ During review:
 5. **Enhancement Complete**: 
    - Card status updated to COMPLETE in card content
    - Card file renamed: `ENHANCE_quantity_validation.md` → `X_ENHANCE_quantity_validation.md`
+   - Gameplan directory renamed: `gameplans/quantity-validation/` → `gameplans/X_quantity-validation/`
 
 ### Example: Bug Fix
 
@@ -854,6 +867,7 @@ During review:
 5. **Bug Fixed**: 
    - Card status updated to COMPLETE in card content
    - Card file renamed: `BUG_report_duplicate_minifigs.md` → `X_BUG_report_duplicate_minifigs.md`
+   - Gameplan directory renamed: `gameplans/bug-fix-duplicate-minifigs/` → `gameplans/X_bug-fix-duplicate-minifigs/`
 
 ---
 
