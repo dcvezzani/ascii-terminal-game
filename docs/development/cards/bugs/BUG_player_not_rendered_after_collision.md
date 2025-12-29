@@ -4,6 +4,12 @@
 
 After Player B collides with Player A in Player B's terminal window, Player A isn't rendered again until Player A moves in Player A's terminal window. All players should be displayed after collision events, even if they are not moved.
 
+**Verified Behavior**:
+- When a player attempts to walk through/past another player, the server correctly detects the collision
+- The server resets the player's position to honor the collision (server-side collision detection works correctly)
+- However, the client-side rendering doesn't show the other player after the collision is corrected
+- The other player disappears from the colliding player's terminal until they move
+
 **Location**:
 - Incremental rendering: `src/index.js` - `wsClient.onStateUpdate()` callback
 - Player rendering: `src/render/Renderer.js` - `updatePlayersIncremental()` method
@@ -11,21 +17,24 @@ After Player B collides with Player A in Player B's terminal window, Player A is
 
 ## Problem
 
-**Current Behavior**:
+**Current Behavior** (Verified):
 
 1. Player A is at position (10, 10)
-2. Player B moves into position (10, 10) - collision occurs
-3. Server prevents Player B from moving (collision detection)
-4. Server sends STATE_UPDATE with:
-   - Player A still at (10, 10) - position unchanged
-   - Player B at (9, 10) or previous position - move rejected
-5. Client compares previous state with current state
-6. Player A's position hasn't changed, so Player A is **not** in `changes.moved`
-7. Player A is **not** in `changes.joined` (already in game)
-8. Player A is **not** in `changes.left` (still in game)
-9. `updatePlayersIncremental()` only renders players in `moved`, `joined`, or `left` arrays
-10. Player A is **not rendered** in Player B's terminal
-11. Player A only reappears when Player A moves (which triggers a position change)
+2. Player B attempts to move into position (10, 10) - collision occurs
+3. Server correctly detects collision and prevents Player B from moving
+4. Server resets Player B's position to previous position (e.g., 9, 10)
+5. Server sends STATE_UPDATE with:
+   - Player A still at (10, 10) - position unchanged (collision prevented movement)
+   - Player B at (9, 10) - position reset by server (move rejected)
+6. Client compares previous state with current state
+7. Player A's position hasn't changed, so Player A is **not** in `changes.moved`
+8. Player A is **not** in `changes.joined` (already in game)
+9. Player A is **not** in `changes.left` (still in game)
+10. `updatePlayersIncremental()` only renders players in `moved`, `joined`, or `left` arrays
+11. Player A is **not rendered** in Player B's terminal (disappears)
+12. Player A only reappears when Player A moves (which triggers a position change)
+
+**Note**: Server-side collision detection and position correction work correctly. The issue is purely client-side rendering.
 
 **Expected Behavior**:
 
