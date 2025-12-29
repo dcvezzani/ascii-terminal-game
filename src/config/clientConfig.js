@@ -14,5 +14,9 @@ export const clientConfig = {
       maxFiles: 5, // Maximum number of log files to keep
     },
   },
+  prediction: {
+    enabled: true, // Enable client-side prediction for local player
+    reconciliationInterval: 5000, // Reconciliation interval in milliseconds (default: 5 seconds)
+  },
 };
 

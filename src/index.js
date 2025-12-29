@@ -186,6 +186,10 @@ export async function runNetworkedMode() {
   let currentState = null;
   let localPlayerId = null;
   let previousState = null; // Track previous state for incremental rendering
+  // Phase 1: Client-side prediction state tracking
+  let localPlayerPredictedPosition = { x: null, y: null };
+  let lastReconciliationTime = Date.now();
+  let reconciliationTimer = null;
   let running = true;
 
   try {
@@ -219,6 +223,15 @@ export async function runNetworkedMode() {
       }
 
       try {
+        // Phase 1: Client-side prediction - Initialize predicted position on first update
+        if (previousState === null && localPlayerId) {
+          const localPlayer = gameState.players.find(p => p.playerId === localPlayerId);
+          if (localPlayer) {
+            localPlayerPredictedPosition = { x: localPlayer.x, y: localPlayer.y };
+            lastReconciliationTime = Date.now();
+          }
+        }
+
         // Phase 1: State Tracking - Handle initial render detection
         if (previousState === null) {
           // First render - use renderFull()
@@ -336,6 +349,7 @@ export async function runNetworkedMode() {
     wsClient.onPlayerJoined(payload => {
       if (payload.clientId === wsClient.getClientId()) {
         localPlayerId = payload.playerId;
+        // Phase 1: Initialize predicted position will happen on first state update
       }
     });
 
