@@ -3,6 +3,7 @@
  * Manages server-side game state for multiplayer support
  */
 
+import { EventEmitter } from 'events';
 import { Game } from '../game/Game.js';
 import { gameConfig } from '../config/gameConfig.js';
 import { randomUUID } from 'crypto';
@@ -11,9 +12,11 @@ import { logger } from '../utils/logger.js';
 /**
  * Game Server class
  * Maintains authoritative game state and manages multiple players
+ * Extends EventEmitter to support event-driven architecture
  */
-export class GameServer {
+export class GameServer extends EventEmitter {
   constructor() {
+    super(); // Call EventEmitter constructor
     this.game = new Game();
     // Map of playerId -> player info (active players)
     this.players = new Map();
