@@ -57,6 +57,8 @@ If these characters don't display correctly, verify your terminal font is set to
 
 ## Running the Game
 
+### Single-Player Mode (Local)
+
 ```bash
 npm start
 ```
@@ -66,6 +68,37 @@ Or directly:
 ```bash
 node src/index.js
 ```
+
+### Multiplayer Mode (Networked)
+
+The game supports multiplayer via WebSocket. To run in multiplayer mode:
+
+1. **Start the WebSocket server** (in one terminal):
+
+   ```bash
+   npm run server
+   ```
+
+   Or directly:
+
+   ```bash
+   node src/server/server.js
+   ```
+
+   The server will start on port 3000 by default and display:
+   ```
+   WebSocket game server is running. Press Ctrl+C to stop.
+   ```
+
+2. **Start clients** (in additional terminals):
+
+   ```bash
+   npm start
+   ```
+
+   The client will automatically connect to the server if `serverConfig.websocket.enabled` is set to `true` in `src/config/serverConfig.js`.
+
+**Note**: By default, WebSocket mode is disabled. To enable it, set `serverConfig.websocket.enabled = true` in `src/config/serverConfig.js`.
 
 ## Game Description
 
@@ -128,10 +161,15 @@ Shows:
 - `ansi-escapes` - Cursor positioning and screen control
 - `chalk` - Terminal colors and styling
 - `cli-cursor` - Hide/show terminal cursor
+- `ws` - WebSocket library for multiplayer support
+- `uuid` - UUID generation for client/player IDs
 
 **Dev Dependencies**:
 
 - `vitest` - Testing framework
+- `prettier` - Code formatter
+- `husky` - Git hooks manager
+- `lint-staged` - Run linters on staged files
 
 ### Rendering Strategy
 
@@ -146,14 +184,24 @@ Shows:
 ```
 first-game/
 ├── src/
-│   ├── config/          # Game configuration
+│   ├── config/          # Game and server configuration
 │   ├── constants/        # Game constants (characters, etc.)
 │   ├── game/            # Game logic (Board, Game classes)
 │   ├── input/           # Input handling
+│   ├── network/         # WebSocket client and message handling
 │   ├── render/          # Rendering logic
-│   ├── utils/           # Utility functions
-│   └── index.js         # Main entry point
+│   ├── server/          # WebSocket server (GameServer, ConnectionManager)
+│   ├── utils/           # Utility functions (logger, etc.)
+│   ├── index.js         # Main entry point (client)
+│   └── server.js         # Server entry point
 ├── test/                # Test files
+│   ├── config/          # Configuration tests
+│   ├── game/            # Game logic tests
+│   ├── helpers/         # Test helpers (server lifecycle)
+│   ├── integration/     # Integration tests
+│   ├── network/         # Network/message tests
+│   ├── server/          # Server tests
+│   └── ...
 ├── docs/                # Documentation
 │   └── development/     # Development process docs
 ├── STANDARDS_AND_PROCESSES/  # Development standards
@@ -188,6 +236,38 @@ npm run test:watch
 - **Testing**: Vitest for unit tests, run in non-interactive mode
 - **Code Quality**: Follow existing code patterns and standards
 
+## Configuration
+
+### WebSocket Server Configuration
+
+Server settings can be configured in `src/config/serverConfig.js`:
+
+```javascript
+export const serverConfig = {
+  websocket: {
+    enabled: false,        // Enable/disable WebSocket mode
+    port: 3000,            // WebSocket server port
+    host: '0.0.0.0',       // Server host (0.0.0.0 = accessible from network)
+    updateInterval: 250,   // State update interval in milliseconds (4 updates/second)
+  },
+  logging: {
+    level: 'info',         // Logging level: 'debug', 'info', 'warn', 'error'
+  },
+  reconnection: {
+    enabled: true,         // Enable reconnection support
+    maxAttempts: 5,        // Maximum reconnection attempts
+    retryDelay: 1000,     // Delay between reconnection attempts (milliseconds)
+  },
+};
+```
+
+### Network Requirements
+
+- **Port**: Default port 3000 must be available
+- **Firewall**: If running on a network, ensure port 3000 is open
+- **Host**: `0.0.0.0` allows connections from any network interface
+- **Reconnection**: Players have a 1-minute grace period to reconnect after disconnection
+
 ## Troubleshooting
 
 ### Characters Don't Display Correctly
@@ -207,6 +287,13 @@ npm run test:watch
 - Verify Node.js version: `node --version` (should be 18+)
 - Check dependencies are installed: `npm install`
 - Check terminal supports raw mode (most modern terminals do)
+
+### WebSocket Server Issues
+
+- **Port already in use**: Another process may be using port 3000. Change the port in `serverConfig.js` or stop the conflicting process
+- **Connection refused**: Ensure the server is running before starting clients
+- **Can't connect from network**: Check firewall settings and ensure `host` is set to `'0.0.0.0'` (not `'localhost'`)
+- **Reconnection not working**: Ensure `reconnection.enabled` is `true` in `serverConfig.js`
 
 ## Related Documents
 
