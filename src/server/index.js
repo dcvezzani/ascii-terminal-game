@@ -15,6 +15,7 @@ import {
 } from '../network/MessageHandler.js';
 import { MessageTypes } from '../network/MessageTypes.js';
 import { randomUUID } from 'crypto';
+import { logger } from '../utils/logger.js';
 
 let wss = null;
 let connectionManager = null;
@@ -45,14 +46,14 @@ export async function startServer() {
       });
 
       wss.on('listening', () => {
-        console.log(
+        logger.info(
           `WebSocket server listening on ${serverConfig.websocket.host}:${serverConfig.websocket.port}`
         );
         resolve();
       });
 
       wss.on('error', error => {
-        console.error('WebSocket server error:', error);
+        logger.error('WebSocket server error:', error);
         reject(error);
       });
 
@@ -83,6 +84,9 @@ export async function startServer() {
         if (gameServer.getPlayerCount() > 0) {
           const stateMessage = createStateUpdateMessage(gameServer.getGameState());
           broadcastMessage(stateMessage);
+          logger.debug(
+            `Broadcasting state update to ${wss.clients.size} client(s), ${gameServer.getPlayerCount()} player(s)`
+          );
         }
       }, serverConfig.websocket.updateInterval);
 
@@ -98,7 +102,7 @@ export async function startServer() {
         }
       });
     } catch (error) {
-      console.error('Failed to start WebSocket server:', error);
+      logger.error('Failed to start WebSocket server:', error);
       reject(error);
     }
   });
@@ -138,10 +142,10 @@ export async function stopServer() {
         // All clients closed, now close the server
         wss.close(error => {
           if (error) {
-            console.error('Error closing WebSocket server:', error);
+            logger.error('Error closing WebSocket server:', error);
             reject(error);
           } else {
-            console.log('WebSocket server stopped');
+            logger.info('WebSocket server stopped');
             wss = null;
             connectionManager = null;
             gameServer = null;
@@ -159,10 +163,10 @@ export async function stopServer() {
     if (wss.clients.size === 0) {
       wss.close(error => {
         if (error) {
-          console.error('Error closing WebSocket server:', error);
+          logger.error('Error closing WebSocket server:', error);
           reject(error);
         } else {
-          console.log('WebSocket server stopped');
+          logger.info('WebSocket server stopped');
           wss = null;
           connectionManager = null;
           gameServer = null;
@@ -175,10 +179,10 @@ export async function stopServer() {
         // Force close even if clients haven't closed
         wss.close(error => {
           if (error) {
-            console.error('Error closing WebSocket server:', error);
+            logger.error('Error closing WebSocket server:', error);
             reject(error);
           } else {
-            console.log('WebSocket server stopped (forced)');
+            logger.info('WebSocket server stopped (forced)');
             wss = null;
             connectionManager = null;
             gameServer = null;
@@ -205,12 +209,12 @@ export function getServer() {
  */
 function setupGracefulShutdown() {
   const shutdown = async signal => {
-    console.log(`\nReceived ${signal}, shutting down gracefully...`);
+    logger.info(`\nReceived ${signal}, shutting down gracefully...`);
     try {
       await stopServer();
       process.exit(0);
     } catch (error) {
-      console.error('Error during shutdown:', error);
+      logger.error('Error during shutdown:', error);
       process.exit(1);
     }
   };
@@ -226,7 +230,7 @@ function setupGracefulShutdown() {
 function handleConnection(ws) {
   // Add connection to manager
   const clientId = connectionManager.addConnection(ws);
-  console.log(`Client connected: ${clientId}`);
+  logger.info(`Client connected: ${clientId}`);
 
   // Send CONNECT message with client ID and initial game state
   const connectMessage = createMessage(MessageTypes.CONNECT, {
@@ -247,7 +251,7 @@ function handleConnection(ws) {
 
   // Set up error handler
   ws.on('error', error => {
-    console.error(`WebSocket error for client ${clientId}:`, error);
+    logger.error(`WebSocket error for client ${clientId}:`, error);
     handleDisconnect(clientId);
   });
 }
@@ -259,27 +263,41 @@ function handleConnection(ws) {
  * @param {Buffer | string} data - Message data
  */
 function handleMessage(ws, clientId, data) {
-  // Update activity timestamp
-  connectionManager.updateActivity(clientId);
+  try {
+    // Update activity timestamp
+    connectionManager.updateActivity(clientId);
 
-  // Parse message
-  const messageString = data.toString();
-  const { message, error } = parseMessage(messageString);
+    // Parse message
+    const messageString = data.toString();
+    logger.debug(`Received message from client ${clientId}: ${messageString.substring(0, 100)}`);
 
-  if (error) {
-    // Send error response
+    const { message, error } = parseMessage(messageString);
+
+    if (error) {
+      // Send error response
+      logger.warn(`Message parse error for client ${clientId}: ${error.message}`);
+      const errorMessage = createErrorMessage(
+        error.code,
+        error.message,
+        { action: 'PARSE_MESSAGE' },
+        clientId
+      );
+      sendMessage(ws, errorMessage);
+      return;
+    }
+
+    // Route message based on type
+    routeMessage(ws, clientId, message);
+  } catch (error) {
+    logger.error(`Error handling message from client ${clientId}:`, error);
     const errorMessage = createErrorMessage(
-      error.code,
-      error.message,
-      { action: 'PARSE_MESSAGE' },
+      'INTERNAL_ERROR',
+      'Internal server error while processing message',
+      { action: 'HANDLE_MESSAGE' },
       clientId
     );
     sendMessage(ws, errorMessage);
-    return;
   }
-
-  // Route message based on type
-  routeMessage(ws, clientId, message);
 }
 
 /**
@@ -330,79 +348,90 @@ function routeMessage(ws, clientId, message) {
  * @param {object} payload - Message payload
  */
 function handleConnectMessage(ws, clientId, payload) {
-  const existingPlayerId = payload.playerId;
-  const isReconnection = existingPlayerId && gameServer.hasPlayer(existingPlayerId);
+  try {
+    const existingPlayerId = payload.playerId;
+    const isReconnection = existingPlayerId && gameServer.hasPlayer(existingPlayerId);
 
-  let playerId;
-  let playerName;
+    let playerId;
+    let playerName;
 
-  if (isReconnection) {
-    // Reconnection: restore existing player
-    playerId = existingPlayerId;
-    const existingPlayer = gameServer.getPlayer(playerId);
-    playerName =
-      payload.playerName || existingPlayer?.playerName || `Player-${playerId.slice(0, 8)}`;
+    if (isReconnection) {
+      // Reconnection: restore existing player
+      playerId = existingPlayerId;
+      const existingPlayer = gameServer.getPlayer(playerId);
+      playerName =
+        payload.playerName || existingPlayer?.playerName || `Player-${playerId.slice(0, 8)}`;
 
-    // Update connection mapping (new clientId, same playerId)
-    connectionManager.setPlayerId(clientId, playerId);
-    connectionManager.setPlayerName(clientId, playerName);
+      // Update connection mapping (new clientId, same playerId)
+      connectionManager.setPlayerId(clientId, playerId);
+      connectionManager.setPlayerName(clientId, playerName);
 
-    // Update player's clientId in game server
-    if (existingPlayer) {
-      existingPlayer.clientId = clientId;
-      existingPlayer.playerName = playerName;
+      // Update player's clientId in game server
+      if (existingPlayer) {
+        existingPlayer.clientId = clientId;
+        existingPlayer.playerName = playerName;
+      }
+
+      logger.info(`Player reconnected: ${playerId} (client: ${clientId})`);
+    } else {
+      // New connection: create new player
+      playerId = randomUUID();
+      playerName = payload.playerName || `Player-${playerId.slice(0, 8)}`;
+
+      // Set player info in connection manager
+      connectionManager.setPlayerId(clientId, playerId);
+      connectionManager.setPlayerName(clientId, playerName);
+
+      // Add player to game
+      const added = gameServer.addPlayer(playerId, playerName, clientId);
+      if (!added) {
+        const errorMessage = createErrorMessage(
+          'PLAYER_ADD_FAILED',
+          'Failed to add player to game',
+          { action: 'CONNECT', playerId },
+          clientId
+        );
+        sendMessage(ws, errorMessage);
+        return;
+      }
+
+      logger.info(`Player joined: ${playerId} (client: ${clientId})`);
     }
 
-    console.log(`Player reconnected: ${playerId} (client: ${clientId})`);
-  } else {
-    // New connection: create new player
-    playerId = randomUUID();
-    playerName = payload.playerName || `Player-${playerId.slice(0, 8)}`;
+    // Send CONNECT response with player info and game state
+    const connectResponse = createMessage(MessageTypes.CONNECT, {
+      clientId,
+      playerId,
+      playerName,
+      gameState: gameServer.getGameState(),
+      isReconnection,
+    });
+    sendMessage(ws, connectResponse);
 
-    // Set player info in connection manager
-    connectionManager.setPlayerId(clientId, playerId);
-    connectionManager.setPlayerName(clientId, playerName);
-
-    // Add player to game
-    const added = gameServer.addPlayer(playerId, playerName, clientId);
-    if (!added) {
-      const errorMessage = createErrorMessage(
-        'PLAYER_ADD_FAILED',
-        'Failed to add player to game',
-        { action: 'CONNECT', playerId },
-        clientId
+    if (!isReconnection) {
+      // Only broadcast PLAYER_JOINED for new players
+      broadcastMessage(
+        createMessage(MessageTypes.PLAYER_JOINED, {
+          playerId,
+          playerName,
+          clientId,
+        })
       );
-      sendMessage(ws, errorMessage);
-      return;
     }
 
-    console.log(`Player joined: ${playerId} (client: ${clientId})`);
-  }
-
-  // Send CONNECT response with player info and game state
-  const connectResponse = createMessage(MessageTypes.CONNECT, {
-    clientId,
-    playerId,
-    playerName,
-    gameState: gameServer.getGameState(),
-    isReconnection,
-  });
-  sendMessage(ws, connectResponse);
-
-  if (!isReconnection) {
-    // Only broadcast PLAYER_JOINED for new players
-    broadcastMessage(
-      createMessage(MessageTypes.PLAYER_JOINED, {
-        playerId,
-        playerName,
-        clientId,
-      })
+    // Broadcast immediate state update to all clients
+    const stateMessage = createStateUpdateMessage(gameServer.getGameState());
+    broadcastMessage(stateMessage);
+  } catch (error) {
+    logger.error(`Error handling CONNECT message from client ${clientId}:`, error);
+    const errorMessage = createErrorMessage(
+      'INTERNAL_ERROR',
+      'Internal server error while processing CONNECT',
+      { action: 'CONNECT' },
+      clientId
     );
+    sendMessage(ws, errorMessage);
   }
-
-  // Broadcast immediate state update to all clients
-  const stateMessage = createStateUpdateMessage(gameServer.getGameState());
-  broadcastMessage(stateMessage);
 }
 
 /**
@@ -420,67 +449,83 @@ function handleDisconnectMessage(clientId) {
  * @param {object} payload - Message payload
  */
 function handleMoveMessage(ws, clientId, payload) {
-  const connection = connectionManager.getConnection(clientId);
-  if (!connection || !connection.playerId) {
+  try {
+    const connection = connectionManager.getConnection(clientId);
+    if (!connection || !connection.playerId) {
+      logger.warn(`Move attempted by non-connected client: ${clientId}`);
+      const errorMessage = createErrorMessage(
+        'NOT_CONNECTED',
+        'Player not connected',
+        { action: 'MOVE' },
+        clientId
+      );
+      sendMessage(ws, errorMessage);
+      return;
+    }
+
+    const { dx, dy } = payload;
+    if (typeof dx !== 'number' || typeof dy !== 'number') {
+      logger.warn(`Invalid move payload from client ${clientId}: dx=${dx}, dy=${dy}`);
+      const errorMessage = createErrorMessage(
+        'INVALID_MOVE',
+        'dx and dy must be numbers',
+        { action: 'MOVE' },
+        clientId
+      );
+      sendMessage(ws, errorMessage);
+      return;
+    }
+
+    // Validate dx and dy are -1, 0, or 1
+    if (dx < -1 || dx > 1 || dy < -1 || dy > 1) {
+      logger.warn(`Move out of range from client ${clientId}: dx=${dx}, dy=${dy}`);
+      const errorMessage = createErrorMessage(
+        'INVALID_MOVE',
+        'dx and dy must be -1, 0, or 1',
+        { action: 'MOVE' },
+        clientId
+      );
+      sendMessage(ws, errorMessage);
+      return;
+    }
+
+    // Validate game is running
+    if (!gameServer.getGameState().running) {
+      logger.warn(`Move attempted while game not running by client ${clientId}`);
+      const errorMessage = createErrorMessage(
+        'GAME_NOT_RUNNING',
+        'Game is not running',
+        { action: 'MOVE', playerId: connection.playerId },
+        clientId
+      );
+      sendMessage(ws, errorMessage);
+      return;
+    }
+
+    const moved = gameServer.movePlayer(connection.playerId, dx, dy);
+    if (!moved) {
+      logger.debug(`Move failed for player ${connection.playerId}: (${dx}, ${dy})`);
+      const errorMessage = createErrorMessage(
+        'MOVE_FAILED',
+        'Move failed: invalid position or collision',
+        { action: 'MOVE', playerId: connection.playerId, dx, dy },
+        clientId
+      );
+      sendMessage(ws, errorMessage);
+      return;
+    }
+
+    // Movement successful - state will be broadcast via periodic updates
+  } catch (error) {
+    logger.error(`Error handling MOVE message from client ${clientId}:`, error);
     const errorMessage = createErrorMessage(
-      'NOT_CONNECTED',
-      'Player not connected',
+      'INTERNAL_ERROR',
+      'Internal server error while processing MOVE',
       { action: 'MOVE' },
       clientId
     );
     sendMessage(ws, errorMessage);
-    return;
   }
-
-  const { dx, dy } = payload;
-  if (typeof dx !== 'number' || typeof dy !== 'number') {
-    const errorMessage = createErrorMessage(
-      'INVALID_MOVE',
-      'dx and dy must be numbers',
-      { action: 'MOVE' },
-      clientId
-    );
-    sendMessage(ws, errorMessage);
-    return;
-  }
-
-  // Validate dx and dy are -1, 0, or 1
-  if (dx < -1 || dx > 1 || dy < -1 || dy > 1) {
-    const errorMessage = createErrorMessage(
-      'INVALID_MOVE',
-      'dx and dy must be -1, 0, or 1',
-      { action: 'MOVE' },
-      clientId
-    );
-    sendMessage(ws, errorMessage);
-    return;
-  }
-
-  // Validate game is running
-  if (!gameServer.getGameState().running) {
-    const errorMessage = createErrorMessage(
-      'GAME_NOT_RUNNING',
-      'Game is not running',
-      { action: 'MOVE', playerId: connection.playerId },
-      clientId
-    );
-    sendMessage(ws, errorMessage);
-    return;
-  }
-
-  const moved = gameServer.movePlayer(connection.playerId, dx, dy);
-  if (!moved) {
-    const errorMessage = createErrorMessage(
-      'MOVE_FAILED',
-      'Move failed: invalid position or collision',
-      { action: 'MOVE', playerId: connection.playerId, dx, dy },
-      clientId
-    );
-    sendMessage(ws, errorMessage);
-    return;
-  }
-
-  // Movement successful - state will be broadcast via periodic updates
 }
 
 /**
@@ -490,40 +535,54 @@ function handleMoveMessage(ws, clientId, payload) {
  * @param {object} payload - Message payload
  */
 function handleSetPlayerNameMessage(ws, clientId, payload) {
-  const connection = connectionManager.getConnection(clientId);
-  if (!connection || !connection.playerId) {
+  try {
+    const connection = connectionManager.getConnection(clientId);
+    if (!connection || !connection.playerId) {
+      logger.warn(`SET_PLAYER_NAME attempted by non-connected client: ${clientId}`);
+      const errorMessage = createErrorMessage(
+        'NOT_CONNECTED',
+        'Player not connected',
+        { action: 'SET_PLAYER_NAME' },
+        clientId
+      );
+      sendMessage(ws, errorMessage);
+      return;
+    }
+
+    const { playerName } = payload;
+    if (!playerName || typeof playerName !== 'string') {
+      logger.warn(`Invalid player name from client ${clientId}: ${playerName}`);
+      const errorMessage = createErrorMessage(
+        'INVALID_PLAYER_NAME',
+        'playerName must be a non-empty string',
+        { action: 'SET_PLAYER_NAME' },
+        clientId
+      );
+      sendMessage(ws, errorMessage);
+      return;
+    }
+
+    // Update player name
+    connectionManager.setPlayerName(clientId, playerName);
+    const player = gameServer.getPlayer(connection.playerId);
+    if (player) {
+      player.playerName = playerName;
+      logger.info(`Player name updated: ${playerName} (${connection.playerId})`);
+    }
+
+    // Broadcast immediate state update with name change
+    const stateMessage = createStateUpdateMessage(gameServer.getGameState());
+    broadcastMessage(stateMessage);
+  } catch (error) {
+    logger.error(`Error handling SET_PLAYER_NAME message from client ${clientId}:`, error);
     const errorMessage = createErrorMessage(
-      'NOT_CONNECTED',
-      'Player not connected',
+      'INTERNAL_ERROR',
+      'Internal server error while processing SET_PLAYER_NAME',
       { action: 'SET_PLAYER_NAME' },
       clientId
     );
     sendMessage(ws, errorMessage);
-    return;
   }
-
-  const { playerName } = payload;
-  if (!playerName || typeof playerName !== 'string') {
-    const errorMessage = createErrorMessage(
-      'INVALID_PLAYER_NAME',
-      'playerName must be a non-empty string',
-      { action: 'SET_PLAYER_NAME' },
-      clientId
-    );
-    sendMessage(ws, errorMessage);
-    return;
-  }
-
-  // Update player name
-  connectionManager.setPlayerName(clientId, playerName);
-  const player = gameServer.getPlayer(connection.playerId);
-  if (player) {
-    player.playerName = playerName;
-  }
-
-  // Broadcast immediate state update with name change
-  const stateMessage = createStateUpdateMessage(gameServer.getGameState());
-  broadcastMessage(stateMessage);
 }
 
 /**
@@ -550,7 +609,7 @@ function handleDisconnect(clientId) {
     return;
   }
 
-  console.log(`Client disconnected: ${clientId}`);
+  logger.info(`Client disconnected: ${clientId}`);
 
   // Remove player from game if exists
   if (connection.playerId) {
@@ -582,8 +641,16 @@ function handleDisconnect(clientId) {
  * @param {object} message - Message object
  */
 function sendMessage(ws, message) {
-  if (ws.readyState === ws.OPEN) {
-    ws.send(JSON.stringify(message));
+  try {
+    if (ws.readyState === ws.OPEN) {
+      const messageString = JSON.stringify(message);
+      ws.send(messageString);
+      logger.debug(`Sent message to client: ${message.type}`);
+    } else {
+      logger.warn(`Attempted to send message to client in state ${ws.readyState}`);
+    }
+  } catch (error) {
+    logger.error('Error sending message to client:', error);
   }
 }
 
@@ -592,12 +659,23 @@ function sendMessage(ws, message) {
  * @param {object} message - Message object
  */
 function broadcastMessage(message) {
-  const messageString = JSON.stringify(message);
-  connectionManager.getAllConnections().forEach(connection => {
-    if (connection.ws.readyState === connection.ws.OPEN) {
-      connection.ws.send(messageString);
-    }
-  });
+  try {
+    const messageString = JSON.stringify(message);
+    let sentCount = 0;
+    connectionManager.getAllConnections().forEach(connection => {
+      try {
+        if (connection.ws.readyState === connection.ws.OPEN) {
+          connection.ws.send(messageString);
+          sentCount++;
+        }
+      } catch (error) {
+        logger.error(`Error broadcasting to client ${connection.id}:`, error);
+      }
+    });
+    logger.debug(`Broadcast message ${message.type} to ${sentCount} client(s)`);
+  } catch (error) {
+    logger.error('Error broadcasting message:', error);
+  }
 }
 
 // Setup graceful shutdown handlers

@@ -4,6 +4,7 @@
  */
 
 import { randomUUID } from 'crypto';
+import { logger } from '../utils/logger.js';
 
 /**
  * Connection Manager class
@@ -34,6 +35,7 @@ export class ConnectionManager {
     };
 
     this.connections.set(clientId, connection);
+    logger.debug(`Connection added: ${clientId} (total: ${this.connections.size})`);
 
     return clientId;
   }
@@ -44,7 +46,11 @@ export class ConnectionManager {
    * @returns {boolean} - True if connection was removed, false if not found
    */
   removeConnection(clientId) {
-    return this.connections.delete(clientId);
+    const removed = this.connections.delete(clientId);
+    if (removed) {
+      logger.debug(`Connection removed: ${clientId} (total: ${this.connections.size})`);
+    }
+    return removed;
   }
 
   /**
@@ -88,10 +94,12 @@ export class ConnectionManager {
   setPlayerId(clientId, playerId) {
     const connection = this.getConnection(clientId);
     if (!connection) {
+      logger.warn(`Attempted to set playerId for non-existent connection: ${clientId}`);
       return false;
     }
 
     connection.playerId = playerId;
+    logger.debug(`Player ID set for connection ${clientId}: ${playerId}`);
     return true;
   }
 
@@ -104,10 +112,12 @@ export class ConnectionManager {
   setPlayerName(clientId, playerName) {
     const connection = this.getConnection(clientId);
     if (!connection) {
+      logger.warn(`Attempted to set playerName for non-existent connection: ${clientId}`);
       return false;
     }
 
     connection.playerName = playerName;
+    logger.debug(`Player name set for connection ${clientId}: ${playerName}`);
     return true;
   }
 

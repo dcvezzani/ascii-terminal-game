@@ -6,6 +6,7 @@
 import { Game } from '../game/Game.js';
 import { gameConfig } from '../config/gameConfig.js';
 import { randomUUID } from 'crypto';
+import { logger } from '../utils/logger.js';
 
 /**
  * Game Server class
@@ -47,6 +48,7 @@ export class GameServer {
    */
   addPlayer(playerId, playerName, clientId, x = null, y = null) {
     if (this.players.has(playerId)) {
+      logger.warn(`Attempted to add duplicate player: ${playerId}`);
       return false;
     }
 
@@ -66,9 +68,13 @@ export class GameServer {
         !this.game.board.isValidPosition(centerX, centerY) ||
         this.game.board.isWall(centerX, centerY)
       ) {
+        logger.warn(
+          `Invalid position for player ${playerId}: (${startX}, ${startY}), center also invalid`
+        );
         return false;
       }
       // Use center position as fallback
+      logger.debug(`Using fallback center position for player ${playerId}`);
       startX = centerX;
       startY = centerY;
     }
@@ -82,6 +88,7 @@ export class GameServer {
     };
 
     this.players.set(playerId, player);
+    logger.info(`Player added: ${playerName} (${playerId}) at (${startX}, ${startY})`);
     return true;
   }
 
@@ -91,7 +98,14 @@ export class GameServer {
    * @returns {boolean} True if player was removed, false if not found
    */
   removePlayer(playerId) {
-    return this.players.delete(playerId);
+    const player = this.players.get(playerId);
+    const removed = this.players.delete(playerId);
+    if (removed && player) {
+      logger.info(`Player removed: ${player.playerName} (${playerId})`);
+    } else if (!removed) {
+      logger.warn(`Attempted to remove non-existent player: ${playerId}`);
+    }
+    return removed;
   }
 
   /**
@@ -104,6 +118,7 @@ export class GameServer {
   movePlayer(playerId, dx, dy) {
     const player = this.players.get(playerId);
     if (!player) {
+      logger.warn(`Attempted to move non-existent player: ${playerId}`);
       return false;
     }
 
@@ -112,10 +127,12 @@ export class GameServer {
 
     // Validate new position
     if (!this.game.board.isValidPosition(newX, newY)) {
+      logger.debug(`Invalid position for player ${playerId}: (${newX}, ${newY})`);
       return false;
     }
 
     if (this.game.board.isWall(newX, newY)) {
+      logger.debug(`Wall collision for player ${playerId} at (${newX}, ${newY})`);
       return false;
     }
 
@@ -126,12 +143,14 @@ export class GameServer {
     );
 
     if (hasCollision) {
+      logger.debug(`Player collision for player ${playerId} at (${newX}, ${newY})`);
       return false;
     }
 
     // Move player
     player.x = newX;
     player.y = newY;
+    logger.debug(`Player ${playerId} moved to (${newX}, ${newY})`);
     return true;
   }
 
