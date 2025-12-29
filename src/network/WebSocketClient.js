@@ -318,6 +318,14 @@ export class WebSocketClient {
   }
 
   /**
+   * Send a RESTART message to restart the game
+   */
+  sendRestart() {
+    const message = createMessage(MessageTypes.RESTART, {}, this.clientId);
+    this.sendMessage(message);
+  }
+
+  /**
    * Set callback for connection event
    * @param {Function} callback - Callback function
    */

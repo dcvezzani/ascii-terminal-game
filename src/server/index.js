@@ -369,6 +369,10 @@ function routeMessage(ws, clientId, message) {
       handleTestMessage(ws, clientId, payload);
       break;
 
+    case MessageTypes.RESTART:
+      handleRestartMessage(ws, clientId);
+      break;
+
     default:
       const errorMessage = createErrorMessage(
         'UNKNOWN_MESSAGE_TYPE',
@@ -644,6 +648,25 @@ function handleSetPlayerNameMessage(ws, clientId, payload) {
 function handlePingMessage(ws, clientId) {
   const pongMessage = createMessage(MessageTypes.PONG, {}, clientId);
   sendMessage(ws, pongMessage);
+}
+
+/**
+ * Handle RESTART message
+ * @param {WebSocket} ws - WebSocket connection
+ * @param {string} clientId - Client ID
+ */
+function handleRestartMessage(ws, clientId) {
+  logger.info(`Received RESTART message from client ${clientId}`);
+  
+  // Reset the game server state
+  gameServer.resetGame();
+  gameServer.startGame();
+  
+  // Broadcast the reset state to all clients
+  const stateMessage = createStateUpdateMessage(gameServer.getGameState());
+  broadcastMessage(stateMessage);
+  
+  logger.info(`Game restarted by client ${clientId}, state broadcast to all clients`);
 }
 
 /**

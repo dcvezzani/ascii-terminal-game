@@ -14,6 +14,7 @@ export const MessageTypes = {
   // Player actions
   MOVE: 'MOVE',
   SET_PLAYER_NAME: 'SET_PLAYER_NAME',
+  RESTART: 'RESTART',
 
   // Server updates
   STATE_UPDATE: 'STATE_UPDATE',

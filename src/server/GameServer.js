@@ -23,6 +23,8 @@ export class GameServer extends EventEmitter {
     this.players = new Map();
     // Map of playerId -> { player, disconnectedAt } (disconnected players awaiting reconnection)
     this.disconnectedPlayers = new Map();
+    // Map of entityId -> entity info
+    this.entities = new Map();
     this.updateInterval = null;
     this.purgeInterval = null;
     // Grace period: 1 minute (60000ms) before permanently removing disconnected players
@@ -41,6 +43,7 @@ export class GameServer extends EventEmitter {
         grid: this.game.board.grid,
       },
       players: Array.from(this.players.values()), // Only active players
+      entities: Array.from(this.entities.values()), // All entities
       score: this.game.getScore(),
       running: this.game.isRunning(),
     };
@@ -324,6 +327,9 @@ export class GameServer extends EventEmitter {
   resetGame() {
     this.game.reset();
     this.players.clear();
+    this.disconnectedPlayers.clear();
+    this.entities.clear();
+    logger.info('Game reset: cleared all players, disconnected players, and entities');
   }
 
   /**
