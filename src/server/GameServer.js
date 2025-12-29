@@ -347,4 +347,61 @@ export class GameServer extends EventEmitter {
   getPlayerCount() {
     return this.players.size;
   }
+
+  /**
+   * Spawn an entity on the board
+   * @param {string} entityType - Type of entity (e.g., 'ruffian', 'enemy')
+   * @param {number} x - X position
+   * @param {number} y - Y position
+   * @param {object} [options] - Optional entity properties (glyph, color, etc.)
+   * @returns {string|null} Entity ID if spawned successfully, null if failed
+   */
+  spawnEntity(entityType, x, y, options = {}) {
+    // Validate position
+    if (!this.game.board.isValidPosition(x, y)) {
+      logger.warn(`Invalid position for entity spawn: (${x}, ${y})`);
+      return null;
+    }
+
+    if (this.game.board.isWall(x, y)) {
+      logger.warn(`Cannot spawn entity on wall at (${x}, ${y})`);
+      return null;
+    }
+
+    // Check for collision with players
+    const hasPlayerCollision = Array.from(this.players.values()).some(
+      player => player.x === x && player.y === y
+    );
+    if (hasPlayerCollision) {
+      logger.warn(`Cannot spawn entity on player at (${x}, ${y})`);
+      return null;
+    }
+
+    // Check for collision with other entities
+    const hasEntityCollision = Array.from(this.entities.values()).some(
+      entity => entity.x === x && entity.y === y
+    );
+    if (hasEntityCollision) {
+      logger.warn(`Cannot spawn entity on existing entity at (${x}, ${y})`);
+      return null;
+    }
+
+    // Generate unique entity ID
+    const entityId = randomUUID();
+
+    // Create entity object
+    const entity = {
+      entityId,
+      entityType,
+      x,
+      y,
+      ...options, // Include any additional options (glyph, color, etc.)
+    };
+
+    // Add to entities map
+    this.entities.set(entityId, entity);
+    logger.info(`Entity spawned: ${entityType} (${entityId}) at (${x}, ${y})`);
+
+    return entityId;
+  }
 }

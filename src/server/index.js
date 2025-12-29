@@ -17,6 +17,7 @@ import { MessageTypes } from '../network/MessageTypes.js';
 import { randomUUID } from 'crypto';
 import { logger } from '../utils/logger.js';
 import { setupCollisionListener } from './listeners/index.js';
+import { toZZTCharacterGlyph, toColorHexValue } from '../constants/gameConstants.js';
 
 let wss = null;
 let connectionManager = null;
@@ -364,6 +365,10 @@ function routeMessage(ws, clientId, message) {
       handlePingMessage(ws, clientId);
       break;
 
+    case MessageTypes.TEST:
+      handleTestMessage(ws, clientId, payload);
+      break;
+
     default:
       const errorMessage = createErrorMessage(
         'UNKNOWN_MESSAGE_TYPE',
@@ -639,6 +644,37 @@ function handleSetPlayerNameMessage(ws, clientId, payload) {
 function handlePingMessage(ws, clientId) {
   const pongMessage = createMessage(MessageTypes.PONG, {}, clientId);
   sendMessage(ws, pongMessage);
+}
+
+/**
+ * Handle TEST message
+ * @param {WebSocket} ws - WebSocket connection
+ * @param {string} clientId - Client ID
+ * @param {object} payload - Message payload
+ */
+function handleTestMessage(ws, clientId, payload) {
+  logger.info(`Received TEST message from client ${clientId}:`, payload);
+  
+  // Spawn a ruffian entity at position 15, 15
+  const ruffianGlyph = toZZTCharacterGlyph('ruffian', toColorHexValue('purple'));
+  const entityId = gameServer.spawnEntity('ruffian', 15, 15, {
+    glyph: ruffianGlyph ? ruffianGlyph.char : null,
+    color: 'purple', // Store color name, client will convert to hex
+  });
+
+  if (entityId) {
+    logger.info(`Ruffian spawned successfully at (15, 15) with entityId: ${entityId}`);
+  } else {
+    logger.warn(`Failed to spawn ruffian at (15, 15)`);
+  }
+
+  // Echo back the test message with acknowledgment
+  const response = createMessage(
+    MessageTypes.TEST,
+    { received: true, originalPayload: payload, entitySpawned: entityId !== null, entityId },
+    clientId
+  );
+  sendMessage(ws, response);
 }
 
 /**

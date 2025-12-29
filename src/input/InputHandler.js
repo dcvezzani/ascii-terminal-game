@@ -97,6 +97,11 @@ export class InputHandler {
     if (keyNameOrSequence) {
       const keyString = String(keyNameOrSequence).toLowerCase();
       switch (keyString) {
+        case 't':
+          if (this.callbacks.onRenderOtherPlayer) {
+            this.callbacks.onRenderOtherPlayer();
+          }
+          return;
         case 'w':
         case 'up':
           if (this.callbacks.onMoveUp) {

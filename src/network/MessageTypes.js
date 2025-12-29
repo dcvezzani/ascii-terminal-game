@@ -4,6 +4,9 @@
  */
 
 export const MessageTypes = {
+  // Test messages re: development
+  TEST: 'TEST',
+
   // Connection management
   CONNECT: 'CONNECT',
   DISCONNECT: 'DISCONNECT',
