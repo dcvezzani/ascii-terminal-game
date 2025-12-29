@@ -358,11 +358,11 @@ describe('WebSocket Integration', () => {
         firstClient.on('message', data => {
           try {
             const message = JSON.parse(data.toString());
-            console.log(`Step ${step}: First client received:`, message.type, {
-              clientId: message.payload?.clientId,
-              playerId: message.payload?.playerId,
-              isReconnection: message.payload?.isReconnection,
-            });
+            // console.log(`Step ${step}: First client received:`, message.type, {
+            //   clientId: message.payload?.clientId,
+            //   playerId: message.payload?.playerId,
+            //   isReconnection: message.payload?.isReconnection,
+            // });
 
             // Step 1: Receive initial CONNECT message from server
             if (
@@ -371,10 +371,10 @@ describe('WebSocket Integration', () => {
               message.payload.clientId &&
               !message.payload.playerId
             ) {
-              console.log(
-                'Step 1 complete: Received initial CONNECT with clientId:',
-                message.payload.clientId
-              );
+              // console.log(
+              //   'Step 1 complete: Received initial CONNECT with clientId:',
+              //   message.payload.clientId
+              // );
 
               // Verify we got a clientId
               expect(message.payload.clientId).toBeDefined();
@@ -382,7 +382,7 @@ describe('WebSocket Integration', () => {
 
               // Step 2: Join as player
               step = 2;
-              console.log('Step 2: Sending CONNECT to join as player');
+              // console.log('Step 2: Sending CONNECT to join as player');
               firstClient.send(
                 JSON.stringify({
                   type: 'CONNECT',

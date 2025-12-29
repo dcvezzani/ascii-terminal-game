@@ -3,13 +3,7 @@ import { ensureServerRunning, ensureServerStopped } from '../helpers/server.js';
 import WebSocket from 'ws';
 
 describe('Server Integration', () => {
-  beforeAll(async () => {
-    await ensureServerRunning();
-  });
 
-  afterAll(async () => {
-    await ensureServerStopped();
-  });
   test('should accept new connections', async () => {
     return new Promise((resolve, reject) => {
       const ws = new WebSocket('ws://localhost:3000');
