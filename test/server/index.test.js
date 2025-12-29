@@ -1,5 +1,4 @@
-import { describe, test, expect, beforeAll, afterAll } from 'vitest';
-import { ensureServerRunning, ensureServerStopped } from '../helpers/server.js';
+import { describe, test, expect } from 'vitest';
 import { serverConfig } from '../../src/config/serverConfig.js';
 import WebSocket from 'ws';
 
