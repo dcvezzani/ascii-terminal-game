@@ -45,16 +45,16 @@ describe('Server Configuration', () => {
       expect(typeof serverConfig.websocket.host).toBe('string');
     });
 
-    test('Has updateInterval property (default: 100ms)', () => {
+    test('Has updateInterval property (default: 250ms)', () => {
       expect(serverConfig.websocket).toHaveProperty('updateInterval');
-      expect(serverConfig.websocket.updateInterval).toBe(100);
+      expect(serverConfig.websocket.updateInterval).toBe(250);
       expect(typeof serverConfig.websocket.updateInterval).toBe('number');
       expect(serverConfig.websocket.updateInterval).toBeGreaterThan(0);
     });
 
-    test('updateInterval represents 10 updates per second', () => {
+    test('updateInterval represents 4 updates per second', () => {
       const updatesPerSecond = 1000 / serverConfig.websocket.updateInterval;
-      expect(updatesPerSecond).toBe(10);
+      expect(updatesPerSecond).toBe(4);
     });
   });
 
@@ -101,8 +101,8 @@ describe('Server Configuration', () => {
       expect(serverConfig.websocket.host).toBe('0.0.0.0');
     });
 
-    test('Update interval matches current configuration (100ms = 10/sec)', () => {
-      expect(serverConfig.websocket.updateInterval).toBe(100);
+    test('Update interval matches current configuration (250ms = 4/sec)', () => {
+      expect(serverConfig.websocket.updateInterval).toBe(250);
     });
 
     test('Reconnection enabled matches specification answer (true)', () => {
