@@ -118,6 +118,11 @@ docs/development/
 
 **Example**: `FEATURE_reconciliation_session_management.md`, `FEATURE_navigation_menu.md`
 
+**Completion**: When a card is finished, rename it with "X_" prefix:
+- `FEATURE_navigation_menu.md` → `X_FEATURE_navigation_menu.md`
+- `ENHANCE_quantity_validation.md` → `X_ENHANCE_quantity_validation.md`
+- `BUG_report_duplicate_minifigs.md` → `X_BUG_report_duplicate_minifigs.md`
+
 **When to Create**:
 
 - New major functionality is needed
@@ -140,6 +145,9 @@ docs/development/
 - **Status**: Current status
 
 **Example**: `ENHANCE_quantity_validation.md`, `ENHANCE_lazy_loading_images.md`
+
+**Completion**: When an enhancement card is finished, rename it with "X_" prefix:
+- `ENHANCE_quantity_validation.md` → `X_ENHANCE_quantity_validation.md`
 
 **When to Create**:
 
@@ -165,6 +173,9 @@ docs/development/
 
 **Example**: `BUG_report_duplicate_minifigs_in_sets.md`
 
+**Completion**: When a bug report is fixed, rename it with "X_" prefix:
+- `BUG_report_duplicate_minifigs.md` → `X_BUG_report_duplicate_minifigs.md`
+
 **When to Create**:
 
 - Defect is discovered
@@ -178,7 +189,10 @@ docs/development/
 3. **Specification**: SPECS document is created from the card
 4. **Gameplan**: GAMEPLAN document is created from the SPECS
 5. **Implementation**: Gameplan is followed to implement
-6. **Completion**: Card status updated to COMPLETE
+6. **Completion**: 
+   - Card status updated to COMPLETE in the card content
+   - **Card file renamed with "X_" prefix** to visually indicate completion
+   - Example: `FEATURE_navigation_menu.md` → `X_FEATURE_navigation_menu.md`
 
 ---
 
@@ -710,7 +724,8 @@ During review:
    - Repeat until all phases complete
 
 9. **Feature Complete**:
-   - Update card status to COMPLETE
+   - Update card status to COMPLETE in card content
+   - **Rename card file with "X_" prefix** (e.g., `FEATURE_name.md` → `X_FEATURE_name.md`)
    - Update gameplan progress
    - Final documentation update
 
@@ -793,7 +808,9 @@ During review:
    - User approves → Continue to Phase 2
    - ... (repeat for all phases)
 
-6. **Feature Complete**: Card status updated to COMPLETE
+6. **Feature Complete**: 
+   - Card status updated to COMPLETE in card content
+   - Card file renamed: `FEATURE_navigation_menu.md` → `X_FEATURE_navigation_menu.md`
 
 ### Example: Enhancement Development
 
@@ -812,7 +829,9 @@ During review:
 
 4. **Implementation**: Follow gameplan with commits after each step
 
-5. **Enhancement Complete**: Card status updated to COMPLETE
+5. **Enhancement Complete**: 
+   - Card status updated to COMPLETE in card content
+   - Card file renamed: `ENHANCE_quantity_validation.md` → `X_ENHANCE_quantity_validation.md`
 
 ### Example: Bug Fix
 
@@ -832,7 +851,9 @@ During review:
 
 4. **Implementation**: Follow gameplan with commits after each step
 
-5. **Bug Fixed**: Card status updated to COMPLETE
+5. **Bug Fixed**: 
+   - Card status updated to COMPLETE in card content
+   - Card file renamed: `BUG_report_duplicate_minifigs.md` → `X_BUG_report_duplicate_minifigs.md`
 
 ---
 
