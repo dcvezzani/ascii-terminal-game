@@ -175,8 +175,9 @@ async function runLocalMode() {
 
 /**
  * Run game in networked (multiplayer) mode
+ * @returns {Promise<void>}
  */
-async function runNetworkedMode() {
+export async function runNetworkedMode() {
   let game = null;
   let renderer = null;
   let inputHandler = null;
