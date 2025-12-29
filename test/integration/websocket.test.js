@@ -570,25 +570,30 @@ describe('WebSocket Integration', () => {
               // Response to CONNECT
               playerId = message.payload.playerId;
 
-              // Move player
+              // Wait a bit for server to fully process player join, then move player
               if (!moveSent) {
                 moveSent = true;
-                firstClient.send(
-                  JSON.stringify({
-                    type: 'MOVE',
-                    payload: { dx: 1, dy: 0 },
-                  })
-                );
+                setTimeout(() => {
+                  firstClient.send(
+                    JSON.stringify({
+                      type: 'MOVE',
+                      payload: { dx: 1, dy: 0 },
+                    })
+                  );
+                }, 100);
               }
             } else if (message.type === 'STATE_UPDATE' && playerId && !playerPosition) {
               const state = message.payload.gameState;
               const player = state.players.find(p => p.playerId === playerId);
-              if (player && player.x !== gameConfig.player.initialX) {
-                // Player has moved, save position
-                playerPosition = { x: player.x, y: player.y };
+              // Wait for player to move (check if position changed from initial)
+              // If player hasn't moved yet, wait for next STATE_UPDATE
+              if (player) {
+                if (player.x !== gameConfig.player.initialX || player.y !== gameConfig.player.initialY) {
+                  // Player has moved, save position
+                  playerPosition = { x: player.x, y: player.y };
 
-                // Disconnect
-                firstClient.close();
+                  // Disconnect
+                  firstClient.close();
 
                 // Wait a bit longer for server to process disconnect and mark player as disconnected
                 setTimeout(() => {
@@ -668,6 +673,10 @@ describe('WebSocket Integration', () => {
                     }
                   });
                 }, 1000);
+                } else {
+                  // Player hasn't moved yet, wait for next STATE_UPDATE
+                  // The move might not have been processed yet
+                }
               }
             }
           } catch (error) {
