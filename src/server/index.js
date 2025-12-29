@@ -17,7 +17,11 @@ import { MessageTypes } from '../network/MessageTypes.js';
 import { randomUUID } from 'crypto';
 import { logger } from '../utils/logger.js';
 import { setupCollisionListener } from './listeners/index.js';
-import { toZZTCharacterGlyph, toColorHexValue } from '../constants/gameConstants.js';
+import {
+  toZZTCharacterGlyph,
+  toColorHexValue,
+  MOVEMENT_BROADCAST_IMMEDIATE,
+} from '../constants/gameConstants.js';
 
 let wss = null;
 let connectionManager = null;
@@ -85,7 +89,7 @@ export async function startServer() {
           ws.isAlive = false;
           ws.ping();
         });
-      }, 30000); // Ping every 30 seconds
+      }, serverConfig.websocket.broadcastIntervals.ping);
 
       // Broadcast state updates periodically
       stateUpdateInterval = setInterval(() => {
@@ -96,9 +100,9 @@ export async function startServer() {
             `Broadcasting state update to ${wss.clients.size} client(s), ${gameServer.getPlayerCount()} player(s)`
           );
         }
-      }, serverConfig.websocket.updateInterval);
+      }, serverConfig.websocket.broadcastIntervals.state);
 
-      // Purge disconnected players and connections periodically (every 30 seconds)
+      // Purge disconnected players and connections periodically
       purgeInterval = setInterval(() => {
         const purgedPlayers = gameServer.purgeDisconnectedPlayers();
         const purgedConnections = connectionManager.purgeDisconnectedConnections();
@@ -108,7 +112,7 @@ export async function startServer() {
         if (purgedConnections > 0) {
           logger.debug(`Purged ${purgedConnections} disconnected connection(s) after grace period`);
         }
-      }, 30000); // Check every 30 seconds
+      }, serverConfig.websocket.broadcastIntervals.purge);
 
       // Clean up purge interval on server close
       wss.on('close', () => {
@@ -570,12 +574,13 @@ function handleMoveMessage(ws, clientId, payload) {
       return;
     }
 
-    // Movement successful - state will be broadcast via periodic updates
-
-    // Movement successful - immediately broadcast state update to all clients
-    // This prevents other clients from seeing brief overlaps before periodic updates
-    const stateMessage = createStateUpdateMessage(gameServer.getGameState());
-    broadcastMessage(stateMessage);
+    // Movement successful - broadcast state update based on configuration
+    // Immediate: prevents other clients from seeing brief overlaps
+    // Periodic: state will be broadcast via periodic updates (default)
+    if (serverConfig.websocket.broadcastIntervals.movement === MOVEMENT_BROADCAST_IMMEDIATE) {
+      const stateMessage = createStateUpdateMessage(gameServer.getGameState());
+      broadcastMessage(stateMessage);
+    }
   } catch (error) {
     logger.error(`Error handling MOVE message from client ${clientId}:`, error);
     const errorMessage = createErrorMessage(
