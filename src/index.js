@@ -193,6 +193,8 @@ export async function runNetworkedMode() {
   let lastReconciliationTime = Date.now();
   let reconciliationTimer = null;
   let running = true;
+  // Phase 4: Queue state updates that arrive before localPlayerId is set
+  let queuedStateUpdate = null;
 
   try {
     // Terminal Size Validation
@@ -219,8 +221,16 @@ export async function runNetworkedMode() {
     });
 
     // Phase 3: Server Reconciliation - Reconciliation function
+    // Phase 4.3: Enhanced with edge case handling
     function reconcileWithServer(gameState) {
-      if (!localPlayerId || localPlayerPredictedPosition.x === null) {
+      // Phase 4.3: Handle null/undefined predicted position
+      if (
+        !localPlayerId ||
+        localPlayerPredictedPosition.x === null ||
+        localPlayerPredictedPosition.y === null ||
+        localPlayerPredictedPosition.x === undefined ||
+        localPlayerPredictedPosition.y === undefined
+      ) {
         return;
       }
 
@@ -232,7 +242,37 @@ export async function runNetworkedMode() {
       const predicted = localPlayerPredictedPosition;
       const server = { x: serverPlayer.x, y: serverPlayer.y };
 
+      // Phase 4.3: Validate server position
+      if (
+        server.x === null ||
+        server.y === null ||
+        server.x === undefined ||
+        server.y === undefined
+      ) {
+        clientLogger.warn(`Invalid server player position: (${server.x}, ${server.y})`);
+        return;
+      }
+
+      // Phase 4.3: Validate predicted position is within bounds
+      if (
+        gameState.board &&
+        gameState.board.grid &&
+        (predicted.x < 0 ||
+          predicted.y < 0 ||
+          predicted.y >= gameState.board.grid.length ||
+          (gameState.board.grid[predicted.y] &&
+            predicted.x >= gameState.board.grid[predicted.y].length))
+      ) {
+        clientLogger.warn(
+          `Predicted position out of bounds: (${predicted.x}, ${predicted.y}), correcting to server position`
+        );
+        // Correct to server position immediately
+        localPlayerPredictedPosition = { x: server.x, y: server.y };
+        return;
+      }
+
       // Check for discrepancy
+      // Phase 4.3: Handle server rejecting moves (position doesn't change on server)
       if (predicted.x !== server.x || predicted.y !== server.y) {
         clientLogger.debug(
           `Reconciliation: Predicted (${predicted.x}, ${predicted.y}) != Server (${server.x}, ${server.y})`
@@ -300,20 +340,41 @@ export async function runNetworkedMode() {
 
     wsClient.onStateUpdate(gameState => {
       currentState = gameState;
-      if (!renderer || !localPlayerId) {
-        return; // Wait for renderer and localPlayerId
+      if (!renderer) {
+        return; // Wait for renderer
+      }
+
+      // Phase 4.1: Handle state update arriving before localPlayerId is set
+      if (!localPlayerId) {
+        // Queue the state update to process once localPlayerId is set
+        queuedStateUpdate = gameState;
+        return;
       }
 
       try {
         // Phase 1: Client-side prediction - Initialize predicted position on first update
+        // Phase 4.1: Handle initial state and mid-game join
         if (previousState === null && localPlayerId) {
           const localPlayer = gameState.players.find(p => p.playerId === localPlayerId);
           if (localPlayer) {
-            localPlayerPredictedPosition = { x: localPlayer.x, y: localPlayer.y };
-            lastReconciliationTime = Date.now();
-            // Phase 3: Start reconciliation timer after first state update
-            if (clientConfig.prediction.enabled) {
-              startReconciliationTimer();
+            // Phase 4.3: Validate position before initializing
+            if (
+              localPlayer.x !== null &&
+              localPlayer.y !== null &&
+              localPlayer.x !== undefined &&
+              localPlayer.y !== undefined
+            ) {
+              localPlayerPredictedPosition = { x: localPlayer.x, y: localPlayer.y };
+              lastReconciliationTime = Date.now();
+              // Phase 3: Start reconciliation timer after first state update
+              // Phase 4.2: Restart timer on reconnect (if already exists, it will be cleared)
+              if (clientConfig.prediction.enabled) {
+                startReconciliationTimer();
+              }
+            } else {
+              clientLogger.warn(
+                `Invalid initial player position: (${localPlayer.x}, ${localPlayer.y})`
+              );
             }
           }
         }
@@ -455,7 +516,55 @@ export async function runNetworkedMode() {
     wsClient.onPlayerJoined(payload => {
       if (payload.clientId === wsClient.getClientId()) {
         localPlayerId = payload.playerId;
-        // Phase 1: Initialize predicted position will happen on first state update
+        // Phase 4.1: Process queued state update if one exists
+        if (queuedStateUpdate && renderer) {
+          // Process the queued state update now that localPlayerId is set
+          // Trigger the state update handler with the queued state
+          currentState = queuedStateUpdate;
+          const gameState = queuedStateUpdate;
+          queuedStateUpdate = null;
+
+          // Process the state update (same logic as onStateUpdate callback)
+          try {
+            // Phase 1: Client-side prediction - Initialize predicted position on first update
+            // Phase 4.1: Handle initial state and mid-game join
+            if (previousState === null && localPlayerId) {
+              const localPlayer = gameState.players.find(p => p.playerId === localPlayerId);
+              if (localPlayer) {
+                // Phase 4.3: Validate position before initializing
+                if (
+                  localPlayer.x !== null &&
+                  localPlayer.y !== null &&
+                  localPlayer.x !== undefined &&
+                  localPlayer.y !== undefined
+                ) {
+                  localPlayerPredictedPosition = { x: localPlayer.x, y: localPlayer.y };
+                  lastReconciliationTime = Date.now();
+                  // Phase 3: Start reconciliation timer after first state update
+                  // Phase 4.2: Restart timer on reconnect (if already exists, it will be cleared)
+                  if (clientConfig.prediction.enabled) {
+                    startReconciliationTimer();
+                  }
+                } else {
+                  clientLogger.warn(
+                    `Invalid initial player position: (${localPlayer.x}, ${localPlayer.y})`
+                  );
+                }
+              }
+            }
+
+            // Phase 1: State Tracking - Handle initial render detection
+            if (previousState === null) {
+              // First render - use renderFull()
+              renderer.renderFull(game, gameState, localPlayerId);
+              // Store state after successful render (deep copy)
+              previousState = JSON.parse(JSON.stringify(gameState));
+            }
+            // Note: We only handle initial render here, incremental updates will happen on next STATE_UPDATE
+          } catch (error) {
+            clientLogger.error('Error processing queued state update:', error);
+          }
+        }
       }
     });
 
@@ -465,11 +574,15 @@ export async function runNetworkedMode() {
 
     wsClient.onDisconnect(() => {
       clientLogger.info('Disconnected from server');
+      // Phase 4.2: Reset predicted position on disconnect
+      localPlayerPredictedPosition = { x: null, y: null };
       // Phase 3: Clear reconciliation timer on disconnect
       if (reconciliationTimer) {
         clearInterval(reconciliationTimer);
         reconciliationTimer = null;
       }
+      // Phase 4.2: Clear queued state update
+      queuedStateUpdate = null;
       running = false;
       if (game) {
         game.stop();
@@ -488,10 +601,13 @@ export async function runNetworkedMode() {
         }
 
         // Phase 2: Client-side prediction - Update and render immediately
+        // Phase 4.3: Handle edge cases (null/undefined, invalid positions, rapid input)
         if (
           clientConfig.prediction.enabled &&
           localPlayerPredictedPosition.x !== null &&
           localPlayerPredictedPosition.y !== null &&
+          localPlayerPredictedPosition.x !== undefined &&
+          localPlayerPredictedPosition.y !== undefined &&
           renderer &&
           currentState
         ) {
@@ -499,8 +615,16 @@ export async function runNetworkedMode() {
           const oldY = localPlayerPredictedPosition.y;
           const newY = oldY - 1;
 
+          // Phase 4.3: Validate bounds before movement
           // Optional: Check for wall collision
-          if (newY >= 0 && currentState.board && currentState.board.grid) {
+          if (
+            newY >= 0 &&
+            currentState.board &&
+            currentState.board.grid &&
+            newY < currentState.board.grid.length &&
+            oldX >= 0 &&
+            oldX < (currentState.board.grid[newY]?.length || 0)
+          ) {
             const boardAdapter = {
               getCell: (x, y) => {
                 if (
@@ -565,10 +689,13 @@ export async function runNetworkedMode() {
         }
 
         // Phase 2: Client-side prediction - Update and render immediately
+        // Phase 4.3: Handle edge cases (null/undefined, invalid positions, rapid input)
         if (
           clientConfig.prediction.enabled &&
           localPlayerPredictedPosition.x !== null &&
           localPlayerPredictedPosition.y !== null &&
+          localPlayerPredictedPosition.x !== undefined &&
+          localPlayerPredictedPosition.y !== undefined &&
           renderer &&
           currentState
         ) {
@@ -576,8 +703,16 @@ export async function runNetworkedMode() {
           const oldY = localPlayerPredictedPosition.y;
           const newY = oldY + 1;
 
+          // Phase 4.3: Validate bounds before movement
           // Optional: Check for wall collision
-          if (currentState.board && currentState.board.grid) {
+          if (
+            currentState.board &&
+            currentState.board.grid &&
+            newY >= 0 &&
+            newY < currentState.board.grid.length &&
+            oldX >= 0 &&
+            oldX < (currentState.board.grid[newY]?.length || 0)
+          ) {
             const boardAdapter = {
               getCell: (x, y) => {
                 if (
@@ -642,10 +777,13 @@ export async function runNetworkedMode() {
         }
 
         // Phase 2: Client-side prediction - Update and render immediately
+        // Phase 4.3: Handle edge cases (null/undefined, invalid positions, rapid input)
         if (
           clientConfig.prediction.enabled &&
           localPlayerPredictedPosition.x !== null &&
           localPlayerPredictedPosition.y !== null &&
+          localPlayerPredictedPosition.x !== undefined &&
+          localPlayerPredictedPosition.y !== undefined &&
           renderer &&
           currentState
         ) {
@@ -653,8 +791,16 @@ export async function runNetworkedMode() {
           const oldY = localPlayerPredictedPosition.y;
           const newX = oldX - 1;
 
+          // Phase 4.3: Validate bounds before movement
           // Optional: Check for wall collision
-          if (newX >= 0 && currentState.board && currentState.board.grid) {
+          if (
+            newX >= 0 &&
+            currentState.board &&
+            currentState.board.grid &&
+            oldY >= 0 &&
+            oldY < currentState.board.grid.length &&
+            newX < (currentState.board.grid[oldY]?.length || 0)
+          ) {
             const boardAdapter = {
               getCell: (x, y) => {
                 if (
@@ -719,10 +865,13 @@ export async function runNetworkedMode() {
         }
 
         // Phase 2: Client-side prediction - Update and render immediately
+        // Phase 4.3: Handle edge cases (null/undefined, invalid positions, rapid input)
         if (
           clientConfig.prediction.enabled &&
           localPlayerPredictedPosition.x !== null &&
           localPlayerPredictedPosition.y !== null &&
+          localPlayerPredictedPosition.x !== undefined &&
+          localPlayerPredictedPosition.y !== undefined &&
           renderer &&
           currentState
         ) {
@@ -730,8 +879,16 @@ export async function runNetworkedMode() {
           const oldY = localPlayerPredictedPosition.y;
           const newX = oldX + 1;
 
+          // Phase 4.3: Validate bounds before movement
           // Optional: Check for wall collision
-          if (currentState.board && currentState.board.grid) {
+          if (
+            currentState.board &&
+            currentState.board.grid &&
+            oldY >= 0 &&
+            oldY < currentState.board.grid.length &&
+            newX >= 0 &&
+            newX < (currentState.board.grid[oldY]?.length || 0)
+          ) {
             const boardAdapter = {
               getCell: (x, y) => {
                 if (
