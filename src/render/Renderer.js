@@ -298,6 +298,9 @@ export class Renderer {
       const oldColorFn = this.getColorFunction(oldGlyph.color);
       this.updateCell(left.x, left.y, oldGlyph.char, oldColorFn);
     }
+
+    // Move cursor out of the way to prevent it from being visible on screen
+    process.stdout.write(ansiEscapes.cursorTo(0, this.statusBarOffset + 1));
   }
 
   /**
@@ -394,6 +397,9 @@ export class Renderer {
       const entityColorFn = this.getColorFunction(entityColor);
       this.updateCell(animated.x, animated.y, entityChar, entityColorFn);
     }
+
+    // Move cursor out of the way to prevent it from being visible on screen
+    process.stdout.write(ansiEscapes.cursorTo(0, this.statusBarOffset + 1));
   }
 
   /**
