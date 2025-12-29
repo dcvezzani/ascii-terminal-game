@@ -126,4 +126,4 @@ export const WALL_CHAR = toGlyph(fontSet.NUMBER_SIGN, toColorHexValue('gray'));
  * Character representing the player
  * Unicode: U+263A (WHITE SMILING FACE)
  */
-export const PLAYER_CHAR = toZZTCharacterGlyph('ruffian', toColorHexValue('white'));
+export const PLAYER_CHAR = toZZTCharacterGlyph('player', toColorHexValue('white'));
