@@ -554,53 +554,51 @@ This gameplan implements a general-purpose scoped event system for the WebSocket
 
 ### Step 6.2: Create Additional Unit Tests
 
-- [ ] Test event scoping (global, group, targeted)
-- [ ] Test event data immutability
-- [ ] Test event emission performance
-- [x] Test error handling in listeners (partially covered in collisionListener.test.js)
+- [x] Test event scoping (global, group, targeted)
+- [x] Test event data immutability
+- [x] Test event emission performance
+- [x] Test error handling in listeners (covered in collisionListener.test.js and eventSystem.test.js)
 
-**Test Cases** (Missing - Need to Create):
-- [ ] `should support global events` - **MISSING**
-- [ ] `should support group events` - **MISSING**
-- [ ] `should support targeted events` - **PARTIALLY COVERED** (collision events are targeted, but no explicit scoping test)
-- [ ] `should pass immutable event data` - **MISSING**
-- [ ] `should emit events efficiently` - **MISSING**
+**Test Cases**:
+- [x] `should support global events` - **CREATED** (GameServer.eventScoping.test.js)
+- [x] `should support group events` - **CREATED** (GameServer.eventScoping.test.js)
+- [x] `should support targeted events` - **CREATED** (GameServer.eventScoping.test.js)
+- [x] `should pass immutable event data` - **CREATED** (GameServer.eventDataImmutability.test.js)
+- [x] `should emit events efficiently` - **CREATED** (GameServer.eventPerformance.test.js)
 - [x] `should handle listener errors gracefully` - **COVERED** (in collisionListener.test.js and eventSystem.test.js)
 
 **Verification**:
-- [ ] All additional tests pass
-- [ ] Tests verify event scoping
-- [ ] Tests verify data immutability
-- [ ] Tests verify performance
+- [x] All additional tests pass (25 tests passing)
+- [x] Tests verify event scoping (10 tests)
+- [x] Tests verify data immutability (8 tests)
+- [x] Tests verify performance (7 tests)
 
-**Missing Test File**: `test/server/GameServer.eventScoping.test.js` - Should test all three event scopes
-**Missing Test File**: `test/server/GameServer.eventDataImmutability.test.js` - Should verify event data is immutable
-**Missing Test File**: `test/server/GameServer.eventPerformance.test.js` - Should verify event emission performance
+**Test Files Created**:
+- ✅ `test/server/GameServer.eventScoping.test.js` - Tests all three event scopes (10 tests)
+- ✅ `test/server/GameServer.eventDataImmutability.test.js` - Verifies event data is immutable (8 tests)
+- ✅ `test/server/GameServer.eventPerformance.test.js` - Verifies event emission performance (7 tests)
 
 ### Step 6.3: Create Integration Tests
 
 - [x] Test event system with real game server (covered in eventSystem.test.js)
-- [ ] Test collision events in multiplayer scenario - **MISSING**
+- [x] Test collision events in multiplayer scenario - **CREATED** (websocket-event-system.test.js)
 - [x] Test event listener registration and activation (covered in eventSystem.test.js)
-- [ ] Test event system isolation (server-only) - **MISSING**
+- [x] Test event system isolation (server-only) - **CREATED** (websocket-event-system.test.js)
 
 **Test Cases**:
-- [x] `should emit collision events in multiplayer game` - **PARTIALLY COVERED** (eventSystem.test.js has basic collision tests)
+- [x] `should emit collision events in multiplayer game` - **CREATED** (websocket-event-system.test.js)
 - [x] `should trigger listeners when collisions occur` - **COVERED** (eventSystem.test.js)
-- [ ] `should not affect client event system` - **MISSING** (needs WebSocket integration test)
-- [ ] `should handle concurrent events` - **MISSING**
+- [x] `should not affect client event system` - **CREATED** (websocket-event-system.test.js)
+- [x] `should handle concurrent events` - **CREATED** (websocket-event-system.test.js)
 
 **Verification**:
 - [x] All integration tests pass (5/5 in eventSystem.test.js)
 - [x] Tests verify real-world scenarios (basic scenarios covered)
-- [ ] Tests verify event system isolation - **MISSING**
-- [ ] Tests verify concurrent event handling - **MISSING**
+- [x] Tests verify event system isolation - **CREATED** (websocket-event-system.test.js)
+- [x] Tests verify concurrent event handling - **CREATED** (websocket-event-system.test.js)
 
-**Missing Test File**: `test/integration/websocket-event-system.test.js` - Should test event system with WebSocket server and multiple clients
-**Missing Test Cases**:
-- Test that server events don't leak to client
-- Test concurrent event emission (multiple collisions at once)
-- Test event system in actual multiplayer game scenario
+**Test File Created**:
+- ✅ `test/integration/websocket-event-system.test.js` - Tests event system with WebSocket server and multiple clients (4 tests)
 
 ### Step 6.4: Manual Testing
 
@@ -634,29 +632,29 @@ This gameplan implements a general-purpose scoped event system for the WebSocket
 - ✅ Basic integration tests created (eventSystem.test.js)
 - ✅ Error handling tests in listeners
 
-**Missing Tests to Create**:
+**Tests Created**:
 
-1. **Event Scoping Tests** (`test/server/GameServer.eventScoping.test.js`):
-   - Test global events (scope: 'global')
-   - Test group events (scope: 'group', with group identifier)
-   - Test targeted events (scope: 'targeted', with targetId)
-   - Verify scope filtering in listeners
+1. ✅ **Event Scoping Tests** (`test/server/GameServer.eventScoping.test.js`) - 10 tests
+   - ✅ Test global events (scope: 'global')
+   - ✅ Test group events (scope: 'group', with group identifier)
+   - ✅ Test targeted events (scope: 'targeted', with targetId)
+   - ✅ Verify scope filtering in listeners
 
-2. **Event Data Immutability Tests** (`test/server/GameServer.eventDataImmutability.test.js`):
-   - Verify event data is passed as copies, not references
-   - Verify listeners cannot modify original game state through event data
-   - Verify event data is serializable (no functions, circular references)
+2. ✅ **Event Data Immutability Tests** (`test/server/GameServer.eventDataImmutability.test.js`) - 8 tests
+   - ✅ Verify event data is passed as copies, not references
+   - ✅ Verify listeners cannot modify original game state through event data
+   - ✅ Verify event data is serializable (no functions, circular references)
 
-3. **Event Performance Tests** (`test/server/GameServer.eventPerformance.test.js`):
-   - Verify event emission doesn't block game operations
-   - Verify event emission is fast (< 1ms overhead)
-   - Verify multiple listeners don't cause performance degradation
+3. ✅ **Event Performance Tests** (`test/server/GameServer.eventPerformance.test.js`) - 7 tests
+   - ✅ Verify event emission doesn't block game operations
+   - ✅ Verify event emission is fast (< 1ms overhead)
+   - ✅ Verify multiple listeners don't cause performance degradation
 
-4. **WebSocket Integration Tests** (`test/integration/websocket-event-system.test.js`):
-   - Test collision events in actual multiplayer scenario with WebSocket server
-   - Test that server events don't leak to client (isolation)
-   - Test concurrent event emission (multiple collisions simultaneously)
-   - Test event system with multiple connected clients
+4. ✅ **WebSocket Integration Tests** (`test/integration/websocket-event-system.test.js`) - 4 tests
+   - ✅ Test collision events in actual multiplayer scenario with WebSocket server
+   - ✅ Test that server events don't leak to client (isolation)
+   - ✅ Test concurrent event emission (multiple collisions simultaneously)
+   - ✅ Test event system with multiple connected clients
 
 **Manual Testing** (Pending):
 - Start WebSocket server and verify it starts without errors
