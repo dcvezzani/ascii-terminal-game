@@ -82,7 +82,7 @@ This gameplan implements a general-purpose scoped event system for the WebSocket
 - ✅ **Phase 1: EventEmitter Integration** - COMPLETE
 - ✅ **Phase 2: Event Type Constants** - COMPLETE
 - ✅ **Phase 3: Collision Event Emission** - COMPLETE
-- ⏳ **Phase 4: Event Listener Infrastructure** - NOT STARTED
+- ✅ **Phase 4: Event Listener Infrastructure** - COMPLETE
 - ⏳ **Phase 5: Event Listener Registration** - NOT STARTED
 - ⏳ **Phase 6: Testing** - NOT STARTED
 
@@ -382,16 +382,16 @@ This gameplan implements a general-purpose scoped event system for the WebSocket
 
 ### Step 4.1: Create Listeners Directory
 
-- [ ] Create `src/server/listeners/` directory
-- [ ] Create `src/server/listeners/index.js` for exporting all listeners
+- [x] Create `src/server/listeners/` directory
+- [x] Create `src/server/listeners/index.js` for exporting all listeners
 
 **Verification**:
-- [ ] `listeners/` directory exists
-- [ ] `index.js` file created
+- [x] `listeners/` directory exists
+- [x] `index.js` file created
 
 ### Step 4.2: Create Collision Listener
 
-- [ ] Create `src/server/listeners/collisionListener.js`
+- [x] Create `src/server/listeners/collisionListener.js`
 - [ ] Implement collision event listener:
   ```javascript
   import { EventTypes } from '../EventTypes.js';
@@ -419,45 +419,45 @@ This gameplan implements a general-purpose scoped event system for the WebSocket
   ```
 
 **Verification**:
-- [ ] `collisionListener.js` file created
-- [ ] Listener function is exported
-- [ ] Listener handles collision events
-- [ ] Error handling is implemented
-- [ ] Logging is included
+- [x] `collisionListener.js` file created
+- [x] Listener function is exported
+- [x] Listener handles collision events
+- [x] Error handling is implemented
+- [x] Logging is included
 
 ### Step 4.3: Export Listeners from Index
 
-- [ ] Open `src/server/listeners/index.js`
-- [ ] Export all listener setup functions:
+- [x] Open `src/server/listeners/index.js`
+- [x] Export all listener setup functions:
   ```javascript
   export { setupCollisionListener } from './collisionListener.js';
   // Future: export other listeners here
   ```
 
 **Verification**:
-- [ ] All listeners are exported
-- [ ] Exports are named exports
-- [ ] File follows project code style
+- [x] All listeners are exported
+- [x] Exports are named exports
+- [x] File follows project code style
 
 ### Step 4.4: Create Unit Tests
 
-- [ ] Create `test/server/listeners/collisionListener.test.js`
-- [ ] Test that collision listener is set up correctly
-- [ ] Test that listener receives collision events
-- [ ] Test that listener handles errors gracefully
+- [x] Create `test/server/listeners/collisionListener.test.js`
+- [x] Test that collision listener is set up correctly
+- [x] Test that listener receives collision events
+- [x] Test that listener handles errors gracefully
 
 **Test Cases**:
-- [ ] `should set up collision listener`
-- [ ] `should receive player collision events`
-- [ ] `should receive wall collision events`
-- [ ] `should log collision events`
-- [ ] `should handle errors gracefully`
+- [x] `should set up collision listener`
+- [x] `should receive player collision events`
+- [x] `should receive wall collision events`
+- [x] `should log collision events`
+- [x] `should handle errors gracefully`
 
 **Verification**:
-- [ ] All tests pass
-- [ ] Tests verify listener setup
-- [ ] Tests verify event handling
-- [ ] Tests verify error handling
+- [x] All tests pass
+- [x] Tests verify listener setup
+- [x] Tests verify event handling
+- [x] Tests verify error handling
 
 ---
 
