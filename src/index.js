@@ -11,6 +11,7 @@ import { validateTerminalSize } from './utils/terminal.js';
 import { gameConfig } from './config/gameConfig.js';
 import { serverConfig } from './config/serverConfig.js';
 import { WebSocketClient } from './network/WebSocketClient.js';
+import { clientLogger } from './utils/clientLogger.js';
 
 /**
  * Run game in local (single-player) mode
@@ -28,8 +29,8 @@ async function runLocalMode() {
       gameConfig.terminal.minColumns
     );
     if (!sizeCheck.valid) {
-      console.error(`\n${sizeCheck.message}`);
-      console.error('Please resize your terminal and try again.\n');
+      clientLogger.error(`\n${sizeCheck.message}`);
+      clientLogger.error('Please resize your terminal and try again.\n');
       process.exit(1);
     }
 
@@ -153,9 +154,9 @@ async function runLocalMode() {
       await new Promise(resolve => setTimeout(resolve, 10));
     }
   } catch (error) {
-    console.error('\nAn error occurred:', error.message);
+    clientLogger.error('\nAn error occurred:', error.message);
     if (error.stack) {
-      console.error(error.stack);
+      clientLogger.error(error.stack);
     }
   } finally {
     try {
@@ -166,7 +167,7 @@ async function runLocalMode() {
         renderer.cleanup();
       }
     } catch (cleanupError) {
-      console.error('Error during cleanup:', cleanupError.message);
+      clientLogger.error('Error during cleanup:', cleanupError.message);
     }
   }
 }
@@ -191,8 +192,8 @@ async function runNetworkedMode() {
       gameConfig.terminal.minColumns
     );
     if (!sizeCheck.valid) {
-      console.error(`\n${sizeCheck.message}`);
-      console.error('Please resize your terminal and try again.\n');
+      clientLogger.error(`\n${sizeCheck.message}`);
+      clientLogger.error('Please resize your terminal and try again.\n');
       process.exit(1);
     }
 
@@ -203,7 +204,7 @@ async function runNetworkedMode() {
 
     // Set up WebSocket callbacks
     wsClient.onConnect(() => {
-      console.log('Connected to server');
+      clientLogger.info('Connected to server');
       // Send CONNECT message to join game
       wsClient.sendConnect();
     });
@@ -222,11 +223,11 @@ async function runNetworkedMode() {
     });
 
     wsClient.onError(error => {
-      console.error('WebSocket error:', error);
+      clientLogger.error('WebSocket error:', error);
     });
 
     wsClient.onDisconnect(() => {
-      console.log('Disconnected from server');
+      clientLogger.info('Disconnected from server');
       running = false;
       if (game) {
         game.stop();
@@ -327,7 +328,7 @@ async function runNetworkedMode() {
     renderer.initialize();
 
     // Connect to server
-    console.log('Connecting to server...');
+    clientLogger.info('Connecting to server...');
     await wsClient.connect();
 
     // Start input handling
@@ -338,9 +339,9 @@ async function runNetworkedMode() {
       await new Promise(resolve => setTimeout(resolve, 10));
     }
   } catch (error) {
-    console.error('\nAn error occurred:', error.message);
+    clientLogger.error('\nAn error occurred:', error.message);
     if (error.stack) {
-      console.error(error.stack);
+      clientLogger.error(error.stack);
     }
   } finally {
     try {
@@ -354,7 +355,7 @@ async function runNetworkedMode() {
         renderer.cleanup();
       }
     } catch (cleanupError) {
-      console.error('Error during cleanup:', cleanupError.message);
+      clientLogger.error('Error during cleanup:', cleanupError.message);
     }
   }
 }
@@ -382,6 +383,6 @@ process.on('SIGTERM', () => {
 
 // Run the game
 main().catch(error => {
-  console.error('Fatal error:', error);
+  clientLogger.error('Fatal error:', error);
   process.exit(1);
 });

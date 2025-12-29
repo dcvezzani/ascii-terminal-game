@@ -1,19 +1,23 @@
 /**
- * Configurable logging utility for the WebSocket server
+ * Configurable logging utility for the game client
  * Uses winston to support multiple transports (console, file, or both)
  */
 
 import winston from 'winston';
-import { serverConfig } from '../config/serverConfig.js';
+import { clientConfig } from '../config/clientConfig.js';
 import path from 'path';
+import { fileURLToPath } from 'url';
 import fs from 'fs';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 /**
  * Create winston transports based on configuration
  */
 function createTransports() {
   const transports = [];
-  const config = serverConfig.logging;
+  const config = clientConfig.logging;
 
   // Determine which transports to use
   const transportTypes = Array.isArray(config.transports)
@@ -94,8 +98,8 @@ function parseFileSize(sizeStr) {
 /**
  * Create winston logger instance
  */
-const winstonLogger = winston.createLogger({
-  level: serverConfig.logging.level || 'info',
+const logger = winston.createLogger({
+  level: clientConfig.logging.level || 'info',
   format: winston.format.combine(
     winston.format.timestamp(),
     winston.format.errors({ stack: true }),
@@ -108,35 +112,35 @@ const winstonLogger = winston.createLogger({
 });
 
 /**
- * Server logger with methods for different log levels
- * Maintains the same API as the previous custom implementation
+ * Client logger with methods for different log levels
  */
-export const logger = {
+export const clientLogger = {
   /**
-   * Log debug messages (all events, messages, state changes)
+   * Log debug messages (detailed information for debugging)
    */
   debug(message, ...args) {
-    winstonLogger.debug(message, ...args);
+    logger.debug(message, ...args);
   },
 
   /**
-   * Log info messages (connections, disconnections, important events)
+   * Log info messages (general information)
    */
   info(message, ...args) {
-    winstonLogger.info(message, ...args);
+    logger.info(message, ...args);
   },
 
   /**
-   * Log warning messages (warnings, non-critical errors)
+   * Log warning messages (warnings, non-critical issues)
    */
   warn(message, ...args) {
-    winstonLogger.warn(message, ...args);
+    logger.warn(message, ...args);
   },
 
   /**
    * Log error messages (errors only)
    */
   error(message, ...args) {
-    winstonLogger.error(message, ...args);
+    logger.error(message, ...args);
   },
 };
+
