@@ -140,11 +140,19 @@ export async function runNetworkedMode() {
             },
           };
 
-          // Clear old predicted position
-          const oldCell = boardAdapter.getCell(oldX, oldY);
-          const oldGlyph = oldCell === WALL_CHAR.char ? WALL_CHAR : EMPTY_SPACE_CHAR;
-          const oldColorFn = renderer.getColorFunction(oldGlyph.color);
-          renderer.updateCell(oldX, oldY, oldGlyph.char, oldColorFn);
+          // Clear old predicted position - use getCellContent to check for entities
+          // The old position might have an entity (like the ruffian we collided with)
+          const oldContent = renderer.getCellContent(
+            oldX,
+            oldY,
+            boardAdapter,
+            gameState.entities || [],
+            gameState.players || [],
+            null,
+            null
+          );
+          const oldColorFn = renderer.getColorFunction(oldContent.color);
+          renderer.updateCell(oldX, oldY, oldContent.glyph.char, oldColorFn);
 
           // Draw at corrected server position
           const playerColorFn = renderer.getColorFunction(PLAYER_CHAR.color);
@@ -177,6 +185,20 @@ export async function runNetworkedMode() {
           reconcileWithServer(currentState);
         }
       }, interval);
+    }
+
+    /**
+     * Check if there's a solid entity at the given position
+     * @param {number} x - X coordinate
+     * @param {number} y - Y coordinate
+     * @param {Array} entities - Array of all entities
+     * @returns {boolean} True if there's a solid entity at the position
+     */
+    function hasSolidEntityAt(x, y, entities) {
+      if (!entities || entities.length === 0) {
+        return false;
+      }
+      return entities.some(entity => entity.x === x && entity.y === y && entity.solid === true);
     }
 
     wsClient.onStateUpdate(gameState => {
@@ -503,6 +525,12 @@ export async function runNetworkedMode() {
               return;
             }
 
+            // Check for solid entity collision
+            if (hasSolidEntityAt(oldX, newY, currentState.entities || [])) {
+              // Solid entity collision - don't move
+              return;
+            }
+
             // Update predicted position
             localPlayerPredictedPosition.y = newY;
 
@@ -593,6 +621,12 @@ export async function runNetworkedMode() {
             const newCell = boardAdapter.getCell(oldX, newY);
             if (newCell === WALL_CHAR.char) {
               // Wall collision - don't move
+              return;
+            }
+
+            // Check for solid entity collision
+            if (hasSolidEntityAt(oldX, newY, currentState.entities || [])) {
+              // Solid entity collision - don't move
               return;
             }
 
@@ -689,6 +723,12 @@ export async function runNetworkedMode() {
               return;
             }
 
+            // Check for solid entity collision
+            if (hasSolidEntityAt(newX, oldY, currentState.entities || [])) {
+              // Solid entity collision - don't move
+              return;
+            }
+
             // Update predicted position
             localPlayerPredictedPosition.x = newX;
 
@@ -779,6 +819,12 @@ export async function runNetworkedMode() {
             const newCell = boardAdapter.getCell(newX, oldY);
             if (newCell === WALL_CHAR.char) {
               // Wall collision - don't move
+              return;
+            }
+
+            // Check for solid entity collision
+            if (hasSolidEntityAt(newX, oldY, currentState.entities || [])) {
+              // Solid entity collision - don't move
               return;
             }
 
