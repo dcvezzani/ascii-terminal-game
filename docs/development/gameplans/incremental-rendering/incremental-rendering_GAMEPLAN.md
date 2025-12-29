@@ -13,7 +13,7 @@ This gameplan implements incremental/differential rendering for multiplayer mode
 
 - ✅ **Phase 1: State Tracking** - COMPLETE
 - ✅ **Phase 2: State Comparison Utilities** - COMPLETE
-- ⏳ **Phase 3: Incremental Renderer Methods** - PENDING
+- ✅ **Phase 3: Incremental Renderer Methods** - COMPLETE
 - ⏳ **Phase 4: Integration** - PENDING
 - ⏳ **Phase 5: Testing and Refinement** - PENDING
 
@@ -219,70 +219,70 @@ Based on specification answers:
 
 ### Step 3.1: Add Update Players Incremental Method
 
-- [ ] Open `src/render/Renderer.js`
-- [ ] Add `updatePlayersIncremental(previousPlayers, currentPlayers, board)` method
-- [ ] Accept change detection result from `comparePlayers()`
-- [ ] For moved players:
+- [x] Open `src/render/Renderer.js`
+- [x] Add `updatePlayersIncremental(previousPlayers, currentPlayers, board)` method
+- [x] Accept change detection result from `comparePlayers()`
+- [x] For moved players:
   - Clear old position (restore cell content from board)
   - Draw player at new position using `updateCell()`
-- [ ] For joined players:
+- [x] For joined players:
   - Draw player at new position
-- [ ] For left players:
+- [x] For left players:
   - Clear player position (restore cell content from board)
-- [ ] Use `PLAYER_CHAR` for player rendering
-- [ ] Handle multiple players at same position (per Q3: server prevents overlaps)
+- [x] Use `PLAYER_CHAR` for player rendering
+- [x] Handle multiple players at same position (per Q3: server prevents overlaps)
 
 **Verification**:
 
-- [ ] `updatePlayersIncremental()` method added to Renderer
-- [ ] Moved players update correctly
-- [ ] Joined players appear correctly
-- [ ] Left players are removed correctly
-- [ ] Old positions restored with correct cell content
+- [x] `updatePlayersIncremental()` method added to Renderer
+- [x] Moved players update correctly
+- [x] Joined players appear correctly
+- [x] Left players are removed correctly
+- [x] Old positions restored with correct cell content
 
 ### Step 3.2: Add Update Entities Incremental Method
 
-- [ ] Add `updateEntitiesIncremental(previousEntities, currentEntities, board)` method
-- [ ] Accept change detection result from `compareEntities()`
-- [ ] For moved entities:
+- [x] Add `updateEntitiesIncremental(previousEntities, currentEntities, board)` method
+- [x] Accept change detection result from `compareEntities()`
+- [x] For moved entities:
   - Clear old position (restore cell content from board)
   - Draw entity at new position using entity-specific glyph/color
-- [ ] For spawned entities:
+- [x] For spawned entities:
   - Draw entity at new position with correct glyph/color
-- [ ] For despawned entities:
+- [x] For despawned entities:
   - Clear entity position (restore cell content from board)
-- [ ] For animated entities:
+- [x] For animated entities:
   - Update glyph/character at same position (no position change)
-- [ ] Support entity-specific glyphs and colors
-- [ ] Use entity type to determine rendering (glyph, color)
+- [x] Support entity-specific glyphs and colors
+- [x] Use entity type to determine rendering (glyph, color)
 
 **Verification**:
 
-- [ ] `updateEntitiesIncremental()` method added to Renderer
-- [ ] Moved entities update correctly
-- [ ] Spawned entities appear correctly
-- [ ] Despawned entities are removed correctly
-- [ ] Animated entities update visual representation correctly
-- [ ] Entities use correct glyphs and colors
+- [x] `updateEntitiesIncremental()` method added to Renderer
+- [x] Moved entities update correctly
+- [x] Spawned entities appear correctly
+- [x] Despawned entities are removed correctly
+- [x] Animated entities update visual representation correctly
+- [x] Entities use correct glyphs and colors
 
 ### Step 3.3: Add Update Status Bar If Changed Method
 
-- [ ] Add `updateStatusBarIfChanged(score, x, y, previousScore, previousX, previousY)` method
-- [ ] Compare score and position with previous values
-- [ ] Only call `renderStatusBar()` if score or position changed (per Q6: Option B)
-- [ ] Reuse existing `renderStatusBar()` method
+- [x] Add `updateStatusBarIfChanged(score, x, y, previousScore, previousX, previousY)` method
+- [x] Compare score and position with previous values
+- [x] Only call `renderStatusBar()` if score or position changed (per Q6: Option B)
+- [x] Reuse existing `renderStatusBar()` method
 
 **Verification**:
 
-- [ ] `updateStatusBarIfChanged()` method added to Renderer
-- [ ] Status bar updates when score changes
-- [ ] Status bar updates when position changes
-- [ ] Status bar does not update when unchanged
+- [x] `updateStatusBarIfChanged()` method added to Renderer
+- [x] Status bar updates when score changes
+- [x] Status bar updates when position changes
+- [x] Status bar does not update when unchanged
 
 ### Step 3.4: Verify Update Cell Method Exists
 
-- [ ] Check if `updateCell(x, y, char, colorFn)` method exists in Renderer
-- [ ] If missing, implement it:
+- [x] Check if `updateCell(x, y, char, colorFn)` method exists in Renderer
+- [x] If missing, implement it:
   ```javascript
   updateCell(x, y, char, colorFn) {
     const boardStartX = getHorizontalCenter(this.boardWidth);
@@ -295,9 +295,9 @@ Based on specification answers:
 
 **Verification**:
 
-- [ ] `updateCell()` method exists or is implemented
-- [ ] Method correctly updates a single cell
-- [ ] Method uses correct cursor positioning
+- [x] `updateCell()` method exists or is implemented
+- [x] Method correctly updates a single cell
+- [x] Method uses correct cursor positioning
 
 ---
 

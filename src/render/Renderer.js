@@ -3,7 +3,13 @@ import chalk from 'chalk';
 import cliCursor from 'cli-cursor';
 import { getHorizontalCenter } from '../utils/terminal.js';
 import { gameConfig } from '../config/gameConfig.js';
-import { EMPTY_SPACE_CHAR, WALL_CHAR, PLAYER_CHAR } from '../constants/gameConstants.js';
+import {
+  EMPTY_SPACE_CHAR,
+  WALL_CHAR,
+  PLAYER_CHAR,
+  toZZTCharacterGlyph,
+  toColorHexValue,
+} from '../constants/gameConstants.js';
 /**
  * Renderer class handles all terminal rendering for the game
  */
@@ -255,6 +261,155 @@ export class Renderer {
 
     // Move cursor out of the way
     process.stdout.write(ansiEscapes.cursorTo(0, startRow + helpLines.length + 1));
+  }
+
+  /**
+   * Update players incrementally based on change detection
+   * @param {Array} previousPlayers - Previous player array
+   * @param {Array} currentPlayers - Current player array
+   * @param {Object} board - Board instance or adapter with getCell method
+   * @param {Object} changes - Change detection result from comparePlayers()
+   */
+  updatePlayersIncremental(previousPlayers, currentPlayers, board, changes) {
+    // Handle moved players
+    for (const moved of changes.moved) {
+      // Clear old position (restore cell content from board)
+      const oldCell = board.getCell(moved.oldX, moved.oldY);
+      const oldGlyph = oldCell === WALL_CHAR.char ? WALL_CHAR : EMPTY_SPACE_CHAR;
+      const oldColorFn = this.getColorFunction(oldGlyph.color);
+      this.updateCell(moved.oldX, moved.oldY, oldGlyph.char, oldColorFn);
+
+      // Draw player at new position
+      const playerColorFn = this.getColorFunction(PLAYER_CHAR.color);
+      this.updateCell(moved.newX, moved.newY, PLAYER_CHAR.char, playerColorFn);
+    }
+
+    // Handle joined players
+    for (const joined of changes.joined) {
+      const playerColorFn = this.getColorFunction(PLAYER_CHAR.color);
+      this.updateCell(joined.x, joined.y, PLAYER_CHAR.char, playerColorFn);
+    }
+
+    // Handle left players
+    for (const left of changes.left) {
+      // Clear player position (restore cell content from board)
+      const oldCell = board.getCell(left.x, left.y);
+      const oldGlyph = oldCell === WALL_CHAR.char ? WALL_CHAR : EMPTY_SPACE_CHAR;
+      const oldColorFn = this.getColorFunction(oldGlyph.color);
+      this.updateCell(left.x, left.y, oldGlyph.char, oldColorFn);
+    }
+  }
+
+  /**
+   * Get entity glyph - uses entity.glyph if provided, otherwise maps entityType
+   * @param {Object} entity - Entity object
+   * @returns {string} Character to render
+   */
+  getEntityGlyph(entity) {
+    // If glyph is provided, use it directly
+    if (entity.glyph) {
+      return entity.glyph;
+    }
+
+    // Otherwise, try to map entityType using toZZTCharacterGlyph
+    if (entity.entityType) {
+      const glyph = toZZTCharacterGlyph(entity.entityType);
+      if (glyph) {
+        return glyph.char;
+      }
+    }
+
+    // Fallback to empty space if no glyph found
+    return EMPTY_SPACE_CHAR.char;
+  }
+
+  /**
+   * Get entity color - uses entity.color if provided, otherwise defaults to white
+   * @param {Object} entity - Entity object
+   * @returns {string|null} Color hex value or null
+   */
+  getEntityColor(entity) {
+    if (entity.color) {
+      return toColorHexValue(entity.color);
+    }
+    return toColorHexValue('white');
+  }
+
+  /**
+   * Update entities incrementally based on change detection
+   * @param {Array} previousEntities - Previous entity array
+   * @param {Array} currentEntities - Current entity array
+   * @param {Object} board - Board instance or adapter with getCell method
+   * @param {Object} changes - Change detection result from compareEntities()
+   */
+  updateEntitiesIncremental(previousEntities, currentEntities, board, changes) {
+    // Handle moved entities
+    for (const moved of changes.moved) {
+      // Find entity in currentEntities to get glyph/color
+      const entity = currentEntities.find(e => e.entityId === moved.entityId);
+      if (!entity) continue;
+
+      // Clear old position (restore cell content from board)
+      const oldCell = board.getCell(moved.oldX, moved.oldY);
+      const oldGlyph = oldCell === WALL_CHAR.char ? WALL_CHAR : EMPTY_SPACE_CHAR;
+      const oldColorFn = this.getColorFunction(oldGlyph.color);
+      this.updateCell(moved.oldX, moved.oldY, oldGlyph.char, oldColorFn);
+
+      // Draw entity at new position
+      const entityChar = this.getEntityGlyph(entity);
+      const entityColor = this.getEntityColor(entity);
+      const entityColorFn = this.getColorFunction(entityColor);
+      this.updateCell(moved.newX, moved.newY, entityChar, entityColorFn);
+    }
+
+    // Handle spawned entities
+    for (const spawned of changes.spawned) {
+      // Find entity in currentEntities to get glyph/color
+      const entity = currentEntities.find(e => e.entityId === spawned.entityId);
+      if (!entity) continue;
+
+      const entityChar = this.getEntityGlyph(entity);
+      const entityColor = this.getEntityColor(entity);
+      const entityColorFn = this.getColorFunction(entityColor);
+      this.updateCell(spawned.x, spawned.y, entityChar, entityColorFn);
+    }
+
+    // Handle despawned entities
+    for (const despawned of changes.despawned) {
+      // Clear entity position (restore cell content from board)
+      const oldCell = board.getCell(despawned.x, despawned.y);
+      const oldGlyph = oldCell === WALL_CHAR.char ? WALL_CHAR : EMPTY_SPACE_CHAR;
+      const oldColorFn = this.getColorFunction(oldGlyph.color);
+      this.updateCell(despawned.x, despawned.y, oldGlyph.char, oldColorFn);
+    }
+
+    // Handle animated entities (glyph change at same position)
+    for (const animated of changes.animated) {
+      // Find entity in currentEntities to get new glyph/color
+      const entity = currentEntities.find(e => e.entityId === animated.entityId);
+      if (!entity) continue;
+
+      const entityChar = this.getEntityGlyph(entity);
+      const entityColor = this.getEntityColor(entity);
+      const entityColorFn = this.getColorFunction(entityColor);
+      this.updateCell(animated.x, animated.y, entityChar, entityColorFn);
+    }
+  }
+
+  /**
+   * Update status bar only if score or position changed
+   * @param {number} score - Current score
+   * @param {number} x - Current player X position
+   * @param {number} y - Current player Y position
+   * @param {number} previousScore - Previous score
+   * @param {number} previousX - Previous player X position
+   * @param {number} previousY - Previous player Y position
+   */
+  updateStatusBarIfChanged(score, x, y, previousScore, previousX, previousY) {
+    // Only update if score or position changed (per Q6: Option B)
+    if (score !== previousScore || x !== previousX || y !== previousY) {
+      this.renderStatusBar(score, x, y);
+    }
   }
 
   /**
