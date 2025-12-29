@@ -442,6 +442,30 @@ After all steps in a phase are complete:
 - ⏳ **Phase 2: Backend Core Functions** - IN PROGRESS
 ```
 
+### Gameplan Completion
+
+After all phases in a gameplan are complete:
+
+1. **Update Gameplan**: Mark all phases as COMPLETE in gameplan progress summary
+2. **Final Verification**: Ensure all verification items are complete
+3. **Rename Gameplan Directory**: Rename the gameplan directory with "X_" prefix to visually indicate completion
+4. **Final Commit**: Create final commit marking gameplan as complete
+
+**Gameplan Completion Process**:
+
+```bash
+# Rename gameplan directory to mark completion
+mv docs/development/gameplans/{feature-name} docs/development/gameplans/X_{feature-name}
+```
+
+**Example**:
+- Before: `docs/development/gameplans/event-system/`
+- After: `docs/development/gameplans/X_event-system/`
+
+**Note**: This is different from card completion:
+- **Cards**: Rename the **file** (e.g., `FEATURE_name.md` → `X_FEATURE_name.md`)
+- **Gameplans**: Rename the **directory** (e.g., `gameplans/event-system/` → `gameplans/X_event-system/`)
+
 ### Review Process
 
 After each phase completion:
