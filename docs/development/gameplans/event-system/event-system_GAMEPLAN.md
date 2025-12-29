@@ -81,7 +81,7 @@ This gameplan implements a general-purpose scoped event system for the WebSocket
 
 - ✅ **Phase 1: EventEmitter Integration** - COMPLETE
 - ✅ **Phase 2: Event Type Constants** - COMPLETE
-- ⏳ **Phase 3: Collision Event Emission** - NOT STARTED
+- ✅ **Phase 3: Collision Event Emission** - COMPLETE
 - ⏳ **Phase 4: Event Listener Infrastructure** - NOT STARTED
 - ⏳ **Phase 5: Event Listener Registration** - NOT STARTED
 - ⏳ **Phase 6: Testing** - NOT STARTED
@@ -255,20 +255,20 @@ This gameplan implements a general-purpose scoped event system for the WebSocket
 
 ### Step 3.1: Import EventTypes in GameServer
 
-- [ ] Open `src/server/GameServer.js`
-- [ ] Add import for `EventTypes`:
+- [x] Open `src/server/GameServer.js`
+- [x] Add import for `EventTypes`:
   ```javascript
   import { EventTypes } from './EventTypes.js';
   ```
 
 **Verification**:
-- [ ] `EventTypes` imported
-- [ ] Import statement is correct
+- [x] `EventTypes` imported
+- [x] Import statement is correct
 
 ### Step 3.2: Emit Player Collision Events
 
-- [ ] Find the player collision detection code in `movePlayer()` method
-- [ ] Before returning `false` for player collision, emit a targeted event:
+- [x] Find the player collision detection code in `movePlayer()` method
+- [x] Before returning `false` for player collision, emit a targeted event:
   ```javascript
   // Check for collision with other players
   const hasCollision = Array.from(this.players.values()).some(
@@ -300,16 +300,16 @@ This gameplan implements a general-purpose scoped event system for the WebSocket
   ```
 
 **Verification**:
-- [ ] Player collision event is emitted before returning `false`
-- [ ] Event includes all required fields (scope, type, targetId, etc.)
-- [ ] Event data is immutable (copies, not references)
-- [ ] Event includes `timestamp`
-- [ ] Existing collision detection logic is preserved
+- [x] Player collision event is emitted before returning `false`
+- [x] Event includes all required fields (scope, type, targetId, etc.)
+- [x] Event data is immutable (copies, not references)
+- [x] Event includes `timestamp`
+- [x] Existing collision detection logic is preserved
 
 ### Step 3.3: Emit Wall Collision Events
 
-- [ ] Find the wall collision detection code in `movePlayer()` method
-- [ ] Before returning `false` for wall collision, emit a targeted event:
+- [x] Find the wall collision detection code in `movePlayer()` method
+- [x] Before returning `false` for wall collision, emit a targeted event:
   ```javascript
   if (this.game.board.isWall(newX, newY)) {
     // Emit targeted collision event
@@ -330,49 +330,49 @@ This gameplan implements a general-purpose scoped event system for the WebSocket
   ```
 
 **Verification**:
-- [ ] Wall collision event is emitted before returning `false`
-- [ ] Event includes all required fields
-- [ ] Event data is immutable
-- [ ] Event includes `timestamp`
-- [ ] Existing wall collision detection logic is preserved
+- [x] Wall collision event is emitted before returning `false`
+- [x] Event includes all required fields
+- [x] Event data is immutable
+- [x] Event includes `timestamp`
+- [x] Existing wall collision detection logic is preserved
 
 ### Step 3.4: Verify Event Emission Doesn't Break Existing Logic
 
-- [ ] Verify that `movePlayer()` still returns `false` on collision
-- [ ] Verify that `movePlayer()` still returns `true` on successful move
-- [ ] Verify that event emission doesn't block the move operation
-- [ ] Verify that event emission is synchronous
+- [x] Verify that `movePlayer()` still returns `false` on collision
+- [x] Verify that `movePlayer()` still returns `true` on successful move
+- [x] Verify that event emission doesn't block the move operation
+- [x] Verify that event emission is synchronous
 
 **Verification**:
-- [ ] Existing collision handling logic works correctly
-- [ ] Event emission doesn't affect return values
-- [ ] Event emission is non-blocking
-- [ ] No performance degradation
+- [x] Existing collision handling logic works correctly
+- [x] Event emission doesn't affect return values
+- [x] Event emission is non-blocking
+- [x] No performance degradation
 
 ### Step 3.5: Create Unit Tests
 
-- [ ] Create `test/server/GameServer.collisionEvents.test.js`
-- [ ] Test that player collision events are emitted
-- [ ] Test that wall collision events are emitted
-- [ ] Test that event data structure is correct
-- [ ] Test that events are emitted synchronously
-- [ ] Test that event emission doesn't break move logic
+- [x] Create `test/server/GameServer.collisionEvents.test.js`
+- [x] Test that player collision events are emitted
+- [x] Test that wall collision events are emitted
+- [x] Test that event data structure is correct
+- [x] Test that events are emitted synchronously
+- [x] Test that event emission doesn't break move logic
 
 **Test Cases**:
-- [ ] `should emit player collision event when player collides with another player`
-- [ ] `should emit wall collision event when player collides with wall`
-- [ ] `should include correct event data in player collision event`
-- [ ] `should include correct event data in wall collision event`
-- [ ] `should emit event before returning false`
-- [ ] `should not emit event on successful move`
-- [ ] `should emit event synchronously`
-- [ ] `should not block move operation`
+- [x] `should emit player collision event when player collides with another player`
+- [x] `should emit wall collision event when player collides with wall`
+- [x] `should include correct event data in player collision event`
+- [x] `should include correct event data in wall collision event`
+- [x] `should emit event before returning false`
+- [x] `should not emit event on successful move`
+- [x] `should emit event synchronously`
+- [x] `should not block move operation`
 
 **Verification**:
-- [ ] All tests pass
-- [ ] Tests verify event emission
-- [ ] Tests verify event data structure
-- [ ] Tests verify no breaking changes
+- [x] All tests pass
+- [x] Tests verify event emission
+- [x] Tests verify event data structure
+- [x] Tests verify no breaking changes
 
 ---
 

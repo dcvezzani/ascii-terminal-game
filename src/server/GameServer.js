@@ -8,6 +8,7 @@ import { Game } from '../game/Game.js';
 import { gameConfig } from '../config/gameConfig.js';
 import { randomUUID } from 'crypto';
 import { logger } from '../utils/logger.js';
+import { EventTypes } from './EventTypes.js';
 
 /**
  * Game Server class
@@ -258,6 +259,18 @@ export class GameServer extends EventEmitter {
     }
 
     if (this.game.board.isWall(newX, newY)) {
+      // Emit targeted collision event
+      this.emit(EventTypes.BUMP, {
+        scope: 'targeted',
+        type: EventTypes.WALL_COLLISION,
+        targetId: playerId,
+        playerId: playerId,
+        attemptedPosition: { x: newX, y: newY },
+        currentPosition: { x: player.x, y: player.y },
+        collisionType: 'wall',
+        timestamp: Date.now(),
+      });
+
       logger.debug(`Wall collision for player ${playerId} at (${newX}, ${newY})`);
       return false;
     }
@@ -269,6 +282,23 @@ export class GameServer extends EventEmitter {
     );
 
     if (hasCollision) {
+      const otherPlayer = Array.from(this.players.values()).find(
+        p => p.playerId !== playerId && p.x === newX && p.y === newY
+      );
+
+      // Emit targeted collision event
+      this.emit(EventTypes.BUMP, {
+        scope: 'targeted',
+        type: EventTypes.PLAYER_COLLISION,
+        targetId: playerId,
+        playerId: playerId,
+        attemptedPosition: { x: newX, y: newY },
+        currentPosition: { x: player.x, y: player.y },
+        collisionType: 'player',
+        otherPlayerId: otherPlayer.playerId,
+        timestamp: Date.now(),
+      });
+
       logger.debug(`Player collision for player ${playerId} at (${newX}, ${newY})`);
       return false;
     }
