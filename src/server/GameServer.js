@@ -15,9 +15,14 @@ import { logger } from '../utils/logger.js';
 export class GameServer {
   constructor() {
     this.game = new Game();
-    // Map of playerId -> player info
+    // Map of playerId -> player info (active players)
     this.players = new Map();
+    // Map of playerId -> { player, disconnectedAt } (disconnected players awaiting reconnection)
+    this.disconnectedPlayers = new Map();
     this.updateInterval = null;
+    this.purgeInterval = null;
+    // Grace period: 1 minute (60000ms) before permanently removing disconnected players
+    this.disconnectGracePeriod = 60000;
   }
 
   /**
@@ -31,7 +36,7 @@ export class GameServer {
         height: this.game.board.height,
         grid: this.game.board.grid,
       },
-      players: Array.from(this.players.values()),
+      players: Array.from(this.players.values()), // Only active players
       score: this.game.getScore(),
       running: this.game.isRunning(),
     };
@@ -93,19 +98,137 @@ export class GameServer {
   }
 
   /**
-   * Remove a player from the game
+   * Mark a player as disconnected (moves to disconnectedPlayers map)
+   * Player will be kept for grace period before permanent removal
+   * @param {string} playerId - Player ID to mark as disconnected
+   * @returns {boolean} True if player was marked as disconnected, false if not found
+   */
+  markPlayerDisconnected(playerId) {
+    const player = this.players.get(playerId);
+    if (!player) {
+      logger.warn(`Attempted to mark non-existent player as disconnected: ${playerId}`);
+      return false;
+    }
+
+    // Move player to disconnectedPlayers map with timestamp
+    this.disconnectedPlayers.set(playerId, {
+      player: { ...player }, // Copy player data
+      disconnectedAt: Date.now(),
+    });
+
+    // Remove from active players
+    this.players.delete(playerId);
+    logger.info(`Player marked as disconnected: ${player.playerName} (${playerId})`);
+    return true;
+  }
+
+  /**
+   * Remove a player from the game permanently
    * @param {string} playerId - Player ID to remove
    * @returns {boolean} True if player was removed, false if not found
    */
   removePlayer(playerId) {
+    // Remove from active players
     const player = this.players.get(playerId);
     const removed = this.players.delete(playerId);
+
+    // Also remove from disconnected players if present
+    this.disconnectedPlayers.delete(playerId);
+
     if (removed && player) {
-      logger.info(`Player removed: ${player.playerName} (${playerId})`);
+      logger.info(`Player permanently removed: ${player.playerName} (${playerId})`);
     } else if (!removed) {
       logger.warn(`Attempted to remove non-existent player: ${playerId}`);
     }
     return removed;
+  }
+
+  /**
+   * Restore a disconnected player (reconnection)
+   * @param {string} playerId - Player ID to restore
+   * @param {string} newClientId - New client ID for the reconnected player
+   * @returns {boolean} True if player was restored, false if not found in disconnected players
+   */
+  restorePlayer(playerId, newClientId) {
+    const disconnected = this.disconnectedPlayers.get(playerId);
+    if (!disconnected) {
+      return false;
+    }
+
+    // Restore player to active players
+    const player = {
+      ...disconnected.player,
+      clientId: newClientId,
+    };
+    this.players.set(playerId, player);
+
+    // Remove from disconnected players
+    this.disconnectedPlayers.delete(playerId);
+
+    logger.info(`Player restored: ${player.playerName} (${playerId})`);
+    return true;
+  }
+
+  /**
+   * Purge players that have been disconnected for longer than grace period
+   * @returns {number} Number of players purged
+   */
+  purgeDisconnectedPlayers() {
+    const now = Date.now();
+    const playersToPurge = [];
+
+    for (const [playerId, { player, disconnectedAt }] of this.disconnectedPlayers.entries()) {
+      if (now - disconnectedAt > this.disconnectGracePeriod) {
+        playersToPurge.push({ playerId, player });
+      }
+    }
+
+    // Remove purged players
+    for (const { playerId, player } of playersToPurge) {
+      this.disconnectedPlayers.delete(playerId);
+      logger.info(
+        `Purging disconnected player after grace period: ${player.playerName} (${playerId})`
+      );
+    }
+
+    return playersToPurge.length;
+  }
+
+  /**
+   * Check if a player exists (active or disconnected)
+   * @param {string} playerId - Player ID
+   * @returns {boolean} True if player exists (active or disconnected)
+   */
+  hasPlayer(playerId) {
+    return this.players.has(playerId) || this.disconnectedPlayers.has(playerId);
+  }
+
+  hasRecentPlayer(playerId) {
+    // console.log("hasRecentPlayer playerId", playerId);
+    // console.log("hasRecentPlayer players", this.players);
+    // console.log("hasRecentPlayer disconnectedPlayers", this.disconnectedPlayers);
+    return this.players.has(playerId) || this.disconnectedPlayers.has(playerId);
+  }
+
+  /**
+   * Get player information (checks both active and disconnected players)
+   * @param {string} playerId - Player ID
+   * @returns {object | null} Player info or null if not found
+   */
+  getPlayer(playerId) {
+    // Check active players first
+    const activePlayer = this.players.get(playerId);
+    if (activePlayer) {
+      return activePlayer;
+    }
+
+    // Check disconnected players
+    const disconnected = this.disconnectedPlayers.get(playerId);
+    if (disconnected) {
+      return disconnected.player;
+    }
+
+    return null;
   }
 
   /**
@@ -155,15 +278,6 @@ export class GameServer {
   }
 
   /**
-   * Get player information
-   * @param {string} playerId - Player ID
-   * @returns {object | null} Player info or null if not found
-   */
-  getPlayer(playerId) {
-    return this.players.get(playerId) || null;
-  }
-
-  /**
    * Get all players
    * @returns {Array<object>} Array of player objects
    */
@@ -199,14 +313,5 @@ export class GameServer {
    */
   getPlayerCount() {
     return this.players.size;
-  }
-
-  /**
-   * Check if a player exists
-   * @param {string} playerId - Player ID
-   * @returns {boolean} True if player exists
-   */
-  hasPlayer(playerId) {
-    return this.players.has(playerId);
   }
 }

@@ -50,12 +50,15 @@ describe('ConnectionManager', () => {
   });
 
   describe('removeConnection', () => {
-    test('should remove connection by client ID', () => {
+    test('should schedule connection for removal (still accessible during grace period)', () => {
       const clientId = connectionManager.addConnection(mockWebSocket);
       const removed = connectionManager.removeConnection(clientId);
 
       expect(removed).toBe(true);
-      expect(connectionManager.getConnection(clientId)).toBeUndefined();
+      // Connection should still be accessible during grace period
+      expect(connectionManager.getConnection(clientId)).toBeDefined();
+      // But should not be in active connections
+      expect(connectionManager.hasConnection(clientId)).toBe(false);
     });
 
     test('should return false if connection not found', () => {

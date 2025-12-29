@@ -22,6 +22,7 @@ let connectionManager = null;
 let gameServer = null;
 let pingInterval = null;
 let stateUpdateInterval = null;
+let purgeInterval = null;
 
 /**
  * Start the WebSocket server
@@ -90,6 +91,26 @@ export async function startServer() {
         }
       }, serverConfig.websocket.updateInterval);
 
+      // Purge disconnected players and connections periodically (every 30 seconds)
+      purgeInterval = setInterval(() => {
+        const purgedPlayers = gameServer.purgeDisconnectedPlayers();
+        const purgedConnections = connectionManager.purgeDisconnectedConnections();
+        if (purgedPlayers > 0) {
+          logger.debug(`Purged ${purgedPlayers} disconnected player(s) after grace period`);
+        }
+        if (purgedConnections > 0) {
+          logger.debug(`Purged ${purgedConnections} disconnected connection(s) after grace period`);
+        }
+      }, 30000); // Check every 30 seconds
+
+      // Clean up purge interval on server close
+      wss.on('close', () => {
+        if (purgeInterval) {
+          clearInterval(purgeInterval);
+          purgeInterval = null;
+        }
+      });
+
       // Clean up intervals on server close
       wss.on('close', () => {
         if (pingInterval) {
@@ -126,6 +147,10 @@ export async function stopServer() {
     if (stateUpdateInterval) {
       clearInterval(stateUpdateInterval);
       stateUpdateInterval = null;
+    }
+    if (purgeInterval) {
+      clearInterval(purgeInterval);
+      purgeInterval = null;
     }
 
     // Terminate all connections forcefully
@@ -245,7 +270,10 @@ function handleConnection(ws) {
   });
 
   // Set up disconnect handler
-  ws.on('close', () => {
+  ws.on('close', (code, reason) => {
+    logger.info(
+      `WebSocket close event fired for clientId: ${clientId}, code: ${code}, reason: ${reason?.toString() || 'none'}`
+    );
     handleDisconnect(clientId);
   });
 
@@ -349,8 +377,12 @@ function routeMessage(ws, clientId, message) {
  */
 function handleConnectMessage(ws, clientId, payload) {
   try {
+    // console.log("handleConnectMessage payload", JSON.stringify(payload));
     const existingPlayerId = payload.playerId;
-    const isReconnection = existingPlayerId && gameServer.hasPlayer(existingPlayerId);
+    const isReconnection = existingPlayerId && gameServer.hasRecentPlayer(existingPlayerId);
+    logger.info(
+      `CONNECT message from client ${clientId}: existingPlayerId=${existingPlayerId}, isReconnection=${isReconnection}`
+    );
 
     let playerId;
     let playerName;
@@ -362,15 +394,23 @@ function handleConnectMessage(ws, clientId, payload) {
       playerName =
         payload.playerName || existingPlayer?.playerName || `Player-${playerId.slice(0, 8)}`;
 
-      // Update connection mapping (new clientId, same playerId)
-      connectionManager.setPlayerId(clientId, playerId);
-      connectionManager.setPlayerName(clientId, playerName);
-
-      // Update player's clientId in game server
-      if (existingPlayer) {
+      // Restore player if they were disconnected
+      const wasRestored = gameServer.restorePlayer(playerId, clientId);
+      if (wasRestored) {
+        // Update player info
+        const restoredPlayer = gameServer.getPlayer(playerId);
+        if (restoredPlayer) {
+          restoredPlayer.playerName = playerName;
+        }
+      } else if (existingPlayer) {
+        // Player was already active, just update clientId and name
         existingPlayer.clientId = clientId;
         existingPlayer.playerName = playerName;
       }
+
+      // Update connection mapping (new clientId, same playerId)
+      connectionManager.setPlayerId(clientId, playerId);
+      connectionManager.setPlayerName(clientId, playerName);
 
       logger.info(`Player reconnected: ${playerId} (client: ${clientId})`);
     } else {
@@ -601,17 +641,19 @@ function handlePingMessage(ws, clientId) {
  */
 function handleDisconnect(clientId) {
   if (!connectionManager) {
+    logger.warn(`handleDisconnect called but connectionManager is null for clientId: ${clientId}`);
     return;
   }
 
   const connection = connectionManager.getConnection(clientId);
   if (!connection) {
+    logger.warn(`handleDisconnect called but connection not found for clientId: ${clientId}`);
     return;
   }
 
-  logger.info(`Client disconnected: ${clientId}`);
+  logger.info(`Client disconnected: ${clientId}, playerId: ${connection.playerId || 'none'}`);
 
-  // Remove player from game if exists
+  // Mark player as disconnected (instead of removing immediately)
   if (connection.playerId) {
     const player = gameServer.getPlayer(connection.playerId);
     if (player) {
@@ -624,9 +666,13 @@ function handleDisconnect(clientId) {
         })
       );
     }
-    gameServer.removePlayer(connection.playerId);
+    // Mark as disconnected (will be purged after grace period)
+    const marked = gameServer.markPlayerDisconnected(connection.playerId);
+    logger.info(
+      `Marked player ${connection.playerId} as disconnected: ${marked}, hasPlayer check: ${gameServer.hasPlayer(connection.playerId)}`
+    );
 
-    // Broadcast immediate state update after player removal
+    // Broadcast immediate state update after player disconnection
     const stateMessage = createStateUpdateMessage(gameServer.getGameState());
     broadcastMessage(stateMessage);
   }

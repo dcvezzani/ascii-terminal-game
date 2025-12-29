@@ -12,8 +12,12 @@ import { logger } from '../utils/logger.js';
  */
 export class ConnectionManager {
   constructor() {
-    // Map of clientId -> connection info
+    // Map of clientId -> connection info (active connections)
     this.connections = new Map();
+    // Map of clientId -> { connection, disconnectedAt } (connections scheduled for removal)
+    this.disconnectedConnections = new Map();
+    // Grace period: 1 minute (60000ms) before permanently removing disconnected connections
+    this.disconnectGracePeriod = 60000;
   }
 
   /**
@@ -41,25 +45,94 @@ export class ConnectionManager {
   }
 
   /**
-   * Remove a connection by client ID
-   * @param {string} clientId - Client ID to remove
-   * @returns {boolean} - True if connection was removed, false if not found
+   * Schedule a connection for removal after grace period
+   * Connection is moved to disconnectedConnections and will be purged after 1 minute
+   * @param {string} clientId - Client ID
+   * @returns {boolean} - True if connection was scheduled for removal, false if not found
    */
   removeConnection(clientId) {
-    const removed = this.connections.delete(clientId);
+    const connection = this.connections.get(clientId);
+    if (!connection) {
+      // Check if already in disconnectedConnections
+      if (this.disconnectedConnections.has(clientId)) {
+        logger.debug(`Connection ${clientId} already scheduled for removal`);
+        return true;
+      }
+      return false;
+    }
+
+    // Move connection to disconnectedConnections with timestamp
+    this.disconnectedConnections.set(clientId, {
+      connection: { ...connection }, // Copy connection data
+      disconnectedAt: Date.now(),
+    });
+
+    // Remove from active connections
+    this.connections.delete(clientId);
+    logger.debug(
+      `Connection scheduled for removal: ${clientId} (will be purged after grace period, total active: ${this.connections.size})`
+    );
+    return true;
+  }
+
+  /**
+   * Permanently remove a connection (used after grace period)
+   * @param {string} clientId - Client ID
+   * @returns {boolean} - True if connection was removed, false if not found
+   */
+  permanentlyRemoveConnection(clientId) {
+    const removed = this.disconnectedConnections.delete(clientId);
     if (removed) {
-      logger.debug(`Connection removed: ${clientId} (total: ${this.connections.size})`);
+      logger.debug(`Connection permanently removed: ${clientId}`);
     }
     return removed;
   }
 
   /**
-   * Get a connection by client ID
+   * Purge connections that have been disconnected for longer than grace period
+   * @returns {number} Number of connections purged
+   */
+  purgeDisconnectedConnections() {
+    const now = Date.now();
+    const connectionsToPurge = [];
+
+    for (const [
+      clientId,
+      { connection, disconnectedAt },
+    ] of this.disconnectedConnections.entries()) {
+      if (now - disconnectedAt > this.disconnectGracePeriod) {
+        connectionsToPurge.push(clientId);
+      }
+    }
+
+    // Remove purged connections
+    for (const clientId of connectionsToPurge) {
+      this.disconnectedConnections.delete(clientId);
+      logger.debug(`Purging disconnected connection after grace period: ${clientId}`);
+    }
+
+    return connectionsToPurge.length;
+  }
+
+  /**
+   * Get a connection by client ID (checks both active and disconnected connections)
    * @param {string} clientId - Client ID
    * @returns {object | undefined} - Connection object or undefined if not found
    */
   getConnection(clientId) {
-    return this.connections.get(clientId);
+    // Check active connections first
+    const activeConnection = this.connections.get(clientId);
+    if (activeConnection) {
+      return activeConnection;
+    }
+
+    // Check disconnected connections (within grace period)
+    const disconnected = this.disconnectedConnections.get(clientId);
+    if (disconnected) {
+      return disconnected.connection;
+    }
+
+    return undefined;
   }
 
   /**
