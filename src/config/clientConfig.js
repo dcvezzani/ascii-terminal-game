@@ -5,7 +5,7 @@
 
 export const clientConfig = {
   logging: {
-    level: 'info', // Logging level: 'debug', 'info', 'warn', 'error'
+    level: 'warn', // Logging level: 'debug', 'info', 'warn', 'error'
     transports: ['file'], // Transport options: 'console', 'file', or ['console', 'file']
     file: {
       enabled: true, // Enable file logging

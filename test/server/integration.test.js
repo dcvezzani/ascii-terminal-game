@@ -18,7 +18,7 @@ describe('Server Integration', () => {
       ws.on('open', () => {
         clearTimeout(timeoutId);
         ws.close();
-        console.log('Connection accepted');
+        // console.log('Connection accepted');
         resolve();
       });
 

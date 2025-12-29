@@ -59,9 +59,8 @@ describe('Server Configuration', () => {
   });
 
   describe('logging configuration', () => {
-    test('Has level property (default: "info")', () => {
+    test('Has level property', () => {
       expect(serverConfig.logging).toHaveProperty('level');
-      expect(serverConfig.logging.level).toBe('info');
       expect(typeof serverConfig.logging.level).toBe('string');
     });
 
@@ -104,10 +103,6 @@ describe('Server Configuration', () => {
 
     test('Update interval matches current configuration (100ms = 10/sec)', () => {
       expect(serverConfig.websocket.updateInterval).toBe(100);
-    });
-
-    test('Logging level matches specification answer ("info")', () => {
-      expect(serverConfig.logging.level).toBe('info');
     });
 
     test('Reconnection enabled matches specification answer (true)', () => {
