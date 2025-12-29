@@ -863,8 +863,8 @@ export async function runNetworkedMode() {
       },
       onRenderAllPlayers: () => {
         if (renderer && currentState) {
-          renderer.renderFull(game, currentState, localPlayerId);
-        }
+            renderer.renderFull(game, currentState, localPlayerId);
+          }
       },
       onRenderOtherPlayer_001: () => {
         if (renderer && currentState) {

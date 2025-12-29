@@ -1,7 +1,7 @@
 import ansiEscapes from 'ansi-escapes';
 import chalk from 'chalk';
 import cliCursor from 'cli-cursor';
-import { getHorizontalCenter } from '../utils/terminal.js';
+import { getHorizontalCenter, getTerminalSize } from '../utils/terminal.js';
 import { gameConfig } from '../config/gameConfig.js';
 import {
   EMPTY_SPACE_CHAR,
@@ -118,9 +118,18 @@ export class Renderer {
     const statusText = `Score: ${score} | Position: (${x}, ${y}) | Controls: Arrow/WASD to move, Q/ESC to quit, R to restart, H/? for help`;
     const centerOffset = getHorizontalCenter(statusText.length);
 
+    // Pre-allocate space for the status bar to ensure all trailing characters are cleared
+    // Calculate maximum possible status text width (with largest position values)
+    const maxStatusText = `Score: 999 | Position: (99, 99) | Controls: Arrow/WASD to move, Q/ESC to quit, R to restart, H/? for help`;
+    const terminalWidth = getTerminalSize().columns;
+    const preAllocWidth = Math.max(maxStatusText.length, terminalWidth);
+    const preAllocSpaces = ' '.repeat(preAllocWidth);
+
+    // Move to the status bar line and write spaces to clear/overwrite entire line
+    process.stdout.write(ansiEscapes.cursorTo(0, this.statusBarOffset));
+    process.stdout.write(preAllocSpaces);
+    // Now move to center position and write the new text
     process.stdout.write(ansiEscapes.cursorTo(centerOffset, this.statusBarOffset));
-    // Clear the line first to remove any trailing characters
-    process.stdout.write(ansiEscapes.eraseEndLine);
     process.stdout.write(chalk.dim(statusText));
   }
 

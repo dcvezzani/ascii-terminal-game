@@ -29,12 +29,9 @@ export class InputHandler {
       return;
     }
 
-    this.rl = readline.createInterface({
-      input: process.stdin,
-      output: process.stdout,
-    });
-
     // Enable raw mode to capture individual keypresses
+    // We don't need readline.createInterface - it causes buffering
+    // Just use emitKeypressEvents to parse keypresses
     readline.emitKeypressEvents(process.stdin);
 
     if (process.stdin.isTTY) {
@@ -44,9 +41,16 @@ export class InputHandler {
     process.stdin.resume();
     process.stdin.setEncoding('utf8');
 
-    // Handle keypress events
+    // Handle keypress events directly - no readline interface needed
     process.stdin.on('keypress', (str, key) => {
       this.handleKeypress(str, key);
+    });
+
+    // Also handle 'data' events to drain any buffered data immediately
+    process.stdin.on('data', (chunk) => {
+      // Data is already handled by keypress events
+      // This listener just ensures we don't accumulate buffered data
+      // The keypress handler will process it
     });
 
     this.listening = true;
@@ -62,6 +66,7 @@ export class InputHandler {
 
     // Remove listeners first to prevent any further keypress processing
     process.stdin.removeAllListeners('keypress');
+    process.stdin.removeAllListeners('data');
 
     if (this.rl) {
       this.rl.close();
@@ -78,6 +83,27 @@ export class InputHandler {
   }
 
   /**
+   * Clear any buffered input from stdin
+   * This prevents characters from accumulating in the input buffer
+   */
+  clearInputBuffer() {
+    if (!process.stdin.isTTY || !process.stdin.readable) {
+      return;
+    }
+    
+    // Drain any buffered data from stdin synchronously
+    // This immediately clears any pending input
+    try {
+      let chunk;
+      while ((chunk = process.stdin.read()) !== null) {
+        // Discard the chunk - this drains the buffer
+      }
+    } catch (error) {
+      // Ignore errors when reading (might not be readable at this moment)
+    }
+  }
+
+  /**
    * Handle a keypress event
    * @param {string} str - Character string
    * @param {Object} key - Key object with name, ctrl, etc.
@@ -90,6 +116,10 @@ export class InputHandler {
       }
       return;
     }
+
+    // Clear input buffer after every keypress to prevent accumulation
+    // Do this early to drain any buffered data
+    this.clearInputBuffer();
 
     // Get readable string from key input or character string
     const keyNameOrSequence = (key && (key.name || key.sequence)) || str;

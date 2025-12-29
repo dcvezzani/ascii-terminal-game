@@ -11,7 +11,7 @@ export const serverConfig = {
     updateInterval: 250, // State update interval in milliseconds (default: 250ms = 4 updates/second)
   },
   logging: {
-    level: 'warn', // Logging level: 'debug', 'info', 'warn', 'error'
+    level: 'info', // Logging level: 'debug', 'info', 'warn', 'error'
     transports: ['console'], // Transport options: 'console', 'file', or ['console', 'file']
     file: {
       enabled: false, // Enable file logging
