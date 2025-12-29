@@ -13,6 +13,8 @@ import { serverConfig } from './config/serverConfig.js';
 import { WebSocketClient } from './network/WebSocketClient.js';
 import { clientLogger } from './utils/clientLogger.js';
 import { compareStates } from './utils/stateComparison.js';
+import { PLAYER_CHAR, WALL_CHAR, EMPTY_SPACE_CHAR } from './constants/gameConstants.js';
+import { clientConfig } from './config/clientConfig.js';
 
 /**
  * Run game in local (single-player) mode
@@ -281,17 +283,31 @@ export async function runNetworkedMode() {
           }
 
           // Apply incremental updates
-          // Update players
+          // Phase 2: Exclude local player from server state rendering (local player uses prediction)
+          const otherPlayers = (gameState.players || []).filter(
+            p => p.playerId !== localPlayerId
+          );
+          const previousOtherPlayers = (previousState.players || []).filter(
+            p => p.playerId !== localPlayerId
+          );
+
+          // Recalculate changes for other players only
+          const otherPlayerChanges = compareStates(
+            { ...previousState, players: previousOtherPlayers },
+            { ...gameState, players: otherPlayers }
+          ).players;
+
+          // Update other players (not local player)
           if (
-            changes.players.moved.length > 0 ||
-            changes.players.joined.length > 0 ||
-            changes.players.left.length > 0
+            otherPlayerChanges.moved.length > 0 ||
+            otherPlayerChanges.joined.length > 0 ||
+            otherPlayerChanges.left.length > 0
           ) {
             renderer.updatePlayersIncremental(
-              previousState.players || [],
-              gameState.players || [],
+              previousOtherPlayers,
+              otherPlayers,
               boardAdapter,
-              changes.players
+              otherPlayerChanges
             );
           }
 
@@ -311,20 +327,20 @@ export async function runNetworkedMode() {
           }
 
           // Update status bar if changed
-          const localPlayer = gameState.players.find(
-            p => p.playerId === localPlayerId
-          );
-          if (localPlayer) {
+          // Phase 2: Use predicted position for status bar (not server position)
+          if (localPlayerPredictedPosition.x !== null && localPlayerPredictedPosition.y !== null) {
             const prevLocalPlayer = previousState.players.find(
               p => p.playerId === localPlayerId
             );
+            const prevPredictedX = prevLocalPlayer?.x ?? localPlayerPredictedPosition.x;
+            const prevPredictedY = prevLocalPlayer?.y ?? localPlayerPredictedPosition.y;
             renderer.updateStatusBarIfChanged(
               gameState.score || 0,
-              localPlayer.x,
-              localPlayer.y,
+              localPlayerPredictedPosition.x,
+              localPlayerPredictedPosition.y,
               previousState.score || 0,
-              prevLocalPlayer?.x || 0,
-              prevLocalPlayer?.y || 0
+              prevPredictedX,
+              prevPredictedY
             );
           }
 
@@ -375,6 +391,71 @@ export async function runNetworkedMode() {
           }
           return;
         }
+
+        // Phase 2: Client-side prediction - Update and render immediately
+        if (
+          clientConfig.prediction.enabled &&
+          localPlayerPredictedPosition.x !== null &&
+          localPlayerPredictedPosition.y !== null &&
+          renderer &&
+          currentState
+        ) {
+          const oldX = localPlayerPredictedPosition.x;
+          const oldY = localPlayerPredictedPosition.y;
+          const newY = oldY - 1;
+
+          // Optional: Check for wall collision
+          if (newY >= 0 && currentState.board && currentState.board.grid) {
+            const boardAdapter = {
+              getCell: (x, y) => {
+                if (
+                  y >= 0 &&
+                  y < currentState.board.grid.length &&
+                  x >= 0 &&
+                  x < currentState.board.grid[y].length
+                ) {
+                  return currentState.board.grid[y][x];
+                }
+                return null;
+              },
+            };
+            const newCell = boardAdapter.getCell(oldX, newY);
+            if (newCell === WALL_CHAR.char) {
+              // Wall collision - don't move
+              return;
+            }
+
+            // Update predicted position
+            localPlayerPredictedPosition.y = newY;
+
+            // Clear old position (restore cell)
+            const oldCell = boardAdapter.getCell(oldX, oldY);
+            const oldGlyph = oldCell === WALL_CHAR.char ? WALL_CHAR : EMPTY_SPACE_CHAR;
+            const oldColorFn = renderer.getColorFunction(oldGlyph.color);
+            renderer.updateCell(oldX, oldY, oldGlyph.char, oldColorFn);
+
+            // Draw at new position
+            const playerColorFn = renderer.getColorFunction(PLAYER_CHAR.color);
+            renderer.updateCell(
+              localPlayerPredictedPosition.x,
+              localPlayerPredictedPosition.y,
+              PLAYER_CHAR.char,
+              playerColorFn
+            );
+
+            // Update status bar with predicted position
+            renderer.updateStatusBarIfChanged(
+              currentState?.score || 0,
+              localPlayerPredictedPosition.x,
+              localPlayerPredictedPosition.y,
+              currentState?.score || 0,
+              oldX,
+              oldY
+            );
+          }
+        }
+
+        // Still send to server
         if (wsClient && wsClient.isConnected()) {
           wsClient.sendMove(0, -1);
         }
@@ -387,6 +468,71 @@ export async function runNetworkedMode() {
           }
           return;
         }
+
+        // Phase 2: Client-side prediction - Update and render immediately
+        if (
+          clientConfig.prediction.enabled &&
+          localPlayerPredictedPosition.x !== null &&
+          localPlayerPredictedPosition.y !== null &&
+          renderer &&
+          currentState
+        ) {
+          const oldX = localPlayerPredictedPosition.x;
+          const oldY = localPlayerPredictedPosition.y;
+          const newY = oldY + 1;
+
+          // Optional: Check for wall collision
+          if (currentState.board && currentState.board.grid) {
+            const boardAdapter = {
+              getCell: (x, y) => {
+                if (
+                  y >= 0 &&
+                  y < currentState.board.grid.length &&
+                  x >= 0 &&
+                  x < currentState.board.grid[y].length
+                ) {
+                  return currentState.board.grid[y][x];
+                }
+                return null;
+              },
+            };
+            const newCell = boardAdapter.getCell(oldX, newY);
+            if (newCell === WALL_CHAR.char) {
+              // Wall collision - don't move
+              return;
+            }
+
+            // Update predicted position
+            localPlayerPredictedPosition.y = newY;
+
+            // Clear old position (restore cell)
+            const oldCell = boardAdapter.getCell(oldX, oldY);
+            const oldGlyph = oldCell === WALL_CHAR.char ? WALL_CHAR : EMPTY_SPACE_CHAR;
+            const oldColorFn = renderer.getColorFunction(oldGlyph.color);
+            renderer.updateCell(oldX, oldY, oldGlyph.char, oldColorFn);
+
+            // Draw at new position
+            const playerColorFn = renderer.getColorFunction(PLAYER_CHAR.color);
+            renderer.updateCell(
+              localPlayerPredictedPosition.x,
+              localPlayerPredictedPosition.y,
+              PLAYER_CHAR.char,
+              playerColorFn
+            );
+
+            // Update status bar with predicted position
+            renderer.updateStatusBarIfChanged(
+              currentState?.score || 0,
+              localPlayerPredictedPosition.x,
+              localPlayerPredictedPosition.y,
+              currentState?.score || 0,
+              oldX,
+              oldY
+            );
+          }
+        }
+
+        // Still send to server
         if (wsClient && wsClient.isConnected()) {
           wsClient.sendMove(0, 1);
         }
@@ -399,6 +545,71 @@ export async function runNetworkedMode() {
           }
           return;
         }
+
+        // Phase 2: Client-side prediction - Update and render immediately
+        if (
+          clientConfig.prediction.enabled &&
+          localPlayerPredictedPosition.x !== null &&
+          localPlayerPredictedPosition.y !== null &&
+          renderer &&
+          currentState
+        ) {
+          const oldX = localPlayerPredictedPosition.x;
+          const oldY = localPlayerPredictedPosition.y;
+          const newX = oldX - 1;
+
+          // Optional: Check for wall collision
+          if (newX >= 0 && currentState.board && currentState.board.grid) {
+            const boardAdapter = {
+              getCell: (x, y) => {
+                if (
+                  y >= 0 &&
+                  y < currentState.board.grid.length &&
+                  x >= 0 &&
+                  x < currentState.board.grid[y].length
+                ) {
+                  return currentState.board.grid[y][x];
+                }
+                return null;
+              },
+            };
+            const newCell = boardAdapter.getCell(newX, oldY);
+            if (newCell === WALL_CHAR.char) {
+              // Wall collision - don't move
+              return;
+            }
+
+            // Update predicted position
+            localPlayerPredictedPosition.x = newX;
+
+            // Clear old position (restore cell)
+            const oldCell = boardAdapter.getCell(oldX, oldY);
+            const oldGlyph = oldCell === WALL_CHAR.char ? WALL_CHAR : EMPTY_SPACE_CHAR;
+            const oldColorFn = renderer.getColorFunction(oldGlyph.color);
+            renderer.updateCell(oldX, oldY, oldGlyph.char, oldColorFn);
+
+            // Draw at new position
+            const playerColorFn = renderer.getColorFunction(PLAYER_CHAR.color);
+            renderer.updateCell(
+              localPlayerPredictedPosition.x,
+              localPlayerPredictedPosition.y,
+              PLAYER_CHAR.char,
+              playerColorFn
+            );
+
+            // Update status bar with predicted position
+            renderer.updateStatusBarIfChanged(
+              currentState?.score || 0,
+              localPlayerPredictedPosition.x,
+              localPlayerPredictedPosition.y,
+              currentState?.score || 0,
+              oldX,
+              oldY
+            );
+          }
+        }
+
+        // Still send to server
         if (wsClient && wsClient.isConnected()) {
           wsClient.sendMove(-1, 0);
         }
@@ -411,6 +622,71 @@ export async function runNetworkedMode() {
           }
           return;
         }
+
+        // Phase 2: Client-side prediction - Update and render immediately
+        if (
+          clientConfig.prediction.enabled &&
+          localPlayerPredictedPosition.x !== null &&
+          localPlayerPredictedPosition.y !== null &&
+          renderer &&
+          currentState
+        ) {
+          const oldX = localPlayerPredictedPosition.x;
+          const oldY = localPlayerPredictedPosition.y;
+          const newX = oldX + 1;
+
+          // Optional: Check for wall collision
+          if (currentState.board && currentState.board.grid) {
+            const boardAdapter = {
+              getCell: (x, y) => {
+                if (
+                  y >= 0 &&
+                  y < currentState.board.grid.length &&
+                  x >= 0 &&
+                  x < currentState.board.grid[y].length
+                ) {
+                  return currentState.board.grid[y][x];
+                }
+                return null;
+              },
+            };
+            const newCell = boardAdapter.getCell(newX, oldY);
+            if (newCell === WALL_CHAR.char) {
+              // Wall collision - don't move
+              return;
+            }
+
+            // Update predicted position
+            localPlayerPredictedPosition.x = newX;
+
+            // Clear old position (restore cell)
+            const oldCell = boardAdapter.getCell(oldX, oldY);
+            const oldGlyph = oldCell === WALL_CHAR.char ? WALL_CHAR : EMPTY_SPACE_CHAR;
+            const oldColorFn = renderer.getColorFunction(oldGlyph.color);
+            renderer.updateCell(oldX, oldY, oldGlyph.char, oldColorFn);
+
+            // Draw at new position
+            const playerColorFn = renderer.getColorFunction(PLAYER_CHAR.color);
+            renderer.updateCell(
+              localPlayerPredictedPosition.x,
+              localPlayerPredictedPosition.y,
+              PLAYER_CHAR.char,
+              playerColorFn
+            );
+
+            // Update status bar with predicted position
+            renderer.updateStatusBarIfChanged(
+              currentState?.score || 0,
+              localPlayerPredictedPosition.x,
+              localPlayerPredictedPosition.y,
+              currentState?.score || 0,
+              oldX,
+              oldY
+            );
+          }
+        }
+
+        // Still send to server
         if (wsClient && wsClient.isConnected()) {
           wsClient.sendMove(1, 0);
         }
