@@ -183,6 +183,7 @@ async function runNetworkedMode() {
   let showingHelp = false;
   let currentState = null;
   let localPlayerId = null;
+  let previousState = null; // Track previous state for incremental rendering
   let running = true;
 
   try {
@@ -212,7 +213,19 @@ async function runNetworkedMode() {
     wsClient.onStateUpdate(gameState => {
       currentState = gameState;
       if (renderer && localPlayerId) {
-        renderer.renderFull(game, gameState, localPlayerId);
+        // Phase 1: State Tracking - Handle initial render detection
+        if (previousState === null) {
+          // First render - use renderFull()
+          renderer.renderFull(game, gameState, localPlayerId);
+          // Store state after successful render (deep copy)
+          previousState = JSON.parse(JSON.stringify(gameState));
+        } else {
+          // Subsequent renders - will use incremental updates (Phase 4)
+          // For now, still use renderFull() until incremental updates are implemented
+          renderer.renderFull(game, gameState, localPlayerId);
+          // Store state after successful render (deep copy)
+          previousState = JSON.parse(JSON.stringify(gameState));
+        }
       }
     });
 
