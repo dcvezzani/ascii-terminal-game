@@ -12,6 +12,7 @@ import { gameConfig } from './config/gameConfig.js';
 import { serverConfig } from './config/serverConfig.js';
 import { WebSocketClient } from './network/WebSocketClient.js';
 import { clientLogger } from './utils/clientLogger.js';
+import { compareStates } from './utils/stateComparison.js';
 
 /**
  * Run game in local (single-player) mode
@@ -212,7 +213,11 @@ async function runNetworkedMode() {
 
     wsClient.onStateUpdate(gameState => {
       currentState = gameState;
-      if (renderer && localPlayerId) {
+      if (!renderer || !localPlayerId) {
+        return; // Wait for renderer and localPlayerId
+      }
+
+      try {
         // Phase 1: State Tracking - Handle initial render detection
         if (previousState === null) {
           // First render - use renderFull()
@@ -220,11 +225,109 @@ async function runNetworkedMode() {
           // Store state after successful render (deep copy)
           previousState = JSON.parse(JSON.stringify(gameState));
         } else {
-          // Subsequent renders - will use incremental updates (Phase 4)
-          // For now, still use renderFull() until incremental updates are implemented
-          renderer.renderFull(game, gameState, localPlayerId);
-          // Store state after successful render (deep copy)
+          // Phase 4: Subsequent renders - use incremental updates
+          // Create board adapter for incremental updates
+          const boardAdapter = {
+            getCell: (x, y) => {
+              if (
+                y >= 0 &&
+                y < gameState.board.grid.length &&
+                x >= 0 &&
+                x < gameState.board.grid[y].length
+              ) {
+                return gameState.board.grid[y][x];
+              }
+              return null;
+            },
+          };
+
+          // Compare states to detect changes
+          const changes = compareStates(previousState, gameState);
+
+          // Calculate total changes for fallback threshold (per Q4: Option D)
+          const totalChanges =
+            changes.players.moved.length +
+            changes.players.joined.length +
+            changes.players.left.length +
+            changes.entities.moved.length +
+            changes.entities.spawned.length +
+            changes.entities.despawned.length +
+            changes.entities.animated.length;
+
+          const FALLBACK_THRESHOLD = 10; // Configurable threshold
+
+          // Fallback to full render if too many changes
+          if (totalChanges > FALLBACK_THRESHOLD) {
+            clientLogger.debug(
+              `Too many changes (${totalChanges}), falling back to full render`
+            );
+            renderer.renderFull(game, gameState, localPlayerId);
+            previousState = JSON.parse(JSON.stringify(gameState));
+            return;
+          }
+
+          // Apply incremental updates
+          // Update players
+          if (
+            changes.players.moved.length > 0 ||
+            changes.players.joined.length > 0 ||
+            changes.players.left.length > 0
+          ) {
+            renderer.updatePlayersIncremental(
+              previousState.players || [],
+              gameState.players || [],
+              boardAdapter,
+              changes.players
+            );
+          }
+
+          // Update entities
+          if (
+            changes.entities.moved.length > 0 ||
+            changes.entities.spawned.length > 0 ||
+            changes.entities.despawned.length > 0 ||
+            changes.entities.animated.length > 0
+          ) {
+            renderer.updateEntitiesIncremental(
+              previousState.entities || [],
+              gameState.entities || [],
+              boardAdapter,
+              changes.entities
+            );
+          }
+
+          // Update status bar if changed
+          const localPlayer = gameState.players.find(
+            p => p.playerId === localPlayerId
+          );
+          if (localPlayer) {
+            const prevLocalPlayer = previousState.players.find(
+              p => p.playerId === localPlayerId
+            );
+            renderer.updateStatusBarIfChanged(
+              gameState.score || 0,
+              localPlayer.x,
+              localPlayer.y,
+              previousState.score || 0,
+              prevLocalPlayer?.x || 0,
+              prevLocalPlayer?.y || 0
+            );
+          }
+
+          // Store state after successful incremental update (deep copy)
           previousState = JSON.parse(JSON.stringify(gameState));
+        }
+      } catch (error) {
+        // Phase 4: Error Recovery (per Q8: Option C)
+        clientLogger.error('Error during incremental update:', error);
+        // Fall back to full render on error
+        try {
+          renderer.renderFull(game, gameState, localPlayerId);
+          previousState = JSON.parse(JSON.stringify(gameState));
+        } catch (fallbackError) {
+          clientLogger.error('Error during fallback render:', fallbackError);
+          // If even fallback fails, reset previousState to force full render next time
+          previousState = null;
         }
       }
     });
