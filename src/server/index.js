@@ -679,10 +679,12 @@ function handleTestMessage(ws, clientId, payload) {
   logger.info(`Received TEST message from client ${clientId}:`, payload);
   
   // Spawn a ruffian entity at position 15, 15
+  // Ruffian is solid (blocks movement) by default
   const ruffianGlyph = toZZTCharacterGlyph('ruffian', toColorHexValue('purple'));
   const entityId = gameServer.spawnEntity('ruffian', 15, 15, {
     glyph: ruffianGlyph ? ruffianGlyph.char : null,
     color: 'purple', // Store color name, client will convert to hex
+    solid: true, // Ruffian is solid - blocks player movement
   });
 
   if (entityId) {

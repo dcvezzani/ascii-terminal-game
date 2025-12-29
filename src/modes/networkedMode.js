@@ -310,7 +310,8 @@ export async function runNetworkedMode() {
               previousOtherPlayers,
               otherPlayers,
               boardAdapter,
-              otherPlayerChanges
+              otherPlayerChanges,
+              gameState.entities || []
             );
           }
 
@@ -505,11 +506,16 @@ export async function runNetworkedMode() {
             // Update predicted position
             localPlayerPredictedPosition.y = newY;
 
-            // Clear old position (restore cell)
-            const oldCell = boardAdapter.getCell(oldX, oldY);
-            const oldGlyph = oldCell === WALL_CHAR.char ? WALL_CHAR : EMPTY_SPACE_CHAR;
-            const oldColorFn = renderer.getColorFunction(oldGlyph.color);
-            renderer.updateCell(oldX, oldY, oldGlyph.char, oldColorFn);
+            // Clear old position - check for entity first, then board cell
+            const oldContent = renderer.getCellContent(
+              oldX,
+              oldY,
+              boardAdapter,
+              currentState.entities || [],
+              [] // No other players when checking what to restore
+            );
+            const oldColorFn = renderer.getColorFunction(oldContent.color);
+            renderer.updateCell(oldX, oldY, oldContent.glyph.char, oldColorFn);
 
             // Draw at new position
             const playerColorFn = renderer.getColorFunction(PLAYER_CHAR.color);
@@ -593,11 +599,16 @@ export async function runNetworkedMode() {
             // Update predicted position
             localPlayerPredictedPosition.y = newY;
 
-            // Clear old position (restore cell)
-            const oldCell = boardAdapter.getCell(oldX, oldY);
-            const oldGlyph = oldCell === WALL_CHAR.char ? WALL_CHAR : EMPTY_SPACE_CHAR;
-            const oldColorFn = renderer.getColorFunction(oldGlyph.color);
-            renderer.updateCell(oldX, oldY, oldGlyph.char, oldColorFn);
+            // Clear old position - check for entity first, then board cell
+            const oldContent = renderer.getCellContent(
+              oldX,
+              oldY,
+              boardAdapter,
+              currentState.entities || [],
+              [] // No other players when checking what to restore
+            );
+            const oldColorFn = renderer.getColorFunction(oldContent.color);
+            renderer.updateCell(oldX, oldY, oldContent.glyph.char, oldColorFn);
 
             // Draw at new position
             const playerColorFn = renderer.getColorFunction(PLAYER_CHAR.color);
@@ -681,11 +692,16 @@ export async function runNetworkedMode() {
             // Update predicted position
             localPlayerPredictedPosition.x = newX;
 
-            // Clear old position (restore cell)
-            const oldCell = boardAdapter.getCell(oldX, oldY);
-            const oldGlyph = oldCell === WALL_CHAR.char ? WALL_CHAR : EMPTY_SPACE_CHAR;
-            const oldColorFn = renderer.getColorFunction(oldGlyph.color);
-            renderer.updateCell(oldX, oldY, oldGlyph.char, oldColorFn);
+            // Clear old position - check for entity first, then board cell
+            const oldContent = renderer.getCellContent(
+              oldX,
+              oldY,
+              boardAdapter,
+              currentState.entities || [],
+              [] // No other players when checking what to restore
+            );
+            const oldColorFn = renderer.getColorFunction(oldContent.color);
+            renderer.updateCell(oldX, oldY, oldContent.glyph.char, oldColorFn);
 
             // Draw at new position
             const playerColorFn = renderer.getColorFunction(PLAYER_CHAR.color);
@@ -769,11 +785,16 @@ export async function runNetworkedMode() {
             // Update predicted position
             localPlayerPredictedPosition.x = newX;
 
-            // Clear old position (restore cell)
-            const oldCell = boardAdapter.getCell(oldX, oldY);
-            const oldGlyph = oldCell === WALL_CHAR.char ? WALL_CHAR : EMPTY_SPACE_CHAR;
-            const oldColorFn = renderer.getColorFunction(oldGlyph.color);
-            renderer.updateCell(oldX, oldY, oldGlyph.char, oldColorFn);
+            // Clear old position - check for entity first, then board cell
+            const oldContent = renderer.getCellContent(
+              oldX,
+              oldY,
+              boardAdapter,
+              currentState.entities || [],
+              [] // No other players when checking what to restore
+            );
+            const oldColorFn = renderer.getColorFunction(oldContent.color);
+            renderer.updateCell(oldX, oldY, oldContent.glyph.char, oldColorFn);
 
             // Draw at new position
             const playerColorFn = renderer.getColorFunction(PLAYER_CHAR.color);

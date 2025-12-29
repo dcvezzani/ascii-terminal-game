@@ -25,22 +25,22 @@ describe('Board', () => {
 
       // Top edge (y=0)
       for (let x = 0; x < width; x++) {
-        expect(board.getCell(x, 0)).toBe(WALL_CHAR.char);
+        expect(board.getCellChar(x, 0)).toBe(WALL_CHAR.char);
       }
 
       // Bottom edge (y=height-1)
       for (let x = 0; x < width; x++) {
-        expect(board.getCell(x, height - 1)).toBe(WALL_CHAR.char);
+        expect(board.getCellChar(x, height - 1)).toBe(WALL_CHAR.char);
       }
 
       // Left edge (x=0)
       for (let y = 0; y < height; y++) {
-        expect(board.getCell(0, y)).toBe(WALL_CHAR.char);
+        expect(board.getCellChar(0, y)).toBe(WALL_CHAR.char);
       }
 
       // Right edge (x=width-1)
       for (let y = 0; y < height; y++) {
-        expect(board.getCell(width - 1, y)).toBe(WALL_CHAR.char);
+        expect(board.getCellChar(width - 1, y)).toBe(WALL_CHAR.char);
       }
     });
 
@@ -51,7 +51,7 @@ describe('Board', () => {
       // Check interior (not edges)
       for (let y = 1; y < height - 1; y++) {
         for (let x = 1; x < width - 1; x++) {
-          expect(board.getCell(x, y)).toBe(EMPTY_SPACE_CHAR.char);
+          expect(board.getCellChar(x, y)).toBe(EMPTY_SPACE_CHAR.char);
         }
       }
     });
@@ -60,22 +60,22 @@ describe('Board', () => {
       const board = new Board();
       const { width, height } = gameConfig.board;
 
-      expect(board.getCell(0, 0)).toBe(WALL_CHAR.char); // Top-left
-      expect(board.getCell(width - 1, 0)).toBe(WALL_CHAR.char); // Top-right
-      expect(board.getCell(0, height - 1)).toBe(WALL_CHAR.char); // Bottom-left
-      expect(board.getCell(width - 1, height - 1)).toBe(WALL_CHAR.char); // Bottom-right
+      expect(board.getCellChar(0, 0)).toBe(WALL_CHAR.char); // Top-left
+      expect(board.getCellChar(width - 1, 0)).toBe(WALL_CHAR.char); // Top-right
+      expect(board.getCellChar(0, height - 1)).toBe(WALL_CHAR.char); // Bottom-left
+      expect(board.getCellChar(width - 1, height - 1)).toBe(WALL_CHAR.char); // Bottom-right
     });
   });
 
-  describe('getCell(x, y)', () => {
+  describe('getCellChar(x, y)', () => {
     test('Returns correct cell content for valid positions', () => {
       const board = new Board();
       const { width, height } = gameConfig.board;
-      expect(board.getCell(0, 0)).toBe(WALL_CHAR.char);
-      expect(board.getCell(Math.floor(width / 2), Math.floor(height / 2))).toBe(
+      expect(board.getCellChar(0, 0)).toBe(WALL_CHAR.char);
+      expect(board.getCellChar(Math.floor(width / 2), Math.floor(height / 2))).toBe(
         EMPTY_SPACE_CHAR.char
       );
-      expect(board.getCell(width - 1, height - 1)).toBe(WALL_CHAR.char);
+      expect(board.getCellChar(width - 1, height - 1)).toBe(WALL_CHAR.char);
     });
 
     test('Returns # for wall positions (edges)', () => {
@@ -84,17 +84,17 @@ describe('Board', () => {
       const midY = Math.floor(height / 2);
       const midX = Math.floor(width / 2);
 
-      expect(board.getCell(0, midY)).toBe(WALL_CHAR.char); // Left edge
-      expect(board.getCell(width - 1, midY)).toBe(WALL_CHAR.char); // Right edge
-      expect(board.getCell(midX, 0)).toBe(WALL_CHAR.char); // Top edge
-      expect(board.getCell(midX, height - 1)).toBe(WALL_CHAR.char); // Bottom edge
+      expect(board.getCellChar(0, midY)).toBe(WALL_CHAR.char); // Left edge
+      expect(board.getCellChar(width - 1, midY)).toBe(WALL_CHAR.char); // Right edge
+      expect(board.getCellChar(midX, 0)).toBe(WALL_CHAR.char); // Top edge
+      expect(board.getCellChar(midX, height - 1)).toBe(WALL_CHAR.char); // Bottom edge
     });
 
     test('Returns . for empty positions (interior)', () => {
       const board = new Board();
-      expect(board.getCell(10, 10)).toBe(EMPTY_SPACE_CHAR.char);
-      expect(board.getCell(5, 5)).toBe(EMPTY_SPACE_CHAR.char);
-      expect(board.getCell(15, 15)).toBe(EMPTY_SPACE_CHAR.char);
+      expect(board.getCellChar(10, 10)).toBe(EMPTY_SPACE_CHAR.char);
+      expect(board.getCellChar(5, 5)).toBe(EMPTY_SPACE_CHAR.char);
+      expect(board.getCellChar(15, 15)).toBe(EMPTY_SPACE_CHAR.char);
     });
 
     test('Returns null for invalid X coordinate (negative)', () => {
@@ -133,7 +133,7 @@ describe('Board', () => {
       const board = new Board();
       const result = board.setCell(10, 10, '@');
       expect(result).toBe(true);
-      expect(board.getCell(10, 10)).toBe('@');
+      expect(board.getCellChar(10, 10)).toBe('@');
     });
 
     test('Returns true when set is successful', () => {
@@ -168,22 +168,22 @@ describe('Board', () => {
     test('Cell value is actually updated after successful set', () => {
       const board = new Board();
       board.setCell(10, 10, 'X');
-      expect(board.getCell(10, 10)).toBe('X');
+      expect(board.getCellChar(10, 10)).toBe('X');
 
       board.setCell(10, 10, 'Y');
-      expect(board.getCell(10, 10)).toBe('Y');
+      expect(board.getCellChar(10, 10)).toBe('Y');
     });
 
     test('Can set different values (not just . and #)', () => {
       const board = new Board();
       board.setCell(10, 10, '@');
-      expect(board.getCell(10, 10)).toBe('@');
+      expect(board.getCellChar(10, 10)).toBe('@');
 
       board.setCell(10, 10, '*');
-      expect(board.getCell(10, 10)).toBe('*');
+      expect(board.getCellChar(10, 10)).toBe('*');
 
       board.setCell(10, 10, 'A');
-      expect(board.getCell(10, 10)).toBe('A');
+      expect(board.getCellChar(10, 10)).toBe('A');
     });
   });
 
