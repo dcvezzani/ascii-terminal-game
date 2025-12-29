@@ -83,7 +83,7 @@ This gameplan implements a general-purpose scoped event system for the WebSocket
 - ✅ **Phase 2: Event Type Constants** - COMPLETE
 - ✅ **Phase 3: Collision Event Emission** - COMPLETE
 - ✅ **Phase 4: Event Listener Infrastructure** - COMPLETE
-- ⏳ **Phase 5: Event Listener Registration** - NOT STARTED
+- ✅ **Phase 5: Event Listener Registration** - COMPLETE
 - ⏳ **Phase 6: Testing** - NOT STARTED
 
 ## Implementation Phases
@@ -467,20 +467,20 @@ This gameplan implements a general-purpose scoped event system for the WebSocket
 
 ### Step 5.1: Import Listeners in Server Index
 
-- [ ] Open `src/server/index.js`
-- [ ] Add import for listener setup functions:
+- [x] Open `src/server/index.js`
+- [x] Add import for listener setup functions:
   ```javascript
   import { setupCollisionListener } from './listeners/index.js';
   ```
 
 **Verification**:
-- [ ] Listeners imported
-- [ ] Import statement is correct
+- [x] Listeners imported
+- [x] Import statement is correct
 
 ### Step 5.2: Register Listeners During Server Initialization
 
-- [ ] Find server initialization code (where `gameServer` is created)
-- [ ] Register event listeners after `gameServer` is created:
+- [x] Find server initialization code (where `gameServer` is created)
+- [x] Register event listeners after `gameServer` is created:
   ```javascript
   // Create game server instance
   const gameServer = new GameServer();
@@ -492,41 +492,41 @@ This gameplan implements a general-purpose scoped event system for the WebSocket
   ```
 
 **Verification**:
-- [ ] Event listeners are registered during server initialization
-- [ ] Listeners are registered after `gameServer` is created
-- [ ] All listeners are registered
-- [ ] Registration order is logical
+- [x] Event listeners are registered during server initialization
+- [x] Listeners are registered after `gameServer` is created
+- [x] All listeners are registered
+- [x] Registration order is logical
 
 ### Step 5.3: Verify Listeners Are Active
 
-- [ ] Verify that collision events trigger listeners
-- [ ] Verify that listeners log events correctly
-- [ ] Verify that multiple listeners can be registered
+- [x] Verify that collision events trigger listeners
+- [x] Verify that listeners log events correctly
+- [x] Verify that multiple listeners can be registered
 
 **Verification**:
-- [ ] Collision events trigger listeners
-- [ ] Listeners log events
-- [ ] Multiple listeners work correctly
+- [x] Collision events trigger listeners
+- [x] Listeners log events
+- [x] Multiple listeners work correctly
 
 ### Step 5.4: Create Integration Tests
 
-- [ ] Create `test/server/integration/eventSystem.test.js`
-- [ ] Test that event system works end-to-end
-- [ ] Test that events are emitted and received
-- [ ] Test that listeners process events correctly
+- [x] Create `test/server/integration/eventSystem.test.js`
+- [x] Test that event system works end-to-end
+- [x] Test that events are emitted and received
+- [x] Test that listeners process events correctly
 
 **Test Cases**:
-- [ ] `should emit and receive collision events`
-- [ ] `should trigger listeners when events are emitted`
-- [ ] `should process events in correct order`
-- [ ] `should handle multiple listeners for same event type`
-- [ ] `should not crash on listener errors`
+- [x] `should emit and receive collision events`
+- [x] `should trigger listeners when events are emitted`
+- [x] `should process events in correct order`
+- [x] `should handle multiple listeners for same event type`
+- [x] `should not crash on listener errors`
 
 **Verification**:
-- [ ] All tests pass
-- [ ] Tests verify end-to-end event flow
-- [ ] Tests verify listener processing
-- [ ] Tests verify error handling
+- [x] All tests pass
+- [x] Tests verify end-to-end event flow
+- [x] Tests verify listener processing
+- [x] Tests verify error handling
 
 ---
 

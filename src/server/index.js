@@ -16,6 +16,7 @@ import {
 import { MessageTypes } from '../network/MessageTypes.js';
 import { randomUUID } from 'crypto';
 import { logger } from '../utils/logger.js';
+import { setupCollisionListener } from './listeners/index.js';
 
 let wss = null;
 let connectionManager = null;
@@ -39,6 +40,11 @@ export async function startServer() {
       connectionManager = new ConnectionManager();
       gameServer = new GameServer();
       gameServer.startGame();
+
+      // Set up event listeners
+      setupCollisionListener(gameServer);
+      // Future: setupCombatListener(gameServer);
+      // Future: setupAlignmentListener(gameServer);
 
       wss = new WebSocketServer({
         port: serverConfig.websocket.port,
