@@ -218,6 +218,86 @@ export async function runNetworkedMode() {
       wsClient.sendConnect();
     });
 
+    // Phase 3: Server Reconciliation - Reconciliation function
+    function reconcileWithServer(gameState) {
+      if (!localPlayerId || localPlayerPredictedPosition.x === null) {
+        return;
+      }
+
+      const serverPlayer = gameState.players.find(p => p.playerId === localPlayerId);
+      if (!serverPlayer) {
+        return;
+      }
+
+      const predicted = localPlayerPredictedPosition;
+      const server = { x: serverPlayer.x, y: serverPlayer.y };
+
+      // Check for discrepancy
+      if (predicted.x !== server.x || predicted.y !== server.y) {
+        clientLogger.debug(
+          `Reconciliation: Predicted (${predicted.x}, ${predicted.y}) != Server (${server.x}, ${server.y})`
+        );
+
+        // Correct to server position
+        const oldX = predicted.x;
+        const oldY = predicted.y;
+        localPlayerPredictedPosition = { x: server.x, y: server.y };
+
+        // Re-render at corrected position
+        if (renderer) {
+          const boardAdapter = {
+            getCell: (x, y) => {
+              if (
+                y >= 0 &&
+                y < gameState.board.grid.length &&
+                x >= 0 &&
+                x < gameState.board.grid[y].length
+              ) {
+                return gameState.board.grid[y][x];
+              }
+              return null;
+            },
+          };
+
+          // Clear old predicted position
+          const oldCell = boardAdapter.getCell(oldX, oldY);
+          const oldGlyph = oldCell === WALL_CHAR.char ? WALL_CHAR : EMPTY_SPACE_CHAR;
+          const oldColorFn = renderer.getColorFunction(oldGlyph.color);
+          renderer.updateCell(oldX, oldY, oldGlyph.char, oldColorFn);
+
+          // Draw at corrected server position
+          const playerColorFn = renderer.getColorFunction(PLAYER_CHAR.color);
+          renderer.updateCell(server.x, server.y, PLAYER_CHAR.char, playerColorFn);
+
+          // Update status bar
+          renderer.updateStatusBarIfChanged(
+            gameState.score || 0,
+            server.x,
+            server.y,
+            gameState.score || 0,
+            oldX,
+            oldY
+          );
+        }
+      }
+
+      lastReconciliationTime = Date.now();
+    }
+
+    // Phase 3: Server Reconciliation - Start reconciliation timer
+    function startReconciliationTimer() {
+      if (reconciliationTimer) {
+        clearInterval(reconciliationTimer);
+      }
+
+      const interval = clientConfig.prediction.reconciliationInterval;
+      reconciliationTimer = setInterval(() => {
+        if (currentState && localPlayerId && clientConfig.prediction.enabled) {
+          reconcileWithServer(currentState);
+        }
+      }, interval);
+    }
+
     wsClient.onStateUpdate(gameState => {
       currentState = gameState;
       if (!renderer || !localPlayerId) {
@@ -231,6 +311,10 @@ export async function runNetworkedMode() {
           if (localPlayer) {
             localPlayerPredictedPosition = { x: localPlayer.x, y: localPlayer.y };
             lastReconciliationTime = Date.now();
+            // Phase 3: Start reconciliation timer after first state update
+            if (clientConfig.prediction.enabled) {
+              startReconciliationTimer();
+            }
           }
         }
 
@@ -347,6 +431,12 @@ export async function runNetworkedMode() {
           // Store state after successful incremental update (deep copy)
           previousState = JSON.parse(JSON.stringify(gameState));
         }
+
+        // Phase 3: Optionally reconcile on every state update (in addition to timer)
+        // This provides more frequent reconciliation if needed
+        if (clientConfig.prediction.enabled && localPlayerId) {
+          reconcileWithServer(gameState);
+        }
       } catch (error) {
         // Phase 4: Error Recovery (per Q8: Option C)
         clientLogger.error('Error during incremental update:', error);
@@ -375,6 +465,11 @@ export async function runNetworkedMode() {
 
     wsClient.onDisconnect(() => {
       clientLogger.info('Disconnected from server');
+      // Phase 3: Clear reconciliation timer on disconnect
+      if (reconciliationTimer) {
+        clearInterval(reconciliationTimer);
+        reconciliationTimer = null;
+      }
       running = false;
       if (game) {
         game.stop();
@@ -752,6 +847,11 @@ export async function runNetworkedMode() {
     }
   } finally {
     try {
+      // Phase 3: Clear reconciliation timer on cleanup
+      if (reconciliationTimer) {
+        clearInterval(reconciliationTimer);
+        reconciliationTimer = null;
+      }
       if (inputHandler) {
         inputHandler.stop();
       }
