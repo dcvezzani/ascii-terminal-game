@@ -571,6 +571,11 @@ function handleMoveMessage(ws, clientId, payload) {
     }
 
     // Movement successful - state will be broadcast via periodic updates
+
+    // Movement successful - immediately broadcast state update to all clients
+    // This prevents other clients from seeing brief overlaps before periodic updates
+    const stateMessage = createStateUpdateMessage(gameServer.getGameState());
+    broadcastMessage(stateMessage);
   } catch (error) {
     logger.error(`Error handling MOVE message from client ${clientId}:`, error);
     const errorMessage = createErrorMessage(
@@ -657,15 +662,15 @@ function handlePingMessage(ws, clientId) {
  */
 function handleRestartMessage(ws, clientId) {
   logger.info(`Received RESTART message from client ${clientId}`);
-  
+
   // Reset the game server state
   gameServer.resetGame();
   gameServer.startGame();
-  
+
   // Broadcast the reset state to all clients
   const stateMessage = createStateUpdateMessage(gameServer.getGameState());
   broadcastMessage(stateMessage);
-  
+
   logger.info(`Game restarted by client ${clientId}, state broadcast to all clients`);
 }
 
@@ -677,7 +682,7 @@ function handleRestartMessage(ws, clientId) {
  */
 function handleTestMessage(ws, clientId, payload) {
   logger.info(`Received TEST message from client ${clientId}:`, payload);
-  
+
   // Spawn a ruffian entity at position 15, 15
   // Ruffian is solid (blocks movement) by default
   const ruffianGlyph = toZZTCharacterGlyph('ruffian', toColorHexValue('purple'));

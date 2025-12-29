@@ -20,7 +20,7 @@ export class Game {
         char: PLAYER_CHAR.char,
         color: PLAYER_CHAR.color,
         id: this.playerId,
-        solid: false, // Players are non-solid
+        solid: true, // Players are solid entities
       });
     } catch (error) {
       // If initial position is invalid, board will throw - this shouldn't happen

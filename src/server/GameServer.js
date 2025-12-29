@@ -80,27 +80,58 @@ export class GameServer extends EventEmitter {
     let startX = x !== null ? x : gameConfig.player.initialX;
     let startY = y !== null ? y : gameConfig.player.initialY;
 
-    // Validate position
+    // Validate position and check for conflicts
     if (
       !this.game.board.isValidPosition(startX, startY) ||
-      this.game.board.isWall(startX, startY)
+      this.game.board.isWall(startX, startY) ||
+      this.game.board.hasSolidEntity(startX, startY)
     ) {
-      // If invalid, try center position
+      // If invalid or occupied, try to find an available position near center
       const centerX = gameConfig.player.initialX;
       const centerY = gameConfig.player.initialY;
+      let foundPosition = false;
+
+      // Try center first
       if (
-        !this.game.board.isValidPosition(centerX, centerY) ||
-        this.game.board.isWall(centerX, centerY)
+        this.game.board.isValidPosition(centerX, centerY) &&
+        !this.game.board.isWall(centerX, centerY) &&
+        !this.game.board.hasSolidEntity(centerX, centerY)
       ) {
+        startX = centerX;
+        startY = centerY;
+        foundPosition = true;
+      } else {
+        // Search in a spiral pattern around center for an available position
+        const maxRadius = Math.min(this.game.board.width, this.game.board.height);
+        for (let radius = 1; radius < maxRadius && !foundPosition; radius++) {
+          for (let dx = -radius; dx <= radius && !foundPosition; dx++) {
+            for (let dy = -radius; dy <= radius && !foundPosition; dy++) {
+              // Only check positions on the edge of the current radius
+              if (Math.abs(dx) === radius || Math.abs(dy) === radius) {
+                const testX = centerX + dx;
+                const testY = centerY + dy;
+                if (
+                  this.game.board.isValidPosition(testX, testY) &&
+                  !this.game.board.isWall(testX, testY) &&
+                  !this.game.board.hasSolidEntity(testX, testY)
+                ) {
+                  startX = testX;
+                  startY = testY;
+                  foundPosition = true;
+                  logger.debug(`Found available position for player ${playerId} at (${testX}, ${testY})`);
+                }
+              }
+            }
+          }
+        }
+      }
+
+      if (!foundPosition) {
         logger.warn(
-          `Invalid position for player ${playerId}: (${startX}, ${startY}), center also invalid`
+          `No available position found for player ${playerId} near center (${centerX}, ${centerY})`
         );
         return false;
       }
-      // Use center position as fallback
-      logger.debug(`Using fallback center position for player ${playerId}`);
-      startX = centerX;
-      startY = centerY;
     }
 
     const player = {
@@ -111,13 +142,13 @@ export class GameServer extends EventEmitter {
       y: startY,
     };
 
-    // Add player to board cell queue (players are non-solid, can stack with entities)
+    // Add player to board cell queue (players are solid, block movement)
     try {
       this.game.board.addEntity(startX, startY, {
         char: PLAYER_CHAR.char,
         color: PLAYER_CHAR.color,
         id: `player-${playerId}`,
-        solid: false, // Players are non-solid, can move over non-solid entities
+        solid: true, // Players are solid entities, block movement
       });
     } catch (error) {
       logger.warn(`Failed to add player to board at (${startX}, ${startY}): ${error.message}`);
@@ -205,7 +236,7 @@ export class GameServer extends EventEmitter {
         char: PLAYER_CHAR.char,
         color: PLAYER_CHAR.color,
         id: `player-${playerId}`,
-        solid: false,
+        solid: true, // Players are solid entities
       });
     } catch (error) {
       logger.warn(`Failed to restore player to board at (${player.x}, ${player.y}): ${error.message}`);
@@ -322,48 +353,42 @@ export class GameServer extends EventEmitter {
     }
 
     // Check for solid entity at new position (blocks movement)
+    // This includes other players (who are solid entities) and other solid entities
     if (this.game.board.hasSolidEntity(newX, newY)) {
-      // Emit targeted collision event
-      this.emit(EventTypes.BUMP, {
-        scope: 'targeted',
-        type: EventTypes.ENTITY_COLLISION,
-        targetId: playerId,
-        playerId: playerId,
-        attemptedPosition: { x: newX, y: newY },
-        currentPosition: { x: player.x, y: player.y },
-        collisionType: 'solid-entity',
-        timestamp: Date.now(),
-      });
-
-      logger.debug(`Solid entity collision for player ${playerId} at (${newX}, ${newY})`);
-      return false;
-    }
-
-    // Check for collision with other players
-    const hasCollision = Array.from(this.players.values()).some(
-      otherPlayer =>
-        otherPlayer.playerId !== playerId && otherPlayer.x === newX && otherPlayer.y === newY
-    );
-
-    if (hasCollision) {
+      // Check if the solid entity is another player for event purposes
       const otherPlayer = Array.from(this.players.values()).find(
         p => p.playerId !== playerId && p.x === newX && p.y === newY
       );
 
-      // Emit targeted collision event
-      this.emit(EventTypes.BUMP, {
-        scope: 'targeted',
-        type: EventTypes.PLAYER_COLLISION,
-        targetId: playerId,
-        playerId: playerId,
-        attemptedPosition: { x: newX, y: newY },
-        currentPosition: { x: player.x, y: player.y },
-        collisionType: 'player',
-        otherPlayerId: otherPlayer.playerId,
-        timestamp: Date.now(),
-      });
+      if (otherPlayer) {
+        // Emit targeted collision event for player collision
+        this.emit(EventTypes.BUMP, {
+          scope: 'targeted',
+          type: EventTypes.PLAYER_COLLISION,
+          targetId: playerId,
+          playerId: playerId,
+          attemptedPosition: { x: newX, y: newY },
+          currentPosition: { x: player.x, y: player.y },
+          collisionType: 'player',
+          otherPlayerId: otherPlayer.playerId,
+          timestamp: Date.now(),
+        });
+        logger.debug(`Player collision for player ${playerId} at (${newX}, ${newY})`);
+      } else {
+        // Emit targeted collision event for solid entity collision
+        this.emit(EventTypes.BUMP, {
+          scope: 'targeted',
+          type: EventTypes.ENTITY_COLLISION,
+          targetId: playerId,
+          playerId: playerId,
+          attemptedPosition: { x: newX, y: newY },
+          currentPosition: { x: player.x, y: player.y },
+          collisionType: 'solid-entity',
+          timestamp: Date.now(),
+        });
+        logger.debug(`Solid entity collision for player ${playerId} at (${newX}, ${newY})`);
+      }
 
-      logger.debug(`Player collision for player ${playerId} at (${newX}, ${newY})`);
       return false;
     }
 
@@ -380,7 +405,7 @@ export class GameServer extends EventEmitter {
         char: PLAYER_CHAR.char,
         color: PLAYER_CHAR.color,
         id: `player-${playerId}`,
-        solid: false,
+        solid: true, // Players are solid entities
       });
     } catch (error) {
       logger.error(`Failed to add player to board at (${newX}, ${newY}): ${error.message}`);
@@ -393,7 +418,7 @@ export class GameServer extends EventEmitter {
           char: PLAYER_CHAR.char,
           color: PLAYER_CHAR.color,
           id: `player-${playerId}`,
-          solid: false,
+          solid: true, // Players are solid entities
         });
       } catch (restoreError) {
         logger.error(`Failed to restore player to old position: ${restoreError.message}`);

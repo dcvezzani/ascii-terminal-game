@@ -201,6 +201,7 @@ export async function runNetworkedMode() {
       return entities.some(entity => entity.x === x && entity.y === y && entity.solid === true);
     }
 
+
     wsClient.onStateUpdate(gameState => {
       currentState = gameState;
       if (!renderer) {
@@ -525,9 +526,19 @@ export async function runNetworkedMode() {
               return;
             }
 
-            // Check for solid entity collision
+            // Check for solid entity collision (includes other players, who are solid entities)
             if (hasSolidEntityAt(oldX, newY, currentState.entities || [])) {
               // Solid entity collision - don't move
+              return;
+            }
+
+            // Check for other player collision (players are solid entities, but we need to check players array
+            // since they're not in entities array - they're tracked separately)
+            const hasOtherPlayer = (currentState.players || []).some(
+              p => p.playerId !== localPlayerId && p.x === oldX && p.y === newY
+            );
+            if (hasOtherPlayer) {
+              // Other player collision - don't move
               return;
             }
 
@@ -624,9 +635,19 @@ export async function runNetworkedMode() {
               return;
             }
 
-            // Check for solid entity collision
+            // Check for solid entity collision (includes other players, who are solid entities)
             if (hasSolidEntityAt(oldX, newY, currentState.entities || [])) {
               // Solid entity collision - don't move
+              return;
+            }
+
+            // Check for other player collision (players are solid entities, but we need to check players array
+            // since they're not in entities array - they're tracked separately)
+            const hasOtherPlayer = (currentState.players || []).some(
+              p => p.playerId !== localPlayerId && p.x === oldX && p.y === newY
+            );
+            if (hasOtherPlayer) {
+              // Other player collision - don't move
               return;
             }
 
@@ -723,9 +744,19 @@ export async function runNetworkedMode() {
               return;
             }
 
-            // Check for solid entity collision
+            // Check for solid entity collision (includes other players, who are solid entities)
             if (hasSolidEntityAt(newX, oldY, currentState.entities || [])) {
               // Solid entity collision - don't move
+              return;
+            }
+
+            // Check for other player collision (players are solid entities, but we need to check players array
+            // since they're not in entities array - they're tracked separately)
+            const hasOtherPlayer = (currentState.players || []).some(
+              p => p.playerId !== localPlayerId && p.x === newX && p.y === oldY
+            );
+            if (hasOtherPlayer) {
+              // Other player collision - don't move
               return;
             }
 
@@ -822,9 +853,19 @@ export async function runNetworkedMode() {
               return;
             }
 
-            // Check for solid entity collision
+            // Check for solid entity collision (includes other players, who are solid entities)
             if (hasSolidEntityAt(newX, oldY, currentState.entities || [])) {
               // Solid entity collision - don't move
+              return;
+            }
+
+            // Check for other player collision (players are solid entities, but we need to check players array
+            // since they're not in entities array - they're tracked separately)
+            const hasOtherPlayer = (currentState.players || []).some(
+              p => p.playerId !== localPlayerId && p.x === newX && p.y === oldY
+            );
+            if (hasOtherPlayer) {
+              // Other player collision - don't move
               return;
             }
 
