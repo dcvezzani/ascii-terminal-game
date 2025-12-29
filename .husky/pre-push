@@ -1,2 +1,14 @@
-npx lint-staged
+formattedFiles=$(npm run format | tail -n +5 | grep -v \(unchanged\))
+formattedFilesCnt=$(echo "$formattedFiles" | wc -l | xargs)
 
+if [[ $formattedFilesCnt > 0 ]]; then
+	echo "Formatting files... $formattedFiles"
+	echo "$formattedFiles" | perl -p -e 's/^([^ ]+).*/$1/' | xargs git add --
+
+  gcomScript="~/scripts/git-commit-02.sh"
+	if [[ -f $gcomScript ]]; then
+		~/scripts/git-commit-02.sh 'formatting code for code at rest'
+	else
+		git commit -m 'formatting for code at rest'
+	fi
+fi
