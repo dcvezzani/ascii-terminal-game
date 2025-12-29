@@ -6,9 +6,9 @@
 export const clientConfig = {
   logging: {
     level: 'info', // Logging level: 'debug', 'info', 'warn', 'error'
-    transports: ['console'], // Transport options: 'console', 'file', or ['console', 'file']
+    transports: ['file'], // Transport options: 'console', 'file', or ['console', 'file']
     file: {
-      enabled: false, // Enable file logging
+      enabled: true, // Enable file logging
       path: './logs/client.log', // Log file path (relative to project root)
       maxSize: '20m', // Maximum log file size before rotation
       maxFiles: 5, // Maximum number of log files to keep
