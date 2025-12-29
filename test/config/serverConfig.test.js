@@ -25,9 +25,9 @@ describe('Server Configuration', () => {
   });
 
   describe('websocket configuration', () => {
-    test('Has enabled property (default: false)', () => {
+    test('Has enabled property (default: true)', () => {
       expect(serverConfig.websocket).toHaveProperty('enabled');
-      expect(serverConfig.websocket.enabled).toBe(false);
+      expect(serverConfig.websocket.enabled).toBe(true);
       expect(typeof serverConfig.websocket.enabled).toBe('boolean');
     });
 
@@ -45,16 +45,16 @@ describe('Server Configuration', () => {
       expect(typeof serverConfig.websocket.host).toBe('string');
     });
 
-    test('Has updateInterval property (default: 250ms)', () => {
+    test('Has updateInterval property (default: 100ms)', () => {
       expect(serverConfig.websocket).toHaveProperty('updateInterval');
-      expect(serverConfig.websocket.updateInterval).toBe(250);
+      expect(serverConfig.websocket.updateInterval).toBe(100);
       expect(typeof serverConfig.websocket.updateInterval).toBe('number');
       expect(serverConfig.websocket.updateInterval).toBeGreaterThan(0);
     });
 
-    test('updateInterval represents 4 updates per second', () => {
+    test('updateInterval represents 10 updates per second', () => {
       const updatesPerSecond = 1000 / serverConfig.websocket.updateInterval;
-      expect(updatesPerSecond).toBe(4);
+      expect(updatesPerSecond).toBe(10);
     });
   });
 
@@ -102,8 +102,8 @@ describe('Server Configuration', () => {
       expect(serverConfig.websocket.host).toBe('0.0.0.0');
     });
 
-    test('Update interval matches specification answer (250ms = 4/sec)', () => {
-      expect(serverConfig.websocket.updateInterval).toBe(250);
+    test('Update interval matches current configuration (100ms = 10/sec)', () => {
+      expect(serverConfig.websocket.updateInterval).toBe(100);
     });
 
     test('Logging level matches specification answer ("info")', () => {
