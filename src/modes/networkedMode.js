@@ -3,6 +3,7 @@
  */
 
 import { Game } from '../game/Game.js';
+import { Board } from '../game/Board.js';
 import { Renderer } from '../render/Renderer.js';
 import { InputHandler } from '../input/InputHandler.js';
 import { validateTerminalSize } from '../utils/terminal.js';
@@ -140,6 +141,22 @@ export async function runNetworkedMode() {
               }
               return null;
             },
+            getDisplay: (x, y) => {
+              if (
+                y >= 0 &&
+                y < gameState.board.grid.length &&
+                x >= 0 &&
+                x < gameState.board.grid[y].length
+              ) {
+                const char = gameState.board.grid[y][x];
+                // Determine color based on character
+                if (char === WALL_CHAR.char) {
+                  return { char: WALL_CHAR.char, color: WALL_CHAR.color };
+                }
+                return { char: EMPTY_SPACE_CHAR.char, color: EMPTY_SPACE_CHAR.color };
+              }
+              return null;
+            },
           };
 
           // Clear old predicted position - use getCellContent to check for entities
@@ -210,6 +227,9 @@ export async function runNetworkedMode() {
         return; // Wait for renderer
       }
 
+      // Create Board instance from server data
+      const board = Board.fromSerialized(gameState.board);
+
       // Phase 4.1: Handle state update arriving before localPlayerId is set
       if (!localPlayerId) {
         // Queue the state update to process once localPlayerId is set
@@ -270,20 +290,7 @@ export async function runNetworkedMode() {
           previousState = JSON.parse(JSON.stringify(gameState));
         } else {
           // Phase 4: Subsequent renders - use incremental updates
-          // Create board adapter for incremental updates
-          const boardAdapter = {
-            getCell: (x, y) => {
-              if (
-                y >= 0 &&
-                y < gameState.board.grid.length &&
-                x >= 0 &&
-                x < gameState.board.grid[y].length
-              ) {
-                return gameState.board.grid[y][x];
-              }
-              return null;
-            },
-          };
+          // Board instance already created from gameState.board above
 
           // Compare states to detect changes
           const changes = compareStates(previousState, gameState);
@@ -334,7 +341,7 @@ export async function runNetworkedMode() {
             renderer.updatePlayersIncremental(
               previousOtherPlayers,
               otherPlayers,
-              boardAdapter,
+              board,
               otherPlayerChanges,
               gameState.entities || []
             );
@@ -350,7 +357,7 @@ export async function runNetworkedMode() {
             renderer.updateEntitiesIncremental(
               previousState.entities || [],
               gameState.entities || [],
-              boardAdapter,
+              board,
               changes.entities
             );
           }
@@ -542,6 +549,22 @@ export async function runNetworkedMode() {
                 }
                 return null;
               },
+              getDisplay: (x, y) => {
+                if (
+                  y >= 0 &&
+                  y < currentState.board.grid.length &&
+                  x >= 0 &&
+                  x < currentState.board.grid[y].length
+                ) {
+                  const char = currentState.board.grid[y][x];
+                  // Determine color based on character
+                  if (char === WALL_CHAR.char) {
+                    return { char: WALL_CHAR.char, color: WALL_CHAR.color };
+                  }
+                  return { char: EMPTY_SPACE_CHAR.char, color: EMPTY_SPACE_CHAR.color };
+                }
+                return null;
+              },
             };
             const newCell = boardAdapter.getCell(oldX, newY);
             if (newCell === WALL_CHAR.char) {
@@ -648,6 +671,22 @@ export async function runNetworkedMode() {
                   x < currentState.board.grid[y].length
                 ) {
                   return currentState.board.grid[y][x];
+                }
+                return null;
+              },
+              getDisplay: (x, y) => {
+                if (
+                  y >= 0 &&
+                  y < currentState.board.grid.length &&
+                  x >= 0 &&
+                  x < currentState.board.grid[y].length
+                ) {
+                  const char = currentState.board.grid[y][x];
+                  // Determine color based on character
+                  if (char === WALL_CHAR.char) {
+                    return { char: WALL_CHAR.char, color: WALL_CHAR.color };
+                  }
+                  return { char: EMPTY_SPACE_CHAR.char, color: EMPTY_SPACE_CHAR.color };
                 }
                 return null;
               },
@@ -760,6 +799,22 @@ export async function runNetworkedMode() {
                 }
                 return null;
               },
+              getDisplay: (x, y) => {
+                if (
+                  y >= 0 &&
+                  y < currentState.board.grid.length &&
+                  x >= 0 &&
+                  x < currentState.board.grid[y].length
+                ) {
+                  const char = currentState.board.grid[y][x];
+                  // Determine color based on character
+                  if (char === WALL_CHAR.char) {
+                    return { char: WALL_CHAR.char, color: WALL_CHAR.color };
+                  }
+                  return { char: EMPTY_SPACE_CHAR.char, color: EMPTY_SPACE_CHAR.color };
+                }
+                return null;
+              },
             };
             const newCell = boardAdapter.getCell(newX, oldY);
             if (newCell === WALL_CHAR.char) {
@@ -866,6 +921,22 @@ export async function runNetworkedMode() {
                   x < currentState.board.grid[y].length
                 ) {
                   return currentState.board.grid[y][x];
+                }
+                return null;
+              },
+              getDisplay: (x, y) => {
+                if (
+                  y >= 0 &&
+                  y < currentState.board.grid.length &&
+                  x >= 0 &&
+                  x < currentState.board.grid[y].length
+                ) {
+                  const char = currentState.board.grid[y][x];
+                  // Determine color based on character
+                  if (char === WALL_CHAR.char) {
+                    return { char: WALL_CHAR.char, color: WALL_CHAR.color };
+                  }
+                  return { char: EMPTY_SPACE_CHAR.char, color: EMPTY_SPACE_CHAR.color };
                 }
                 return null;
               },

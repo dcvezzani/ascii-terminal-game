@@ -10,7 +10,7 @@ This gameplan implements reuse of `Board` and `Cell` classes on the client side 
 ## Progress Summary
 
 - ✅ **Phase 1: Add Board Deserialization** - COMPLETE
-- ⏳ **Phase 2: Update Client to Use Board Instances** - PENDING
+- ✅ **Phase 2: Update Client to Use Board Instances** - COMPLETE
 - ⏳ **Phase 3: Remove boardAdapter Objects** - PENDING
 - ⏳ **Phase 4: Testing and Verification** - PENDING
 
@@ -166,21 +166,21 @@ This gameplan implements reuse of `Board` and `Cell` classes on the client side 
 
 ### Step 2.1: Import Board Class in networkedMode
 
-- [ ] Open `src/modes/networkedMode.js`
-- [ ] Add import for Board class:
+- [x] Open `src/modes/networkedMode.js`
+- [x] Add import for Board class:
   ```javascript
   import { Board } from '../game/Board.js';
   ```
-- [ ] Verify import is at top of file with other imports
+- [x] Verify import is at top of file with other imports
 
 **Verification**:
-- [ ] Board class is imported
-- [ ] No import errors
+- [x] Board class is imported
+- [x] No import errors
 
 ### Step 2.2: Create Board Instance from Game State
 
-- [ ] Locate `wsClient.onStateUpdate()` callback in `networkedMode.js`
-- [ ] After receiving `gameState`, create Board instance:
+- [x] Locate `wsClient.onStateUpdate()` callback in `networkedMode.js`
+- [x] After receiving `gameState`, create Board instance:
   ```javascript
   wsClient.onStateUpdate(gameState => {
     currentState = gameState;
@@ -191,18 +191,18 @@ This gameplan implements reuse of `Board` and `Cell` classes on the client side 
     // ... rest of state update handling
   });
   ```
-- [ ] Store board instance in a variable accessible to movement handlers
-- [ ] Consider storing in `currentState` or a separate variable
+- [x] Store board instance in a variable accessible to movement handlers
+- [x] Consider storing in `currentState` or a separate variable
 
 **Verification**:
-- [ ] Board instance is created from `gameState.board`
-- [ ] Board instance is accessible where needed
-- [ ] No errors when creating Board from server data
+- [x] Board instance is created from `gameState.board`
+- [x] Board instance is accessible where needed
+- [x] No errors when creating Board from server data
 
 ### Step 2.3: Update State Update Handler to Use Board
 
-- [ ] Locate first `boardAdapter` creation (around line 274 in incremental rendering)
-- [ ] Replace `boardAdapter` with Board instance:
+- [x] Locate first `boardAdapter` creation (around line 274 in incremental rendering)
+- [x] Replace `boardAdapter` with Board instance:
   ```javascript
   // Before:
   const boardAdapter = {
@@ -213,14 +213,14 @@ This gameplan implements reuse of `Board` and `Cell` classes on the client side 
   // After:
   const board = Board.fromSerialized(gameState.board);
   ```
-- [ ] Update `renderer.renderFull()` call if it needs Board instance
-- [ ] Update `renderer.updatePlayersIncremental()` to use Board instance
-- [ ] Update any other methods that use `boardAdapter`
+- [x] Update `renderer.renderFull()` call if it needs Board instance
+- [x] Update `renderer.updatePlayersIncremental()` to use Board instance
+- [x] Update any other methods that use `boardAdapter`
 
 **Verification**:
-- [ ] Board instance replaces first `boardAdapter`
-- [ ] Rendering still works correctly
-- [ ] No errors in state update handler
+- [x] Board instance replaces first `boardAdapter`
+- [x] Rendering still works correctly
+- [x] No errors in state update handler
 
 ---
 

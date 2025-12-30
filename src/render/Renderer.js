@@ -3,6 +3,7 @@ import chalk from 'chalk';
 import cliCursor from 'cli-cursor';
 import { getHorizontalCenter, getTerminalSize } from '../utils/terminal.js';
 import { gameConfig } from '../config/gameConfig.js';
+import { Board } from '../game/Board.js';
 import {
   EMPTY_SPACE_CHAR,
   WALL_CHAR,
@@ -123,40 +124,7 @@ export class Renderer {
 
     if (networkState) {
       // Networked mode - render from server state
-      const board = {
-        width: networkState.board.width,
-        height: networkState.board.height,
-        grid: networkState.board.grid,
-        getCell: (x, y) => {
-          if (
-            y >= 0 &&
-            y < networkState.board.grid.length &&
-            x >= 0 &&
-            x < networkState.board.grid[y].length
-          ) {
-            return networkState.board.grid[y][x];
-          }
-          return null;
-        },
-        getDisplay: (x, y) => {
-          // For network state, grid contains base characters (strings)
-          // Convert to display format with color
-          if (
-            y >= 0 &&
-            y < networkState.board.grid.length &&
-            x >= 0 &&
-            x < networkState.board.grid[y].length
-          ) {
-            const char = networkState.board.grid[y][x];
-            // Determine color based on character type
-            if (char === WALL_CHAR.char) {
-              return { char: WALL_CHAR.char, color: WALL_CHAR.color };
-            }
-            return { char: EMPTY_SPACE_CHAR.char, color: EMPTY_SPACE_CHAR.color };
-          }
-          return null;
-        },
-      };
+      const board = Board.fromSerialized(networkState.board);
       const localPlayer = networkState.players.find(p => p.playerId === localPlayerId);
       const playerX = localPlayer ? localPlayer.x : 0;
       const playerY = localPlayer ? localPlayer.y : 0;
