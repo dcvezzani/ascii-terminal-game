@@ -129,42 +129,14 @@ export async function runNetworkedMode() {
 
         // Re-render at corrected position
         if (renderer) {
-          const boardAdapter = {
-            getCell: (x, y) => {
-              if (
-                y >= 0 &&
-                y < gameState.board.grid.length &&
-                x >= 0 &&
-                x < gameState.board.grid[y].length
-              ) {
-                return gameState.board.grid[y][x];
-              }
-              return null;
-            },
-            getDisplay: (x, y) => {
-              if (
-                y >= 0 &&
-                y < gameState.board.grid.length &&
-                x >= 0 &&
-                x < gameState.board.grid[y].length
-              ) {
-                const char = gameState.board.grid[y][x];
-                // Determine color based on character
-                if (char === WALL_CHAR.char) {
-                  return { char: WALL_CHAR.char, color: WALL_CHAR.color };
-                }
-                return { char: EMPTY_SPACE_CHAR.char, color: EMPTY_SPACE_CHAR.color };
-              }
-              return null;
-            },
-          };
+          const board = Board.fromSerialized(gameState.board);
 
           // Clear old predicted position - use getCellContent to check for entities
           // The old position might have an entity (like the ruffian we collided with)
           const oldContent = renderer.getCellContent(
             oldX,
             oldY,
-            boardAdapter,
+            board,
             gameState.entities || [],
             gameState.players || [],
             null,
@@ -537,37 +509,9 @@ export async function runNetworkedMode() {
             oldX >= 0 &&
             oldX < (currentState.board.grid[newY]?.length || 0)
           ) {
-            const boardAdapter = {
-              getCell: (x, y) => {
-                if (
-                  y >= 0 &&
-                  y < currentState.board.grid.length &&
-                  x >= 0 &&
-                  x < currentState.board.grid[y].length
-                ) {
-                  return currentState.board.grid[y][x];
-                }
-                return null;
-              },
-              getDisplay: (x, y) => {
-                if (
-                  y >= 0 &&
-                  y < currentState.board.grid.length &&
-                  x >= 0 &&
-                  x < currentState.board.grid[y].length
-                ) {
-                  const char = currentState.board.grid[y][x];
-                  // Determine color based on character
-                  if (char === WALL_CHAR.char) {
-                    return { char: WALL_CHAR.char, color: WALL_CHAR.color };
-                  }
-                  return { char: EMPTY_SPACE_CHAR.char, color: EMPTY_SPACE_CHAR.color };
-                }
-                return null;
-              },
-            };
-            const newCell = boardAdapter.getCell(oldX, newY);
-            if (newCell === WALL_CHAR.char) {
+            const board = Board.fromSerialized(currentState.board);
+            const newCell = board.getCell(oldX, newY);
+            if (newCell && newCell.getBaseChar() === WALL_CHAR.char) {
               // Wall collision - don't move
               return;
             }
@@ -595,7 +539,7 @@ export async function runNetworkedMode() {
             const oldContent = renderer.getCellContent(
               oldX,
               oldY,
-              boardAdapter,
+              board,
               currentState.entities || [],
               [] // No other players when checking what to restore
             );
@@ -662,37 +606,9 @@ export async function runNetworkedMode() {
             oldX >= 0 &&
             oldX < (currentState.board.grid[newY]?.length || 0)
           ) {
-            const boardAdapter = {
-              getCell: (x, y) => {
-                if (
-                  y >= 0 &&
-                  y < currentState.board.grid.length &&
-                  x >= 0 &&
-                  x < currentState.board.grid[y].length
-                ) {
-                  return currentState.board.grid[y][x];
-                }
-                return null;
-              },
-              getDisplay: (x, y) => {
-                if (
-                  y >= 0 &&
-                  y < currentState.board.grid.length &&
-                  x >= 0 &&
-                  x < currentState.board.grid[y].length
-                ) {
-                  const char = currentState.board.grid[y][x];
-                  // Determine color based on character
-                  if (char === WALL_CHAR.char) {
-                    return { char: WALL_CHAR.char, color: WALL_CHAR.color };
-                  }
-                  return { char: EMPTY_SPACE_CHAR.char, color: EMPTY_SPACE_CHAR.color };
-                }
-                return null;
-              },
-            };
-            const newCell = boardAdapter.getCell(oldX, newY);
-            if (newCell === WALL_CHAR.char) {
+            const board = Board.fromSerialized(currentState.board);
+            const newCell = board.getCell(oldX, newY);
+            if (newCell && newCell.getBaseChar() === WALL_CHAR.char) {
               // Wall collision - don't move
               return;
             }
@@ -720,7 +636,7 @@ export async function runNetworkedMode() {
             const oldContent = renderer.getCellContent(
               oldX,
               oldY,
-              boardAdapter,
+              board,
               currentState.entities || [],
               [] // No other players when checking what to restore
             );
@@ -787,37 +703,9 @@ export async function runNetworkedMode() {
             oldY < currentState.board.grid.length &&
             newX < (currentState.board.grid[oldY]?.length || 0)
           ) {
-            const boardAdapter = {
-              getCell: (x, y) => {
-                if (
-                  y >= 0 &&
-                  y < currentState.board.grid.length &&
-                  x >= 0 &&
-                  x < currentState.board.grid[y].length
-                ) {
-                  return currentState.board.grid[y][x];
-                }
-                return null;
-              },
-              getDisplay: (x, y) => {
-                if (
-                  y >= 0 &&
-                  y < currentState.board.grid.length &&
-                  x >= 0 &&
-                  x < currentState.board.grid[y].length
-                ) {
-                  const char = currentState.board.grid[y][x];
-                  // Determine color based on character
-                  if (char === WALL_CHAR.char) {
-                    return { char: WALL_CHAR.char, color: WALL_CHAR.color };
-                  }
-                  return { char: EMPTY_SPACE_CHAR.char, color: EMPTY_SPACE_CHAR.color };
-                }
-                return null;
-              },
-            };
-            const newCell = boardAdapter.getCell(newX, oldY);
-            if (newCell === WALL_CHAR.char) {
+            const board = Board.fromSerialized(currentState.board);
+            const newCell = board.getCell(newX, oldY);
+            if (newCell && newCell.getBaseChar() === WALL_CHAR.char) {
               // Wall collision - don't move
               return;
             }
@@ -845,7 +733,7 @@ export async function runNetworkedMode() {
             const oldContent = renderer.getCellContent(
               oldX,
               oldY,
-              boardAdapter,
+              board,
               currentState.entities || [],
               [] // No other players when checking what to restore
             );
@@ -912,37 +800,9 @@ export async function runNetworkedMode() {
             newX >= 0 &&
             newX < (currentState.board.grid[oldY]?.length || 0)
           ) {
-            const boardAdapter = {
-              getCell: (x, y) => {
-                if (
-                  y >= 0 &&
-                  y < currentState.board.grid.length &&
-                  x >= 0 &&
-                  x < currentState.board.grid[y].length
-                ) {
-                  return currentState.board.grid[y][x];
-                }
-                return null;
-              },
-              getDisplay: (x, y) => {
-                if (
-                  y >= 0 &&
-                  y < currentState.board.grid.length &&
-                  x >= 0 &&
-                  x < currentState.board.grid[y].length
-                ) {
-                  const char = currentState.board.grid[y][x];
-                  // Determine color based on character
-                  if (char === WALL_CHAR.char) {
-                    return { char: WALL_CHAR.char, color: WALL_CHAR.color };
-                  }
-                  return { char: EMPTY_SPACE_CHAR.char, color: EMPTY_SPACE_CHAR.color };
-                }
-                return null;
-              },
-            };
-            const newCell = boardAdapter.getCell(newX, oldY);
-            if (newCell === WALL_CHAR.char) {
+            const board = Board.fromSerialized(currentState.board);
+            const newCell = board.getCell(newX, oldY);
+            if (newCell && newCell.getBaseChar() === WALL_CHAR.char) {
               // Wall collision - don't move
               return;
             }
@@ -970,7 +830,7 @@ export async function runNetworkedMode() {
             const oldContent = renderer.getCellContent(
               oldX,
               oldY,
-              boardAdapter,
+              board,
               currentState.entities || [],
               [] // No other players when checking what to restore
             );
