@@ -96,13 +96,12 @@ describe('InputHandler', () => {
   });
 
   describe('start()', () => {
-    test('Creates readline interface', () => {
+    test('Enables keypress events without creating readline interface', () => {
       inputHandler = new InputHandler();
       inputHandler.start();
-      expect(mockCreateInterface).toHaveBeenCalledWith({
-        input: mockStdin,
-        output: process.stdout,
-      });
+      // InputHandler uses emitKeypressEvents directly, not createInterface
+      expect(mockEmitKeypressEvents).toHaveBeenCalledWith(mockStdin);
+      expect(mockCreateInterface).not.toHaveBeenCalled();
     });
 
     test('Enables keypress events (readline.emitKeypressEvents)', () => {
@@ -145,9 +144,10 @@ describe('InputHandler', () => {
     test('Does not start if already listening (idempotent)', () => {
       inputHandler = new InputHandler();
       inputHandler.start();
-      const firstCallCount = mockCreateInterface.mock.calls.length;
+      const firstCallCount = mockEmitKeypressEvents.mock.calls.length;
       inputHandler.start();
-      expect(mockCreateInterface).toHaveBeenCalledTimes(firstCallCount);
+      // Should not call emitKeypressEvents again if already listening
+      expect(mockEmitKeypressEvents).toHaveBeenCalledTimes(firstCallCount);
     });
 
     test('Handles non-TTY stdin gracefully', () => {
@@ -162,11 +162,14 @@ describe('InputHandler', () => {
   });
 
   describe('stop()', () => {
-    test('Closes readline interface', () => {
+    test('Removes event listeners and cleans up', () => {
       inputHandler = new InputHandler();
       inputHandler.start();
       inputHandler.stop();
-      expect(mockClose).toHaveBeenCalled();
+      // InputHandler no longer uses readline interface, so close is not called
+      // Instead it removes listeners directly
+      expect(mockStdin.removeAllListeners).toHaveBeenCalledWith('keypress');
+      expect(mockStdin.removeAllListeners).toHaveBeenCalledWith('data');
     });
 
     test('Sets raw mode to false (if TTY)', () => {
@@ -198,10 +201,11 @@ describe('InputHandler', () => {
       expect(inputHandler.listening).toBe(false);
     });
 
-    test('Sets rl to null', () => {
+    test('Sets rl to null (rl is not used in current implementation)', () => {
       inputHandler = new InputHandler();
       inputHandler.start();
       inputHandler.stop();
+      // rl is not set in current implementation (no readline interface created)
       expect(inputHandler.rl).toBeNull();
     });
 
@@ -504,8 +508,9 @@ describe('InputHandler', () => {
       inputHandler.start();
       inputHandler.stop();
 
-      expect(mockCreateInterface).toHaveBeenCalledTimes(2);
-      expect(mockClose).toHaveBeenCalledTimes(2);
+      // InputHandler uses emitKeypressEvents, not createInterface
+      expect(mockEmitKeypressEvents).toHaveBeenCalledTimes(2);
+      expect(mockStdin.removeAllListeners).toHaveBeenCalled();
     });
 
     test('State is correct after start/stop cycle', () => {
@@ -523,14 +528,18 @@ describe('InputHandler', () => {
     test('Event listeners are properly cleaned up', () => {
       inputHandler = new InputHandler();
       inputHandler.start();
-      const listenerCount = mockStdin.on.mock.calls.length;
+      const initialListenerCount = mockStdin.on.mock.calls.length;
+      // Should register both 'keypress' and 'data' listeners
+      expect(initialListenerCount).toBeGreaterThanOrEqual(2);
 
       inputHandler.stop();
       expect(mockStdin.removeAllListeners).toHaveBeenCalledWith('keypress');
+      expect(mockStdin.removeAllListeners).toHaveBeenCalledWith('data');
 
       inputHandler.start();
-      // Should be able to register new listeners
-      expect(mockStdin.on).toHaveBeenCalledTimes(listenerCount + 1);
+      // Should be able to register new listeners (keypress + data = 2 more)
+      const finalListenerCount = mockStdin.on.mock.calls.length;
+      expect(finalListenerCount).toBe(initialListenerCount + 2);
     });
 
     test('No memory leaks from event listeners', () => {
@@ -541,8 +550,9 @@ describe('InputHandler', () => {
         inputHandler.stop();
       }
 
-      // Each stop should clean up
-      expect(mockStdin.removeAllListeners).toHaveBeenCalledTimes(5);
+      // Each stop should clean up both 'keypress' and 'data' listeners
+      // So removeAllListeners is called twice per stop (once for each event type)
+      expect(mockStdin.removeAllListeners).toHaveBeenCalledTimes(10);
     });
   });
 

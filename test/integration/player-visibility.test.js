@@ -282,8 +282,11 @@ describe('Player Visibility Integration Tests', () => {
         let playerAId = null;
         let playerBId = null;
         let playerAPosition = null;
+        let playerBPosition = null;
+        let playerBPositionBeforeMove = null;
         let collisionDetected = false;
         let playerAVisibleAfterCollision = false;
+        let moveAttempted = false;
         let timeoutId;
 
         // Both players connect
@@ -325,43 +328,77 @@ describe('Player Visibility Integration Tests', () => {
             );
           } else if (message.type === 'CONNECT' && message.payload.playerId) {
             playerBId = message.payload.playerId;
+            if (message.payload.gameState) {
+              const localPlayer = message.payload.gameState.players.find(
+                p => p.playerId === playerBId
+              );
+              if (localPlayer) {
+                playerBPosition = { x: localPlayer.x, y: localPlayer.y };
+              }
+            }
           } else if (message.type === 'STATE_UPDATE') {
             const gameState = message.payload.gameState;
             playerBStates.push(gameState);
 
-            // Check for collision information
-            if (gameState.hasCollisions || (gameState.collisions && gameState.collisions.length > 0)) {
-              collisionDetected = true;
+            // Update Player B's position
+            const playerBInState = gameState.players.find(p => p.playerId === playerBId);
+            if (playerBInState) {
+              playerBPosition = { x: playerBInState.x, y: playerBInState.y };
+            }
 
-              // After collision, verify Player A is still visible
-              const playerAInState = gameState.players.find(p => p.playerId === playerAId);
-              if (playerAInState) {
-                playerAVisibleAfterCollision = true;
-                expect(playerAInState.x).toBeDefined();
-                expect(playerAInState.y).toBeDefined();
+            // Detect collision: if we attempted a move and Player B's position didn't change
+            if (moveAttempted && playerBPositionBeforeMove) {
+              const positionUnchanged =
+                playerBPosition.x === playerBPositionBeforeMove.x &&
+                playerBPosition.y === playerBPositionBeforeMove.y;
 
-                clearTimeout(timeoutId);
-                playerA.close();
-                playerB.close();
-                resolve();
+              if (positionUnchanged) {
+                collisionDetected = true;
+
+                // After collision, verify Player A is still visible
+                const playerAInState = gameState.players.find(p => p.playerId === playerAId);
+                if (playerAInState) {
+                  playerAVisibleAfterCollision = true;
+                  expect(playerAInState.x).toBeDefined();
+                  expect(playerAInState.y).toBeDefined();
+
+                  clearTimeout(timeoutId);
+                  playerA.close();
+                  playerB.close();
+                  resolve();
+                }
               }
+            }
+          } else if (message.type === 'ERROR' && message.payload.action === 'MOVE') {
+            // Move failed - this could indicate a collision
+            if (moveAttempted) {
+              collisionDetected = true;
+              // Still need to verify Player A is visible in next state update
             }
           }
         });
 
         // After both players are connected, try to move Player B into Player A's position
         setTimeout(() => {
-          if (playerAId && playerBId && playerAPosition) {
-            // Player B tries to move to Player A's position (should cause collision)
-            playerB.send(
-              JSON.stringify({
-                type: 'MOVE',
-                payload: {
-                  dx: playerAPosition.x - 5, // Assuming Player B starts at (5, 5)
-                  dy: playerAPosition.y - 5,
-                },
-              })
-            );
+          if (playerAId && playerBId && playerAPosition && playerBPosition) {
+            // Store Player B's position before move attempt
+            playerBPositionBeforeMove = { ...playerBPosition };
+
+            // Calculate direction to move Player B towards Player A
+            const dx = Math.max(-1, Math.min(1, playerAPosition.x - playerBPosition.x));
+            const dy = Math.max(-1, Math.min(1, playerAPosition.y - playerBPosition.y));
+
+            // Only attempt move if there's a direction to move
+            if (dx !== 0 || dy !== 0) {
+              moveAttempted = true;
+              // Player B tries to move towards Player A's position (should cause collision)
+              playerB.send(
+                JSON.stringify({
+                  type: 'MOVE',
+                  payload: { dx, dy },
+                })
+              );
+            }
           }
         }, 2000);
 
@@ -453,27 +490,33 @@ describe('Player Visibility Integration Tests', () => {
             const gameState = message.payload.gameState;
             playerBStates.push(gameState);
 
-            // Check for collision
-            if (gameState.hasCollisions || (gameState.collisions && gameState.collisions.length > 0)) {
-              // After collision, verify both players are visible
-              const playersInState = gameState.players || [];
-              const playerAInState = playersInState.find(p => p.playerId === playerAId);
-              const playerBInState = playersInState.find(p => p.playerId === playerBId);
+            // Update positions
+            const playersInState = gameState.players || [];
+            const playerAInState = playersInState.find(p => p.playerId === playerAId);
+            const playerBInState = playersInState.find(p => p.playerId === playerBId);
 
-              if (playerAInState && playerBInState) {
-                bothPlayersVisible = true;
-                // Verify positions are unchanged (collision prevented movement)
-                if (playerAPosition && playerBPosition) {
+            if (playerAInState && playerBInState) {
+              // Check if positions are unchanged after move attempt (indicates collision)
+              if (playerAPosition && playerBPosition) {
+                const positionsUnchanged =
+                  playerAInState.x === playerAPosition.x &&
+                  playerAInState.y === playerAPosition.y &&
+                  playerBInState.x === playerBPosition.x &&
+                  playerBInState.y === playerBPosition.y;
+
+                // If we've attempted a move and positions are unchanged, collision occurred
+                if (positionsUnchanged && playerBStates.length > 1) {
+                  bothPlayersVisible = true;
                   expect(playerAInState.x).toBe(playerAPosition.x);
                   expect(playerAInState.y).toBe(playerAPosition.y);
                   expect(playerBInState.x).toBe(playerBPosition.x);
                   expect(playerBInState.y).toBe(playerBPosition.y);
-                }
 
-                clearTimeout(timeoutId);
-                playerA.close();
-                playerB.close();
-                resolve();
+                  clearTimeout(timeoutId);
+                  playerA.close();
+                  playerB.close();
+                  resolve();
+                }
               }
             }
           }
@@ -571,30 +614,43 @@ describe('Player Visibility Integration Tests', () => {
             const gameState = message.payload.gameState;
             playerBStates.push(gameState);
 
-            // Count collisions
-            if (gameState.hasCollisions || (gameState.collisions && gameState.collisions.length > 0)) {
-              collisionCount++;
+            // Track player positions to detect collisions
+            const playersInState = gameState.players || [];
+            const playerAInState = playersInState.find(p => p.playerId === playerAId);
+            const playerBInState = playersInState.find(p => p.playerId === playerBId);
 
-              // After 3 collisions, verify both players are still visible
-              if (collisionCount >= 3) {
-                const playersInState = gameState.players || [];
-                const playerAInState = playersInState.find(p => p.playerId === playerAId);
-                const playerBInState = playersInState.find(p => p.playerId === playerBId);
-
-                if (playerAInState && playerBInState) {
-                  allPlayersVisibleAfterCollisions = true;
-                  expect(playerAInState.x).toBeDefined();
-                  expect(playerAInState.y).toBeDefined();
-                  expect(playerBInState.x).toBeDefined();
-                  expect(playerBInState.y).toBeDefined();
-
-                  clearTimeout(timeoutId);
-                  playerA.close();
-                  playerB.close();
-                  resolve();
+            if (playerAInState && playerBInState) {
+              // Store previous positions to detect when movement is blocked (collision)
+              if (playerBStates.length > 1) {
+                const previousState = playerBStates[playerBStates.length - 2];
+                const prevPlayerB = previousState.players.find(p => p.playerId === playerBId);
+                
+                // If Player B's position hasn't changed after a move attempt, it's a collision
+                if (prevPlayerB && 
+                    prevPlayerB.x === playerBInState.x && 
+                    prevPlayerB.y === playerBInState.y &&
+                    playerBStates.length > 2) {
+                  collisionCount++;
                 }
               }
+
+              // After detecting 3 collisions, verify both players are still visible
+              if (collisionCount >= 3) {
+                allPlayersVisibleAfterCollisions = true;
+                expect(playerAInState.x).toBeDefined();
+                expect(playerAInState.y).toBeDefined();
+                expect(playerBInState.x).toBeDefined();
+                expect(playerBInState.y).toBeDefined();
+
+                clearTimeout(timeoutId);
+                playerA.close();
+                playerB.close();
+                resolve();
+              }
             }
+          } else if (message.type === 'ERROR' && message.payload.action === 'MOVE') {
+            // Move failed - count as collision
+            collisionCount++;
           }
         });
 

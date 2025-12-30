@@ -7,6 +7,8 @@ import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
 import { Renderer } from '../../src/render/Renderer.js';
 import { Game } from '../../src/game/Game.js';
 import * as stateComparison from '../../src/utils/stateComparison.js';
+import { gameConfig } from '../../src/config/gameConfig.js';
+import { WALL_CHAR, EMPTY_SPACE_CHAR } from '../../src/constants/gameConstants.js';
 
 describe('Incremental Rendering Integration - Phase 5.3', () => {
   let mockRenderer;
@@ -15,8 +17,12 @@ describe('Incremental Rendering Integration - Phase 5.3', () => {
   let localPlayerId;
   let renderer;
   let game;
+  let writeSpy;
 
   beforeEach(() => {
+    // Mock stdout.write to prevent actual rendering
+    writeSpy = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+    
     // Reset state
     previousState = null;
     localPlayerId = 'player-1';
@@ -26,6 +32,7 @@ describe('Incremental Rendering Integration - Phase 5.3', () => {
     game = new Game();
 
     // Spy on renderer instance methods (not prototype)
+    // Let renderFull execute normally (stdout is mocked, so no actual rendering)
     mockRenderer = {
       renderFull: vi.spyOn(renderer, 'renderFull'),
       updatePlayersIncremental: vi.spyOn(renderer, 'updatePlayersIncremental'),
@@ -42,7 +49,28 @@ describe('Incremental Rendering Integration - Phase 5.3', () => {
 
   afterEach(() => {
     vi.restoreAllMocks();
+    if (writeSpy) {
+      writeSpy.mockRestore();
+    }
   });
+
+  // Helper function to create a properly sized board grid
+  function createBoardGrid(width = gameConfig.board.width, height = gameConfig.board.height) {
+    const grid = [];
+    for (let y = 0; y < height; y++) {
+      const row = [];
+      for (let x = 0; x < width; x++) {
+        // Outer walls
+        if (y === 0 || y === height - 1 || x === 0 || x === width - 1) {
+          row.push(WALL_CHAR.char);
+        } else {
+          row.push(EMPTY_SPACE_CHAR.char);
+        }
+      }
+      grid.push(row);
+    }
+    return grid;
+  }
 
   // Helper function to simulate state update callback logic
   function simulateStateUpdate(gameState) {
@@ -66,6 +94,24 @@ describe('Incremental Rendering Integration - Phase 5.3', () => {
               x < gameState.board.grid[y].length
             ) {
               return gameState.board.grid[y][x];
+            }
+            return null;
+          },
+          getDisplay: (x, y) => {
+            // For network state, grid contains base characters (strings)
+            // Convert to display format with color
+            if (
+              y >= 0 &&
+              y < gameState.board.grid.length &&
+              x >= 0 &&
+              x < gameState.board.grid[y].length
+            ) {
+              const char = gameState.board.grid[y][x];
+              // Determine color based on character type
+              if (char === WALL_CHAR.char) {
+                return { char: WALL_CHAR.char, color: WALL_CHAR.color };
+              }
+              return { char: EMPTY_SPACE_CHAR.char, color: EMPTY_SPACE_CHAR.color };
             }
             return null;
           },
@@ -149,7 +195,7 @@ describe('Incremental Rendering Integration - Phase 5.3', () => {
   describe('Full Rendering Flow', () => {
     test('should use renderFull() on first render', () => {
       const initialState = {
-        board: { width: 20, height: 10, grid: [['#', ' ', ' ']] },
+        board: { width: 20, height: 10, grid: createBoardGrid(20, 10) },
         players: [{ playerId: 'player-1', x: 5, y: 5, playerName: 'Test' }],
         entities: [],
         score: 0,
@@ -168,9 +214,12 @@ describe('Incremental Rendering Integration - Phase 5.3', () => {
     });
 
     test('should use incremental updates on subsequent renders', () => {
+      // Create a shared grid to avoid board changes triggering fallback
+      const sharedGrid = createBoardGrid(20, 10);
+      
       // First state update - should use renderFull()
       const initialState = {
-        board: { width: 20, height: 10, grid: [['#', ' ', ' ']] },
+        board: { width: 20, height: 10, grid: sharedGrid },
         players: [{ playerId: 'player-1', x: 5, y: 5, playerName: 'Test' }],
         entities: [],
         score: 0,
@@ -182,7 +231,7 @@ describe('Incremental Rendering Integration - Phase 5.3', () => {
 
       // Second state update - should use incremental updates
       const updatedState = {
-        board: { width: 20, height: 10, grid: [['#', ' ', ' ']] },
+        board: { width: 20, height: 10, grid: sharedGrid }, // Reuse same grid
         players: [{ playerId: 'player-1', x: 6, y: 5, playerName: 'Test' }],
         entities: [],
         score: 0,
@@ -195,7 +244,7 @@ describe('Incremental Rendering Integration - Phase 5.3', () => {
 
     test('should track state correctly between renders', () => {
       const state1 = {
-        board: { width: 20, height: 10, grid: [['#', ' ', ' ']] },
+        board: { width: 20, height: 10, grid: createBoardGrid(20, 10) },
         players: [{ playerId: 'player-1', x: 5, y: 5, playerName: 'Test' }],
         entities: [],
         score: 0,
@@ -203,7 +252,7 @@ describe('Incremental Rendering Integration - Phase 5.3', () => {
       simulateStateUpdate(state1);
 
       const state2 = {
-        board: { width: 20, height: 10, grid: [['#', ' ', ' ']] },
+        board: { width: 20, height: 10, grid: createBoardGrid(20, 10) },
         players: [{ playerId: 'player-1', x: 6, y: 5, playerName: 'Test' }],
         entities: [],
         score: 0,
@@ -220,7 +269,7 @@ describe('Incremental Rendering Integration - Phase 5.3', () => {
   describe('Multiple Players', () => {
     test('should handle player movements correctly', () => {
       const initialState = {
-        board: { width: 20, height: 10, grid: [['#', ' ', ' ']] },
+        board: { width: 20, height: 10, grid: createBoardGrid(20, 10) },
         players: [
           { playerId: 'player-1', x: 5, y: 5, playerName: 'Player 1' },
           { playerId: 'player-2', x: 10, y: 10, playerName: 'Player 2' },
@@ -231,7 +280,7 @@ describe('Incremental Rendering Integration - Phase 5.3', () => {
       simulateStateUpdate(initialState);
 
       const updatedState = {
-        board: { width: 20, height: 10, grid: [['#', ' ', ' ']] },
+        board: { width: 20, height: 10, grid: createBoardGrid(20, 10) },
         players: [
           { playerId: 'player-1', x: 6, y: 5, playerName: 'Player 1' },
           { playerId: 'player-2', x: 10, y: 10, playerName: 'Player 2' },
@@ -252,7 +301,7 @@ describe('Incremental Rendering Integration - Phase 5.3', () => {
 
     test('should handle player joins correctly', () => {
       const initialState = {
-        board: { width: 20, height: 10, grid: [['#', ' ', ' ']] },
+        board: { width: 20, height: 10, grid: createBoardGrid(20, 10) },
         players: [{ playerId: 'player-1', x: 5, y: 5, playerName: 'Player 1' }],
         entities: [],
         score: 0,
@@ -260,7 +309,7 @@ describe('Incremental Rendering Integration - Phase 5.3', () => {
       simulateStateUpdate(initialState);
 
       const updatedState = {
-        board: { width: 20, height: 10, grid: [['#', ' ', ' ']] },
+        board: { width: 20, height: 10, grid: createBoardGrid(20, 10) },
         players: [
           { playerId: 'player-1', x: 5, y: 5, playerName: 'Player 1' },
           { playerId: 'player-2', x: 10, y: 10, playerName: 'Player 2' },
@@ -279,7 +328,7 @@ describe('Incremental Rendering Integration - Phase 5.3', () => {
 
     test('should handle player leaves correctly', () => {
       const initialState = {
-        board: { width: 20, height: 10, grid: [['#', ' ', ' ']] },
+        board: { width: 20, height: 10, grid: createBoardGrid(20, 10) },
         players: [
           { playerId: 'player-1', x: 5, y: 5, playerName: 'Player 1' },
           { playerId: 'player-2', x: 10, y: 10, playerName: 'Player 2' },
@@ -290,7 +339,7 @@ describe('Incremental Rendering Integration - Phase 5.3', () => {
       simulateStateUpdate(initialState);
 
       const updatedState = {
-        board: { width: 20, height: 10, grid: [['#', ' ', ' ']] },
+        board: { width: 20, height: 10, grid: createBoardGrid(20, 10) },
         players: [{ playerId: 'player-1', x: 5, y: 5, playerName: 'Player 1' }],
         entities: [],
         score: 0,
@@ -308,7 +357,7 @@ describe('Incremental Rendering Integration - Phase 5.3', () => {
   describe('Entities', () => {
     test('should handle entity movements correctly', () => {
       const initialState = {
-        board: { width: 20, height: 10, grid: [['#', ' ', ' ']] },
+        board: { width: 20, height: 10, grid: createBoardGrid(20, 10) },
         players: [{ playerId: 'player-1', x: 5, y: 5, playerName: 'Player 1' }],
         entities: [
           { entityId: 'entity-1', x: 3, y: 3, entityType: 'enemy', glyph: 'E' },
@@ -318,7 +367,7 @@ describe('Incremental Rendering Integration - Phase 5.3', () => {
       simulateStateUpdate(initialState);
 
       const updatedState = {
-        board: { width: 20, height: 10, grid: [['#', ' ', ' ']] },
+        board: { width: 20, height: 10, grid: createBoardGrid(20, 10) },
         players: [{ playerId: 'player-1', x: 5, y: 5, playerName: 'Player 1' }],
         entities: [
           { entityId: 'entity-1', x: 4, y: 3, entityType: 'enemy', glyph: 'E' },
@@ -338,7 +387,7 @@ describe('Incremental Rendering Integration - Phase 5.3', () => {
 
     test('should handle entity spawns correctly', () => {
       const initialState = {
-        board: { width: 20, height: 10, grid: [['#', ' ', ' ']] },
+        board: { width: 20, height: 10, grid: createBoardGrid(20, 10) },
         players: [{ playerId: 'player-1', x: 5, y: 5, playerName: 'Player 1' }],
         entities: [],
         score: 0,
@@ -346,7 +395,7 @@ describe('Incremental Rendering Integration - Phase 5.3', () => {
       simulateStateUpdate(initialState);
 
       const updatedState = {
-        board: { width: 20, height: 10, grid: [['#', ' ', ' ']] },
+        board: { width: 20, height: 10, grid: createBoardGrid(20, 10) },
         players: [{ playerId: 'player-1', x: 5, y: 5, playerName: 'Player 1' }],
         entities: [
           {
@@ -371,7 +420,7 @@ describe('Incremental Rendering Integration - Phase 5.3', () => {
 
     test('should handle entity despawns correctly', () => {
       const initialState = {
-        board: { width: 20, height: 10, grid: [['#', ' ', ' ']] },
+        board: { width: 20, height: 10, grid: createBoardGrid(20, 10) },
         players: [{ playerId: 'player-1', x: 5, y: 5, playerName: 'Player 1' }],
         entities: [
           { entityId: 'entity-1', x: 3, y: 3, entityType: 'enemy', glyph: 'E' },
@@ -381,7 +430,7 @@ describe('Incremental Rendering Integration - Phase 5.3', () => {
       simulateStateUpdate(initialState);
 
       const updatedState = {
-        board: { width: 20, height: 10, grid: [['#', ' ', ' ']] },
+        board: { width: 20, height: 10, grid: createBoardGrid(20, 10) },
         players: [{ playerId: 'player-1', x: 5, y: 5, playerName: 'Player 1' }],
         entities: [],
         score: 0,
@@ -397,7 +446,7 @@ describe('Incremental Rendering Integration - Phase 5.3', () => {
 
     test('should handle entity animations correctly', () => {
       const initialState = {
-        board: { width: 20, height: 10, grid: [['#', ' ', ' ']] },
+        board: { width: 20, height: 10, grid: createBoardGrid(20, 10) },
         players: [{ playerId: 'player-1', x: 5, y: 5, playerName: 'Player 1' }],
         entities: [
           {
@@ -414,7 +463,7 @@ describe('Incremental Rendering Integration - Phase 5.3', () => {
       simulateStateUpdate(initialState);
 
       const updatedState = {
-        board: { width: 20, height: 10, grid: [['#', ' ', ' ']] },
+        board: { width: 20, height: 10, grid: createBoardGrid(20, 10) },
         players: [{ playerId: 'player-1', x: 5, y: 5, playerName: 'Player 1' }],
         entities: [
           {
@@ -443,7 +492,7 @@ describe('Incremental Rendering Integration - Phase 5.3', () => {
   describe('Fallback Logic', () => {
     test('should fall back to full render when threshold exceeded', () => {
       const initialState = {
-        board: { width: 20, height: 10, grid: [['#', ' ', ' ']] },
+        board: { width: 20, height: 10, grid: createBoardGrid(20, 10) },
         players: [{ playerId: 'player-1', x: 5, y: 5, playerName: 'Player 1' }],
         entities: [],
         score: 0,
@@ -460,7 +509,7 @@ describe('Incremental Rendering Integration - Phase 5.3', () => {
         playerName: `Player ${i}`,
       }));
       const updatedState = {
-        board: { width: 20, height: 10, grid: [['#', ' ', ' ']] },
+        board: { width: 20, height: 10, grid: createBoardGrid(20, 10) },
         players: manyPlayers,
         entities: [],
         score: 0,
@@ -474,7 +523,7 @@ describe('Incremental Rendering Integration - Phase 5.3', () => {
 
     test('should fall back on errors', () => {
       const initialState = {
-        board: { width: 20, height: 10, grid: [['#', ' ', ' ']] },
+        board: { width: 20, height: 10, grid: createBoardGrid(20, 10) },
         players: [{ playerId: 'player-1', x: 5, y: 5, playerName: 'Player 1' }],
         entities: [],
         score: 0,
@@ -489,7 +538,7 @@ describe('Incremental Rendering Integration - Phase 5.3', () => {
       });
 
       const updatedState = {
-        board: { width: 20, height: 10, grid: [['#', ' ', ' ']] },
+        board: { width: 20, height: 10, grid: createBoardGrid(20, 10) },
         players: [{ playerId: 'player-1', x: 6, y: 5, playerName: 'Player 1' }],
         entities: [],
         score: 0,
@@ -505,7 +554,7 @@ describe('Incremental Rendering Integration - Phase 5.3', () => {
   describe('Error Recovery', () => {
     test('should fall back to full render on error', () => {
       const initialState = {
-        board: { width: 20, height: 10, grid: [['#', ' ', ' ']] },
+        board: { width: 20, height: 10, grid: createBoardGrid(20, 10) },
         players: [{ playerId: 'player-1', x: 5, y: 5, playerName: 'Player 1' }],
         entities: [],
         score: 0,
@@ -521,7 +570,7 @@ describe('Incremental Rendering Integration - Phase 5.3', () => {
       });
 
       const updatedState = {
-        board: { width: 20, height: 10, grid: [['#', ' ', ' ']] },
+        board: { width: 20, height: 10, grid: createBoardGrid(20, 10) },
         players: [{ playerId: 'player-1', x: 6, y: 5, playerName: 'Player 1' }],
         entities: [],
         score: 0,
@@ -537,7 +586,7 @@ describe('Incremental Rendering Integration - Phase 5.3', () => {
 
     test('should reset previousState if fallback also fails', () => {
       const initialState = {
-        board: { width: 20, height: 10, grid: [['#', ' ', ' ']] },
+        board: { width: 20, height: 10, grid: createBoardGrid(20, 10) },
         players: [{ playerId: 'player-1', x: 5, y: 5, playerName: 'Player 1' }],
         entities: [],
         score: 0,
@@ -553,7 +602,7 @@ describe('Incremental Rendering Integration - Phase 5.3', () => {
       });
 
       const updatedState = {
-        board: { width: 20, height: 10, grid: [['#', ' ', ' ']] },
+        board: { width: 20, height: 10, grid: createBoardGrid(20, 10) },
         players: [{ playerId: 'player-1', x: 6, y: 5, playerName: 'Player 1' }],
         entities: [],
         score: 0,
@@ -571,7 +620,7 @@ describe('Incremental Rendering Integration - Phase 5.3', () => {
   describe('Edge Cases', () => {
     test('should handle rapid state changes', () => {
       const initialState = {
-        board: { width: 20, height: 10, grid: [['#', ' ', ' ']] },
+        board: { width: 20, height: 10, grid: createBoardGrid(20, 10) },
         players: [{ playerId: 'player-1', x: 5, y: 5, playerName: 'Player 1' }],
         entities: [],
         score: 0,
@@ -585,7 +634,7 @@ describe('Incremental Rendering Integration - Phase 5.3', () => {
       // Rapid state changes - start from x=6 to ensure movement
       for (let i = 1; i <= 5; i++) {
         const state = {
-          board: { width: 20, height: 10, grid: [['#', ' ', ' ']] },
+          board: { width: 20, height: 10, grid: createBoardGrid(20, 10) },
           players: [
             { playerId: 'player-1', x: 5 + i, y: 5, playerName: 'Player 1' },
           ],
@@ -601,7 +650,7 @@ describe('Incremental Rendering Integration - Phase 5.3', () => {
 
     test('should handle null/undefined values', () => {
       const initialState = {
-        board: { width: 20, height: 10, grid: [['#', ' ', ' ']] },
+        board: { width: 20, height: 10, grid: createBoardGrid(20, 10) },
         players: [{ playerId: 'player-1', x: 5, y: 5, playerName: 'Player 1' }],
         entities: null,
         score: 0,
@@ -612,7 +661,7 @@ describe('Incremental Rendering Integration - Phase 5.3', () => {
       mockRenderer.updatePlayersIncremental.mockClear();
 
       const updatedState = {
-        board: { width: 20, height: 10, grid: [['#', ' ', ' ']] },
+        board: { width: 20, height: 10, grid: createBoardGrid(20, 10) },
         players: [{ playerId: 'player-1', x: 6, y: 5, playerName: 'Player 1' }],
         entities: undefined,
         score: 0,
@@ -625,7 +674,7 @@ describe('Incremental Rendering Integration - Phase 5.3', () => {
 
     test('should handle empty arrays', () => {
       const initialState = {
-        board: { width: 20, height: 10, grid: [['#', ' ', ' ']] },
+        board: { width: 20, height: 10, grid: createBoardGrid(20, 10) },
         players: [],
         entities: [],
         score: 0,
@@ -638,7 +687,7 @@ describe('Incremental Rendering Integration - Phase 5.3', () => {
       mockRenderer.updatePlayersIncremental.mockClear();
 
       const updatedState = {
-        board: { width: 20, height: 10, grid: [['#', ' ', ' ']] },
+        board: { width: 20, height: 10, grid: createBoardGrid(20, 10) },
         players: [{ playerId: 'player-1', x: 5, y: 5, playerName: 'Player 1' }],
         entities: [],
         score: 0,

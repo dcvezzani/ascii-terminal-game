@@ -138,6 +138,24 @@ export class Renderer {
           }
           return null;
         },
+        getDisplay: (x, y) => {
+          // For network state, grid contains base characters (strings)
+          // Convert to display format with color
+          if (
+            y >= 0 &&
+            y < networkState.board.grid.length &&
+            x >= 0 &&
+            x < networkState.board.grid[y].length
+          ) {
+            const char = networkState.board.grid[y][x];
+            // Determine color based on character type
+            if (char === WALL_CHAR.char) {
+              return { char: WALL_CHAR.char, color: WALL_CHAR.color };
+            }
+            return { char: EMPTY_SPACE_CHAR.char, color: EMPTY_SPACE_CHAR.color };
+          }
+          return null;
+        },
       };
       const localPlayer = networkState.players.find(p => p.playerId === localPlayerId);
       const playerX = localPlayer ? localPlayer.x : 0;
@@ -431,11 +449,13 @@ export class Renderer {
       return { glyph: { char: entityChar, color: entityColor }, color: entityColor };
     }
 
-    // Fall back to board cell
-    const cell = board.getCell(x, y);
-    if (cell === WALL_CHAR.char) {
-      return { glyph: WALL_CHAR, color: WALL_CHAR.color };
+    // Fall back to board cell - use getDisplay to get what should be displayed
+    const display = board.getDisplay(x, y);
+    if (display) {
+      // Convert color hex to the format expected (or use directly if already correct)
+      return { glyph: { char: display.char, color: display.color }, color: display.color };
     }
+    // Fallback if getDisplay returns null
     return { glyph: EMPTY_SPACE_CHAR, color: EMPTY_SPACE_CHAR.color };
   }
 

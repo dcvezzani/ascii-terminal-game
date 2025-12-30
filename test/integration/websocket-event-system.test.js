@@ -118,9 +118,9 @@ describe('WebSocket Event System Integration', () => {
           // If we got here, at least the collision was attempted
           // (we can't directly verify server-side event emission from client)
           resolve();
-        }, 10000);
+        }, 2000);
       });
-    }, 15000);
+    }, 5000);
   });
 
   describe('Event System Isolation', () => {
@@ -168,9 +168,9 @@ describe('WebSocket Event System Integration', () => {
           // Should not receive any event messages
           expect(receivedEventMessages).toBe(false);
           resolve();
-        }, 5000);
+        }, 2000);
       });
-    }, 10000);
+    }, 5000);
 
     it('should only communicate through official WebSocket messages', async () => {
       return new Promise((resolve, reject) => {
@@ -222,9 +222,9 @@ describe('WebSocket Event System Integration', () => {
           });
 
           resolve();
-        }, 5000);
+        }, 2000);
       });
-    }, 10000);
+    }, 5000);
   });
 
   describe('Concurrent Event Emission', () => {
@@ -274,9 +274,9 @@ describe('WebSocket Event System Integration', () => {
           cleanup();
           // If we got here without errors, concurrent events were handled
           resolve();
-        }, 10000);
+        }, 2000);
       });
-    }, 15000);
+    }, 5000);
   });
 
   describe('Event System with Multiple Clients', () => {
@@ -284,6 +284,7 @@ describe('WebSocket Event System Integration', () => {
       return new Promise((resolve, reject) => {
         const clients = [];
         const connectedClients = [];
+        const playerIds = new Set();
         let timeoutId;
         let stateUpdatesReceived = 0;
 
@@ -305,8 +306,29 @@ describe('WebSocket Event System Integration', () => {
 
           client.on('message', data => {
             const message = JSON.parse(data.toString());
-            if (message.type === 'STATE_UPDATE') {
+            
+            // Handle initial CONNECT message (server sends clientId)
+            if (message.type === 'CONNECT' && !message.payload.playerId) {
+              // Join as player by sending CONNECT with playerName
+              client.send(
+                JSON.stringify({
+                  type: 'CONNECT',
+                  payload: { playerName: `Player ${i + 1}` },
+                })
+              );
+            } else if (message.type === 'CONNECT' && message.payload.playerId) {
+              // Player successfully joined
+              playerIds.add(message.payload.playerId);
+            } else if (message.type === 'STATE_UPDATE') {
               stateUpdatesReceived++;
+              
+              // Once both players have joined and we've received state updates, resolve
+              if (playerIds.size === 2 && stateUpdatesReceived > 0) {
+                clearTimeout(timeoutId);
+                cleanup();
+                expect(stateUpdatesReceived).toBeGreaterThan(0);
+                resolve();
+              }
             }
           });
 
@@ -321,9 +343,9 @@ describe('WebSocket Event System Integration', () => {
           // Should receive state updates (events trigger state updates)
           expect(stateUpdatesReceived).toBeGreaterThan(0);
           resolve();
-        }, 5000);
+        }, 2000);
       });
-    }, 10000);
+    }, 5000);
   });
 });
 

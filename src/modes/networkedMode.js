@@ -59,7 +59,7 @@ export async function runNetworkedMode() {
       clientLogger.info('Connected to server');
       // Only send CONNECT if not reconnecting (reconnection will send it with playerId)
       if (!wsClient.reconnecting) {
-        wsClient.sendConnect();
+      wsClient.sendConnect();
       }
     });
 

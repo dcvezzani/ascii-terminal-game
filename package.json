@@ -8,6 +8,8 @@
     "start": "node src/index.js",
     "server": "node src/server/server.js",
     "test": "vitest run",
+    "test:unit": "vitest run test/config test/game test/input test/network test/render test/server test/utils test/index",
+    "test:integration": "vitest run test/integration",
     "test:debug": "vitest --reporter=hanging-process run",
     "test:watch": "vitest",
     "format": "prettier --write \"**/*.{js,json,md}\"",
