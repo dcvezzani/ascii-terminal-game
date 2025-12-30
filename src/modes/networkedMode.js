@@ -201,7 +201,6 @@ export async function runNetworkedMode() {
       return entities.some(entity => entity.x === x && entity.y === y && entity.solid === true);
     }
 
-
     wsClient.onStateUpdate(gameState => {
       currentState = gameState;
       if (!renderer) {
@@ -300,9 +299,7 @@ export async function runNetworkedMode() {
 
           // Fallback to full render if too many changes
           if (totalChanges > FALLBACK_THRESHOLD) {
-            clientLogger.debug(
-              `Too many changes (${totalChanges}), falling back to full render`
-            );
+            clientLogger.debug(`Too many changes (${totalChanges}), falling back to full render`);
             renderer.renderFull(game, gameState, localPlayerId);
             previousState = JSON.parse(JSON.stringify(gameState));
             return;
@@ -310,9 +307,7 @@ export async function runNetworkedMode() {
 
           // Apply incremental updates
           // Phase 2: Exclude local player from server state rendering (local player uses prediction)
-          const otherPlayers = (gameState.players || []).filter(
-            p => p.playerId !== localPlayerId
-          );
+          const otherPlayers = (gameState.players || []).filter(p => p.playerId !== localPlayerId);
           const previousOtherPlayers = (previousState.players || []).filter(
             p => p.playerId !== localPlayerId
           );
@@ -356,9 +351,7 @@ export async function runNetworkedMode() {
           // Update status bar if changed
           // Phase 2: Use predicted position for status bar (not server position)
           if (localPlayerPredictedPosition.x !== null && localPlayerPredictedPosition.y !== null) {
-            const prevLocalPlayer = previousState.players.find(
-              p => p.playerId === localPlayerId
-            );
+            const prevLocalPlayer = previousState.players.find(p => p.playerId === localPlayerId);
             const prevPredictedX = prevLocalPlayer?.x ?? localPlayerPredictedPosition.x;
             const prevPredictedY = prevLocalPlayer?.y ?? localPlayerPredictedPosition.y;
             renderer.updateStatusBarIfChanged(
@@ -928,12 +921,12 @@ export async function runNetworkedMode() {
         localPlayerPredictedPosition = { x: null, y: null };
         lastReconciliationTime = Date.now();
         localPlayerId = null; // Clear player ID to force rejoin as new player
-        
+
         // Clear help screen if showing
         if (showingHelp) {
           showingHelp = false;
         }
-        
+
         // Send RESTART message to server
         if (wsClient && wsClient.connected) {
           try {
@@ -971,14 +964,14 @@ export async function runNetworkedMode() {
       },
       onRenderAllPlayers: () => {
         if (renderer && currentState) {
-            renderer.renderFull(game, currentState, localPlayerId);
-          }
+          renderer.renderFull(game, currentState, localPlayerId);
+        }
       },
       onRenderOtherPlayer_001: () => {
         if (renderer && currentState) {
-					const colorFn = renderer.getColorFunction(toColorHexValue('red'))
-					const myChar = toZZTCharacterGlyph('player', toColorHexValue('white')).char
-          clientLogger.debug(">>> myChar: " + myChar);
+          const colorFn = renderer.getColorFunction(toColorHexValue('red'));
+          const myChar = toZZTCharacterGlyph('player', toColorHexValue('white')).char;
+          clientLogger.debug('>>> myChar: ' + myChar);
           renderer.updateCell(15, 15, myChar, colorFn);
 
           // process.stdout.write('\b \b');
@@ -986,19 +979,23 @@ export async function runNetworkedMode() {
         }
       },
       onRenderOtherPlayer: () => {
-        clientLogger.debug(">>> onRenderOtherPlayer");
+        clientLogger.debug('>>> onRenderOtherPlayer');
         if (wsClient && wsClient.connected) {
           try {
-            const testMessage = createMessage(MessageTypes.TEST, { test: 'dcv-test' }, wsClient.clientId);
+            const testMessage = createMessage(
+              MessageTypes.TEST,
+              { test: 'dcv-test' },
+              wsClient.clientId
+            );
             wsClient.sendMessage(testMessage);
             clientLogger.debug(">>> Sent test message to server: 'dcv-test'");
           } catch (error) {
-            clientLogger.error(">>> Failed to send test message:", error.message);
+            clientLogger.error('>>> Failed to send test message:', error.message);
           }
         } else {
-          clientLogger.warn(">>> Cannot send test message: WebSocket not connected");
+          clientLogger.warn('>>> Cannot send test message: WebSocket not connected');
         }
-      },      
+      },
     });
 
     // Initialize renderer
@@ -1041,5 +1038,3 @@ export async function runNetworkedMode() {
     }
   }
 }
-
-

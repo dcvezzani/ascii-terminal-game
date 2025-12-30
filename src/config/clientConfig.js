@@ -19,4 +19,3 @@ export const clientConfig = {
     reconciliationInterval: 5000, // Reconciliation interval in milliseconds (default: 5 seconds)
   },
 };
-

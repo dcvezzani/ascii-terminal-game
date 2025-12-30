@@ -162,7 +162,12 @@ describe('Client-Side Prediction Integration Tests - Phase 5.2', () => {
           // Render immediately (not waiting for server)
           const oldCell = boardAdapter.getCell(oldX, oldY);
           const oldGlyph = oldCell === WALL_CHAR.char ? WALL_CHAR : EMPTY_SPACE_CHAR;
-          mockRenderer.updateCell(oldX, oldY, oldGlyph.char, mockRenderer.getColorFunction(oldGlyph.color));
+          mockRenderer.updateCell(
+            oldX,
+            oldY,
+            oldGlyph.char,
+            mockRenderer.getColorFunction(oldGlyph.color)
+          );
           mockRenderer.updateCell(
             localPlayerPredictedPosition.x,
             localPlayerPredictedPosition.y,
@@ -214,7 +219,12 @@ describe('Client-Side Prediction Integration Tests - Phase 5.2', () => {
       mockRenderer.updateCell(10, 9, PLAYER_CHAR.char, vi.fn());
 
       // Verify render happened
-      expect(mockRenderer.updateCell).toHaveBeenCalledWith(10, 9, PLAYER_CHAR.char, expect.any(Function));
+      expect(mockRenderer.updateCell).toHaveBeenCalledWith(
+        10,
+        9,
+        PLAYER_CHAR.char,
+        expect.any(Function)
+      );
 
       // Later, server state update arrives (still at old position)
       const serverState = {
@@ -240,7 +250,11 @@ describe('Client-Side Prediction Integration Tests - Phase 5.2', () => {
           { playerId: 'player-1', x: 10, y: 10 },
           { playerId: 'player-2', x: 5, y: 5 },
         ],
-        board: { grid: Array(20).fill(null).map(() => Array(20).fill('.')) },
+        board: {
+          grid: Array(20)
+            .fill(null)
+            .map(() => Array(20).fill('.')),
+        },
         score: 0,
         running: true,
       };
@@ -294,7 +308,11 @@ describe('Client-Side Prediction Integration Tests - Phase 5.2', () => {
       localPlayerPredictedPosition = { x: 10, y: 10 };
       currentState = {
         players: [{ playerId: 'player-1', x: 10, y: 10 }],
-        board: { grid: Array(20).fill(null).map(() => Array(20).fill('.')) },
+        board: {
+          grid: Array(20)
+            .fill(null)
+            .map(() => Array(20).fill('.')),
+        },
         score: 0,
         running: true,
       };
@@ -330,7 +348,11 @@ describe('Client-Side Prediction Integration Tests - Phase 5.2', () => {
       localPlayerId = 'player-1';
       currentState = {
         players: [{ playerId: 'player-1', x: 10, y: 10 }],
-        board: { grid: Array(20).fill(null).map(() => Array(20).fill('.')) },
+        board: {
+          grid: Array(20)
+            .fill(null)
+            .map(() => Array(20).fill('.')),
+        },
         score: 0,
         running: true,
       };
@@ -402,8 +424,18 @@ describe('Client-Side Prediction Integration Tests - Phase 5.2', () => {
 
         const oldCell = boardAdapter.getCell(oldX, oldY);
         const oldGlyph = oldCell === WALL_CHAR.char ? WALL_CHAR : EMPTY_SPACE_CHAR;
-        mockRenderer.updateCell(oldX, oldY, oldGlyph.char, mockRenderer.getColorFunction(oldGlyph.color));
-        mockRenderer.updateCell(server.x, server.y, PLAYER_CHAR.char, mockRenderer.getColorFunction(PLAYER_CHAR.color));
+        mockRenderer.updateCell(
+          oldX,
+          oldY,
+          oldGlyph.char,
+          mockRenderer.getColorFunction(oldGlyph.color)
+        );
+        mockRenderer.updateCell(
+          server.x,
+          server.y,
+          PLAYER_CHAR.char,
+          mockRenderer.getColorFunction(PLAYER_CHAR.color)
+        );
         mockRenderer.updateStatusBarIfChanged(
           currentState.score || 0,
           server.x,
@@ -427,7 +459,11 @@ describe('Client-Side Prediction Integration Tests - Phase 5.2', () => {
       localPlayerPredictedPosition = { x: 10, y: 10 };
       currentState = {
         players: [{ playerId: 'player-1', x: 10, y: 10 }], // Same position
-        board: { grid: Array(20).fill(null).map(() => Array(20).fill('.')) },
+        board: {
+          grid: Array(20)
+            .fill(null)
+            .map(() => Array(20).fill('.')),
+        },
         score: 0,
         running: true,
       };
@@ -486,10 +522,20 @@ describe('Client-Side Prediction Integration Tests - Phase 5.2', () => {
 
         const oldCell = boardAdapter.getCell(oldX, oldY);
         const oldGlyph = oldCell === WALL_CHAR.char ? WALL_CHAR : EMPTY_SPACE_CHAR;
-        mockRenderer.updateCell(oldX, oldY, oldGlyph.char, mockRenderer.getColorFunction(oldGlyph.color));
+        mockRenderer.updateCell(
+          oldX,
+          oldY,
+          oldGlyph.char,
+          mockRenderer.getColorFunction(oldGlyph.color)
+        );
 
         // Then draw at corrected position
-        mockRenderer.updateCell(server.x, server.y, PLAYER_CHAR.char, mockRenderer.getColorFunction(PLAYER_CHAR.color));
+        mockRenderer.updateCell(
+          server.x,
+          server.y,
+          PLAYER_CHAR.char,
+          mockRenderer.getColorFunction(PLAYER_CHAR.color)
+        );
       }
 
       // Verify smooth correction (old position cleared, new position drawn)
@@ -499,4 +545,3 @@ describe('Client-Side Prediction Integration Tests - Phase 5.2', () => {
     });
   });
 });
-

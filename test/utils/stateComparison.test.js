@@ -45,9 +45,7 @@ describe('State Comparison Utilities - Phase 2', () => {
     });
 
     test('should detect joined players', () => {
-      const previousPlayers = [
-        { playerId: 'player-1', x: 5, y: 5, playerName: 'Player 1' },
-      ];
+      const previousPlayers = [{ playerId: 'player-1', x: 5, y: 5, playerName: 'Player 1' }];
       const currentPlayers = [
         { playerId: 'player-1', x: 5, y: 5, playerName: 'Player 1' },
         { playerId: 'player-2', x: 10, y: 10, playerName: 'Player 2' }, // Joined
@@ -94,9 +92,10 @@ describe('State Comparison Utilities - Phase 2', () => {
       expect(result1.joined).toHaveLength(0);
       expect(result1.left).toHaveLength(0);
 
-      const result2 = comparePlayers([], [
-        { playerId: 'player-1', x: 5, y: 5, playerName: 'Player 1' },
-      ]);
+      const result2 = comparePlayers(
+        [],
+        [{ playerId: 'player-1', x: 5, y: 5, playerName: 'Player 1' }]
+      );
       expect(result2.joined).toHaveLength(1);
 
       const result3 = comparePlayers(
@@ -173,9 +172,7 @@ describe('State Comparison Utilities - Phase 2', () => {
     });
 
     test('should detect spawned entities', () => {
-      const previousEntities = [
-        { entityId: 'entity-1', x: 5, y: 5, entityType: 'enemy' },
-      ];
+      const previousEntities = [{ entityId: 'entity-1', x: 5, y: 5, entityType: 'enemy' }];
       const currentEntities = [
         { entityId: 'entity-1', x: 5, y: 5, entityType: 'enemy' },
         {
@@ -300,9 +297,10 @@ describe('State Comparison Utilities - Phase 2', () => {
       expect(result1.despawned).toHaveLength(0);
       expect(result1.animated).toHaveLength(0);
 
-      const result2 = compareEntities([], [
-        { entityId: 'entity-1', x: 5, y: 5, entityType: 'enemy' },
-      ]);
+      const result2 = compareEntities(
+        [],
+        [{ entityId: 'entity-1', x: 5, y: 5, entityType: 'enemy' }]
+      );
       expect(result2.spawned).toHaveLength(1);
 
       const result3 = compareEntities(
@@ -327,9 +325,7 @@ describe('State Comparison Utilities - Phase 2', () => {
     });
 
     test('should handle entities without optional fields', () => {
-      const previousEntities = [
-        { entityId: 'entity-1', x: 5, y: 5, entityType: 'enemy' },
-      ];
+      const previousEntities = [{ entityId: 'entity-1', x: 5, y: 5, entityType: 'enemy' }];
       const currentEntities = [
         {
           entityId: 'entity-1',
@@ -388,12 +384,8 @@ describe('State Comparison Utilities - Phase 2', () => {
     test('should compare complete states', () => {
       const previousState = {
         board: { width: 20, height: 10, grid: [] },
-        players: [
-          { playerId: 'player-1', x: 5, y: 5, playerName: 'Player 1' },
-        ],
-        entities: [
-          { entityId: 'entity-1', x: 3, y: 3, entityType: 'enemy' },
-        ],
+        players: [{ playerId: 'player-1', x: 5, y: 5, playerName: 'Player 1' }],
+        entities: [{ entityId: 'entity-1', x: 3, y: 3, entityType: 'enemy' }],
         score: 0,
       };
       const currentState = {
@@ -481,4 +473,3 @@ describe('State Comparison Utilities - Phase 2', () => {
     });
   });
 });
-

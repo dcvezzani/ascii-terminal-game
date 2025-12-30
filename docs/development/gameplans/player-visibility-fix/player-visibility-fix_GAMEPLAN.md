@@ -3,10 +3,12 @@
 ## Overview
 
 This gameplan implements fixes for two related bugs:
+
 1. **BUG_player_glyphs_not_visible_until_movement**: Players don't appear when a client first connects if other players are already in the game
 2. **BUG_player_not_rendered_after_collision**: Players disappear after collisions if their position doesn't change
 
 **Reference Cards**:
+
 - `docs/development/cards/bugs/BUG_player_glyphs_not_visible_until_movement.md`
 - `docs/development/cards/bugs/BUG_player_not_rendered_after_collision.md`
 
@@ -22,6 +24,7 @@ This gameplan implements fixes for two related bugs:
 ## Current State
 
 **Current Architecture**:
+
 - `src/index.js` - Client entry point with `runNetworkedMode()`
   - `localPlayerId` is set in `onPlayerJoined` callback
   - State updates are queued if `localPlayerId` is not set
@@ -38,6 +41,7 @@ This gameplan implements fixes for two related bugs:
   - Does NOT include collision information in state updates
 
 **Current Flow**:
+
 1. Client connects to server
 2. Server sends CONNECT response with `clientId` and `gameState` (may include `playerId`)
 3. Client receives CONNECT response but doesn't extract `playerId`
@@ -48,6 +52,7 @@ This gameplan implements fixes for two related bugs:
 8. Client only renders players that changed, so unchanged players disappear
 
 **Problems**:
+
 - `playerId` not extracted from CONNECT response, causing unnecessary queuing
 - Queued state processing logic is duplicated in `onPlayerJoined`
 - Server doesn't send collision information in state updates
@@ -56,6 +61,7 @@ This gameplan implements fixes for two related bugs:
 ## Target State
 
 **New Flow**:
+
 1. Client connects to server
 2. Server sends CONNECT response with `clientId`, `playerId`, and `gameState`
 3. Client extracts `playerId` from CONNECT response and sets `localPlayerId` immediately
@@ -65,6 +71,7 @@ This gameplan implements fixes for two related bugs:
 7. Client detects collision info and renders all players to ensure visibility
 
 **Benefits**:
+
 - Faster initialization (no waiting for PLAYER_JOINED)
 - All players visible immediately on connection
 - All players remain visible after collisions
@@ -100,6 +107,7 @@ This gameplan implements fixes for two related bugs:
   ```
 
 **Verification**:
+
 - [x] `onConnectResponse` added to `callbacks` object
 - [x] Initialized to `null`
 
@@ -110,18 +118,18 @@ This gameplan implements fixes for two related bugs:
   ```javascript
   case MessageTypes.CONNECT:
     this.clientId = payload.clientId;
-    
+
     // If we have a playerId, this is a reconnection
     if (this.playerId && payload.playerId === this.playerId) {
       this.reconnecting = false;
       this.reconnectAttempts = 0;
     }
-    
+
     // NEW: Call onConnectResponse callback with payload
     if (this.callbacks.onConnectResponse) {
       this.callbacks.onConnectResponse(payload);
     }
-    
+
     // Handle gameState in CONNECT response (existing code)
     if (payload.gameState) {
       if (this.callbacks.onStateUpdate) {
@@ -132,6 +140,7 @@ This gameplan implements fixes for two related bugs:
   ```
 
 **Verification**:
+
 - [x] `onConnectResponse` callback is called with payload
 - [x] Callback is called before `onStateUpdate` (if gameState exists)
 - [x] Existing CONNECT handling logic is preserved
@@ -150,6 +159,7 @@ This gameplan implements fixes for two related bugs:
   ```
 
 **Verification**:
+
 - [x] Method exists and sets callback correctly
 - [x] Method follows same pattern as other callback setters (e.g., `onConnect`, `onStateUpdate`)
 
@@ -162,6 +172,7 @@ This gameplan implements fixes for two related bugs:
 - [x] Test that `onConnectResponse()` method sets callback correctly
 
 **Verification**:
+
 - [x] All tests pass
 - [x] Tests cover callback invocation and payload passing
 
@@ -177,12 +188,12 @@ This gameplan implements fixes for two related bugs:
 - [x] In `runNetworkedMode()`, find where `wsClient.onConnect()` is set up
 - [x] Add `wsClient.onConnectResponse()` callback after `wsClient.onConnect()`:
   ```javascript
-  wsClient.onConnectResponse((payload) => {
+  wsClient.onConnectResponse(payload => {
     // Extract playerId from CONNECT response if available
     if (payload && payload.playerId) {
       localPlayerId = payload.playerId;
       clientLogger.debug(`Local player ID set from CONNECT: ${localPlayerId}`);
-      
+
       // Process queued state update if one exists
       if (queuedStateUpdate && renderer) {
         // Process queued state (will be refactored in Phase 3)
@@ -195,6 +206,7 @@ This gameplan implements fixes for two related bugs:
   ```
 
 **Verification**:
+
 - [x] Callback is set up correctly
 - [x] `localPlayerId` is set when `playerId` is in payload
 - [x] Queued state is processed if it exists (temporary - will be refactored in Phase 3)
@@ -205,6 +217,7 @@ This gameplan implements fixes for two related bugs:
 - [x] Note: This will be refactored in Phase 3 to use shared function
 
 **Verification**:
+
 - [x] `onPlayerJoined` still sets `localPlayerId` if not already set
 - [x] Fallback behavior works correctly
 
@@ -217,6 +230,7 @@ This gameplan implements fixes for two related bugs:
 - [x] Test that `onPlayerJoined` still works as fallback
 
 **Verification**:
+
 - [x] All tests pass
 - [x] Tests cover both CONNECT response and PLAYER_JOINED fallback
 
@@ -234,7 +248,7 @@ This gameplan implements fixes for two related bugs:
   // Function to process queued state update
   function processQueuedStateUpdate(gameState) {
     currentState = gameState;
-    
+
     try {
       // Initialize predicted position if needed
       if (previousState === null && localPlayerId) {
@@ -247,7 +261,7 @@ This gameplan implements fixes for two related bugs:
           }
         }
       }
-      
+
       // Initial render - renderFull() already renders all players
       if (previousState === null) {
         renderer.renderFull(game, gameState, localPlayerId);
@@ -260,6 +274,7 @@ This gameplan implements fixes for two related bugs:
   ```
 
 **Verification**:
+
 - [x] Function is defined in correct scope
 - [x] Function includes all logic from `onPlayerJoined` callback
 - [x] Function handles error cases
@@ -268,11 +283,11 @@ This gameplan implements fixes for two related bugs:
 
 - [x] Update `wsClient.onConnectResponse()` callback to use `processQueuedStateUpdate()`:
   ```javascript
-  wsClient.onConnectResponse((payload) => {
+  wsClient.onConnectResponse(payload => {
     if (payload && payload.playerId) {
       localPlayerId = payload.playerId;
       clientLogger.debug(`Local player ID set from CONNECT: ${localPlayerId}`);
-      
+
       // Process queued state update if one exists
       if (queuedStateUpdate && renderer) {
         processQueuedStateUpdate(queuedStateUpdate);
@@ -283,6 +298,7 @@ This gameplan implements fixes for two related bugs:
   ```
 
 **Verification**:
+
 - [x] `onConnectResponse` uses `processQueuedStateUpdate()` function
 - [x] Logic is consistent with `onPlayerJoined`
 
@@ -296,7 +312,7 @@ This gameplan implements fixes for two related bugs:
       if (!localPlayerId) {
         localPlayerId = payload.playerId;
       }
-      
+
       // Process queued state update if one exists
       if (queuedStateUpdate && renderer) {
         processQueuedStateUpdate(queuedStateUpdate);
@@ -307,6 +323,7 @@ This gameplan implements fixes for two related bugs:
   ```
 
 **Verification**:
+
 - [x] `onPlayerJoined` uses `processQueuedStateUpdate()` function
 - [x] `localPlayerId` is only set if not already set (fallback behavior)
 - [x] Duplication is eliminated
@@ -321,6 +338,7 @@ This gameplan implements fixes for two related bugs:
 - [x] Test that function handles errors gracefully
 
 **Verification**:
+
 - [x] All tests pass
 - [x] Tests cover function behavior and error handling
 
@@ -344,12 +362,14 @@ This gameplan implements fixes for two related bugs:
   ```
 
 **Verification**:
+
 - [x] `collisionEvents` array is initialized
 - [x] Array is cleared/reset appropriately
 
 ### Step 4.2: Record Collisions in movePlayer
 
 - [x] In `movePlayer()` method, when collision is detected, record it:
+
   ```javascript
   // Check for collision with other players
   const hasCollision = Array.from(this.players.values()).some(
@@ -363,13 +383,14 @@ This gameplan implements fixes for two related bugs:
     this.collisionEvents.push({
       playerId,
       timestamp: Date.now(),
-      attemptedPosition: { x: newX, y: newY }
+      attemptedPosition: { x: newX, y: newY },
     });
     return false;
   }
   ```
 
 **Verification**:
+
 - [x] Collisions are recorded in `collisionEvents` array
 - [x] Collision events include relevant information
 
@@ -400,6 +421,7 @@ This gameplan implements fixes for two related bugs:
   ```
 
 **Verification**:
+
 - [x] `getGameState()` includes `hasCollisions` flag
 - [x] `getGameState()` includes `collisions` array
 - [x] Collision information is accurate
@@ -407,12 +429,13 @@ This gameplan implements fixes for two related bugs:
 ### Step 4.4: Clear Collision Events After State Update
 
 - [x] In `src/server/index.js`, after broadcasting state update, clear collision events:
+
   ```javascript
   // In state update interval or after move processing:
   if (gameServer.getPlayerCount() > 0) {
     const stateMessage = createStateUpdateMessage(gameServer.getGameState());
     broadcastMessage(stateMessage);
-    
+
     // Clear collision events after broadcasting
     gameServer.clearCollisionEvents();
   }
@@ -426,6 +449,7 @@ This gameplan implements fixes for two related bugs:
   ```
 
 **Verification**:
+
 - [x] Collision events are cleared after state update
 - [x] Events don't persist across update cycles
 
@@ -438,6 +462,7 @@ This gameplan implements fixes for two related bugs:
 - [x] Test that `hasCollisions` flag is correct
 
 **Verification**:
+
 - [x] All tests pass
 - [x] Tests cover collision tracking and state inclusion
 
@@ -451,29 +476,29 @@ This gameplan implements fixes for two related bugs:
 
 - [x] Open `src/index.js`
 - [x] In `wsClient.onStateUpdate()` callback, after processing incremental updates, check for collisions:
+
   ```javascript
   // After processing incremental updates (existing code)...
-  
+
   // NEW: Render all players when collision detected (per Q3: Option B)
   if (gameState.hasCollisions || (gameState.collisions && gameState.collisions.length > 0)) {
     // Collision detected - render all players to ensure visibility
     // This ensures players with unchanged positions are still visible after collisions
-    const otherPlayers = (gameState.players || []).filter(
-      p => p.playerId !== localPlayerId
-    );
-    
+    const otherPlayers = (gameState.players || []).filter(p => p.playerId !== localPlayerId);
+
     // Render all other players
     for (const player of otherPlayers) {
       const playerColorFn = renderer.getColorFunction(PLAYER_CHAR.color);
       renderer.updateCell(player.x, player.y, PLAYER_CHAR.char, playerColorFn);
     }
-    
+
     // Move cursor out of the way
     process.stdout.write(ansiEscapes.cursorTo(0, renderer.statusBarOffset + 1));
   }
   ```
 
 **Verification**:
+
 - [x] Collision check is performed after incremental updates
 - [x] All other players are rendered when collision detected
 - [x] Cursor is moved out of the way
@@ -489,6 +514,7 @@ This gameplan implements fixes for two related bugs:
   ```
 
 **Verification**:
+
 - [x] `PLAYER_CHAR` is imported
 - [x] Import statement is correct (also imported `ansiEscapes` for cursor positioning)
 
@@ -514,6 +540,7 @@ This gameplan implements fixes for two related bugs:
   ```
 
 **Verification**:
+
 - [x] Temporary fallback is implemented (if needed) - SKIPPED (Phase 4 is complete)
 - [x] Fallback only activates if collision detection not available - N/A
 
@@ -526,6 +553,7 @@ This gameplan implements fixes for two related bugs:
 - [x] Test temporary fallback (if implemented) - SKIPPED (Phase 4 is complete)
 
 **Verification**:
+
 - [x] All tests pass
 - [x] Tests cover collision detection and rendering
 
@@ -544,6 +572,7 @@ This gameplan implements fixes for two related bugs:
 - [x] Test that `localPlayerId` is set from CONNECT response - **COVERED** in `test/index/connect-response.test.js`
 
 **Verification**:
+
 - [ ] All integration tests pass
 - [ ] Tests cover initial visibility scenarios
 
@@ -558,6 +587,7 @@ This gameplan implements fixes for two related bugs:
 - [x] Test that collision information is received from server - **PARTIALLY COVERED** in `test/server/GameServer.test.js` (server-side collision tracking) and `test/index/collision-rendering.test.js` (client-side collision rendering logic)
 
 **Verification**:
+
 - [ ] All collision visibility tests pass
 - [ ] Tests cover post-collision scenarios
 
@@ -573,6 +603,7 @@ This gameplan implements fixes for two related bugs:
 - [x] Test that all players in queued state are rendered - **COVERED** in `test/index/queued-state-processing.test.js` (renderFull is called)
 
 **Verification**:
+
 - [ ] All queueing tests pass
 - [ ] Tests cover state queueing and processing
 
@@ -593,6 +624,7 @@ This gameplan implements fixes for two related bugs:
   - [ ] Client B should see Client A immediately after reconnection
 
 **Verification**:
+
 - [ ] Manual testing confirms all scenarios work
 - [ ] No visual glitches or missing players
 
@@ -624,4 +656,3 @@ This gameplan implements fixes for two related bugs:
 - **Modular Implementation**: Phase 1-3 implementation should be modular to allow easy transition to lobby-based game selection in the future (per Q1 note).
 - **Server Collision Detection**: Phase 4 can be implemented separately or deferred. If deferred, Phase 5 includes a temporary fallback solution (per Q4: Option C).
 - **Performance**: Rendering all players after collisions should have minimal performance impact since it only happens when collisions are detected (per Performance Considerations in specs).
-

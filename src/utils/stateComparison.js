@@ -109,8 +109,7 @@ export function compareEntities(previousEntities, currentEntities) {
     const prevEntity = prevMap.get(currentEntity.entityId);
     if (prevEntity) {
       // Entity exists in both
-      const positionChanged =
-        prevEntity.x !== currentEntity.x || prevEntity.y !== currentEntity.y;
+      const positionChanged = prevEntity.x !== currentEntity.x || prevEntity.y !== currentEntity.y;
       const visualChanged =
         prevEntity.glyph !== currentEntity.glyph ||
         prevEntity.animationFrame !== currentEntity.animationFrame;
@@ -205,10 +204,7 @@ export function compareStates(previousState, currentState) {
 
   // Compare all aspects of state
   const players = comparePlayers(previousState.players, currentState.players);
-  const entities = compareEntities(
-    previousState.entities,
-    currentState.entities
-  );
+  const entities = compareEntities(previousState.entities, currentState.entities);
   const score = compareScore(previousState.score, currentState.score);
 
   // Board comparison deferred (per Q2: Option B)
@@ -224,4 +220,3 @@ export function compareStates(previousState, currentState) {
     score,
   };
 }
-

@@ -17,6 +17,7 @@ This gameplan implements client-side prediction for the local player to provide 
 ## Current State
 
 **Current Architecture**:
+
 - `src/index.js` - Client entry point with `runNetworkedMode()`
   - Input handler sends MOVE messages to server
   - Waits for server STATE_UPDATE to render player movement
@@ -28,6 +29,7 @@ This gameplan implements client-side prediction for the local player to provide 
   - Currently only has logging configuration
 
 **Current Flow**:
+
 1. Player presses movement key
 2. Client sends MOVE message to server
 3. Server validates and processes move
@@ -40,6 +42,7 @@ This gameplan implements client-side prediction for the local player to provide 
 ## Target State
 
 **New Flow**:
+
 1. Player presses movement key
 2. Client immediately renders player at predicted position (client-side prediction)
 3. Client sends MOVE message to server (in parallel)
@@ -49,6 +52,7 @@ This gameplan implements client-side prediction for the local player to provide 
 7. Every N seconds: Client reconciles local player position with server (true-up)
 
 **Benefits**:
+
 - Immediate visual feedback (0ms perceived latency)
 - Server authority maintained (prevents cheating)
 - Periodic reconciliation prevents drift
@@ -72,6 +76,7 @@ This gameplan implements client-side prediction for the local player to provide 
   ```
 
 **Verification**:
+
 - [x] `clientConfig.prediction` object exists
 - [x] `enabled` property is boolean (default: true)
 - [x] `reconciliationInterval` property is number (default: 5000)
@@ -87,6 +92,7 @@ This gameplan implements client-side prediction for the local player to provide 
   ```
 
 **Verification**:
+
 - [x] Variables declared in correct scope
 - [x] Initial values are correct (null for position, current time for lastReconciliation)
 
@@ -110,6 +116,7 @@ This gameplan implements client-side prediction for the local player to provide 
   ```
 
 **Verification**:
+
 - [x] Predicted position initialized when local player joins
 - [x] Predicted position matches server position initially
 
@@ -135,34 +142,38 @@ This gameplan implements client-side prediction for the local player to provide 
       }
       return;
     }
-    
+
     // Client-side prediction: Update and render immediately
     if (localPlayerPredictedPosition.x !== null && localPlayerPredictedPosition.y !== null) {
       const oldX = localPlayerPredictedPosition.x;
       const oldY = localPlayerPredictedPosition.y;
-      
+
       // Update predicted position
       localPlayerPredictedPosition.y -= 1;
-      
+
       // Render immediately at predicted position
       const boardAdapter = {
         getCell: (x, y) => {
           if (currentState && currentState.board && currentState.board.grid) {
-            if (y >= 0 && y < currentState.board.grid.length &&
-                x >= 0 && x < currentState.board.grid[y].length) {
+            if (
+              y >= 0 &&
+              y < currentState.board.grid.length &&
+              x >= 0 &&
+              x < currentState.board.grid[y].length
+            ) {
               return currentState.board.grid[y][x];
             }
           }
           return null;
         },
       };
-      
+
       // Clear old position (restore cell)
       const oldCell = boardAdapter.getCell(oldX, oldY);
       const oldGlyph = oldCell === WALL_CHAR.char ? WALL_CHAR : EMPTY_SPACE_CHAR;
       const oldColorFn = renderer.getColorFunction(oldGlyph.color);
       renderer.updateCell(oldX, oldY, oldGlyph.char, oldColorFn);
-      
+
       // Draw at new position
       const playerColorFn = renderer.getColorFunction(PLAYER_CHAR.color);
       renderer.updateCell(
@@ -171,7 +182,7 @@ This gameplan implements client-side prediction for the local player to provide 
         PLAYER_CHAR.char,
         playerColorFn
       );
-      
+
       // Update status bar with predicted position
       renderer.updateStatusBarIfChanged(
         currentState?.score || 0,
@@ -182,15 +193,16 @@ This gameplan implements client-side prediction for the local player to provide 
         oldY
       );
     }
-    
+
     // Still send to server
     if (wsClient && wsClient.isConnected()) {
       wsClient.sendMove(0, -1);
     }
-  }
+  };
   ```
 
 **Verification**:
+
 - [x] All movement callbacks (`onMoveUp`, `onMoveDown`, `onMoveLeft`, `onMoveRight`) updated
 - [x] Predicted position updates immediately
 - [x] Player renders at predicted position immediately
@@ -202,15 +214,20 @@ This gameplan implements client-side prediction for the local player to provide 
 
 - [x] Modify `wsClient.onStateUpdate()` callback
 - [x] When applying incremental updates, exclude local player from player updates:
+
   ```javascript
   // Filter out local player from server state for rendering
   const otherPlayers = gameState.players.filter(p => p.playerId !== localPlayerId);
-  const previousOtherPlayers = (previousState?.players || []).filter(p => p.playerId !== localPlayerId);
-  
+  const previousOtherPlayers = (previousState?.players || []).filter(
+    p => p.playerId !== localPlayerId
+  );
+
   // Update other players (not local player)
-  if (changes.players.moved.length > 0 || 
-      changes.players.joined.length > 0 || 
-      changes.players.left.length > 0) {
+  if (
+    changes.players.moved.length > 0 ||
+    changes.players.joined.length > 0 ||
+    changes.players.left.length > 0
+  ) {
     renderer.updatePlayersIncremental(
       previousOtherPlayers,
       otherPlayers,
@@ -219,9 +236,11 @@ This gameplan implements client-side prediction for the local player to provide 
     );
   }
   ```
+
 - [ ] Local player rendering is handled by input handler (Step 2.1)
 
 **Verification**:
+
 - [x] Local player excluded from server state rendering
 - [x] Other players still render correctly from server state
 - [x] No duplicate rendering of local player
@@ -242,6 +261,7 @@ This gameplan implements client-side prediction for the local player to provide 
 - [ ] Only update and render if move is valid
 
 **Verification**:
+
 - [x] Predicted position doesn't move into walls
 - [x] Visual feedback prevents movement into walls
 - [x] MOVE messages not sent for invalid moves
@@ -258,47 +278,51 @@ This gameplan implements client-side prediction for the local player to provide 
     if (!localPlayerId || localPlayerPredictedPosition.x === null) {
       return;
     }
-    
+
     const serverPlayer = gameState.players.find(p => p.playerId === localPlayerId);
     if (!serverPlayer) {
       return;
     }
-    
+
     const predicted = localPlayerPredictedPosition;
     const server = { x: serverPlayer.x, y: serverPlayer.y };
-    
+
     // Check for discrepancy
     if (predicted.x !== server.x || predicted.y !== server.y) {
       clientLogger.debug(
         `Reconciliation: Predicted (${predicted.x}, ${predicted.y}) != Server (${server.x}, ${server.y})`
       );
-      
+
       // Correct to server position
       const oldX = predicted.x;
       const oldY = predicted.y;
       localPlayerPredictedPosition = { x: server.x, y: server.y };
-      
+
       // Re-render at corrected position
       const boardAdapter = {
         getCell: (x, y) => {
-          if (y >= 0 && y < gameState.board.grid.length &&
-              x >= 0 && x < gameState.board.grid[y].length) {
+          if (
+            y >= 0 &&
+            y < gameState.board.grid.length &&
+            x >= 0 &&
+            x < gameState.board.grid[y].length
+          ) {
             return gameState.board.grid[y][x];
           }
           return null;
         },
       };
-      
+
       // Clear old predicted position
       const oldCell = boardAdapter.getCell(oldX, oldY);
       const oldGlyph = oldCell === WALL_CHAR.char ? WALL_CHAR : EMPTY_SPACE_CHAR;
       const oldColorFn = renderer.getColorFunction(oldGlyph.color);
       renderer.updateCell(oldX, oldY, oldGlyph.char, oldColorFn);
-      
+
       // Draw at corrected server position
       const playerColorFn = renderer.getColorFunction(PLAYER_CHAR.color);
       renderer.updateCell(server.x, server.y, PLAYER_CHAR.char, playerColorFn);
-      
+
       // Update status bar
       renderer.updateStatusBarIfChanged(
         gameState.score || 0,
@@ -309,12 +333,13 @@ This gameplan implements client-side prediction for the local player to provide 
         oldY
       );
     }
-    
+
     lastReconciliationTime = Date.now();
   }
   ```
 
 **Verification**:
+
 - [x] Function detects position discrepancies
 - [x] Function corrects predicted position to server position
 - [x] Function re-renders at corrected position
@@ -328,7 +353,7 @@ This gameplan implements client-side prediction for the local player to provide 
     if (reconciliationTimer) {
       clearInterval(reconciliationTimer);
     }
-    
+
     const interval = clientConfig.prediction.reconciliationInterval;
     reconciliationTimer = setInterval(() => {
       if (currentState && localPlayerId) {
@@ -341,6 +366,7 @@ This gameplan implements client-side prediction for the local player to provide 
 - [ ] Clear timer in cleanup/disconnect handler
 
 **Verification**:
+
 - [x] Timer starts after local player joins
 - [x] Timer triggers reconciliation at configured interval
 - [x] Timer is cleared on disconnect/cleanup
@@ -352,6 +378,7 @@ This gameplan implements client-side prediction for the local player to provide 
 - [x] Or rely solely on timer-based reconciliation
 
 **Verification**:
+
 - [x] Reconciliation occurs at configured intervals
 - [x] Position discrepancies are corrected
 
@@ -366,6 +393,7 @@ This gameplan implements client-side prediction for the local player to provide 
 - [x] Handle case where server state arrives before localPlayerId is set
 
 **Verification**:
+
 - [x] Predicted position always initialized correctly
 - [x] No rendering errors on initial state
 
@@ -376,6 +404,7 @@ This gameplan implements client-side prediction for the local player to provide 
 - [x] Restart reconciliation timer on reconnect
 
 **Verification**:
+
 - [x] Clean state on disconnect
 - [x] Proper initialization on reconnect
 
@@ -387,6 +416,7 @@ This gameplan implements client-side prediction for the local player to provide 
 - [x] Handle server rejecting moves (position doesn't change on server)
 
 **Verification**:
+
 - [x] All edge cases handled gracefully
 - [x] No crashes or visual glitches
 
@@ -404,10 +434,12 @@ This gameplan implements client-side prediction for the local player to provide 
 - [x] Test edge cases ✅ COVERED (edge-cases.test.js - Phase 4)
 
 **Verification**:
+
 - [x] Unit tests created (3 test files exist)
 - [x] All unit tests pass (prediction: 15 tests, reconciliation: 11 tests, edge-cases: 11 tests)
 
 **Test Files**:
+
 - ✅ `test/index/prediction.test.js` - Phase 1 & 2: State tracking, initialization, and immediate updates (15 tests)
   - Phase 1: State variables and initialization (6 tests)
   - Phase 2: Predicted position updates on input (9 tests)
@@ -423,10 +455,12 @@ This gameplan implements client-side prediction for the local player to provide 
 - [x] Test position correction on discrepancy ✅ COVERED
 
 **Verification**:
+
 - [x] Integration tests created
 - [x] All integration tests pass (9 tests)
 
 **Integration Test File**:
+
 - ✅ `test/integration/client-side-prediction.test.js` - Complete integration test suite (9 tests)
   - Test 1: Immediate rendering on input (2 tests)
   - Test 2: Other players still use server state (2 tests)
@@ -442,6 +476,7 @@ This gameplan implements client-side prediction for the local player to provide 
 - [ ] Test with different reconciliation intervals ⏳ PENDING
 
 **Verification**:
+
 - [x] Manual testing completed (partial)
 - [x] Game feels responsive ✅ Local player movement is "smooth as can be; perfect!"
 - [ ] No visual glitches ⚠️ Some issues found
@@ -449,6 +484,7 @@ This gameplan implements client-side prediction for the local player to provide 
 **Manual Testing Results**:
 
 **✅ Verified Working:**
+
 - **Smooth Local Player Movement**: Confirmed - "the local player movement is smooth as can be; perfect!"
   - Immediate rendering on keypress works perfectly
   - No lag or stuttering in local player movement
@@ -465,12 +501,14 @@ This gameplan implements client-side prediction for the local player to provide 
   - Server-side collision handling works as expected
 
 **⚠️ Issues Found:**
+
 - **Other Player Synchronization**: Issues identified
   - Bug: Player not rendered after collision (other player disappears until they move)
   - Bug: Cursor visible after entity updates (visual glitch)
   - Other players may not be visible in certain scenarios
 
 **⏳ Pending Testing:**
+
 - **Various Network Conditions**: Not yet tested
   - High latency scenarios
   - Packet loss scenarios
@@ -522,4 +560,3 @@ This gameplan implements client-side prediction for the local player to provide 
 - Default 5 seconds is a reasonable starting point but may need tuning
 - Wall collision detection in prediction is optional but recommended for better UX
 - Consider adding visual indicators for reconciliation (debug mode)
-

@@ -37,4 +37,3 @@ export const EventTypes = {
   GAME_STATE_CHANGE: 'gameStateChange',
   SCORE_CHANGE: 'scoreChange',
 };
-

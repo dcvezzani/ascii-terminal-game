@@ -72,9 +72,7 @@ describe('Collision Listener', () => {
       gameServer.emit(EventTypes.BUMP, eventData);
 
       expect(logger.debug).toHaveBeenCalled();
-      const logCall = logger.debug.mock.calls.find(call =>
-        call[0].includes('Collision event')
-      );
+      const logCall = logger.debug.mock.calls.find(call => call[0].includes('Collision event'));
       expect(logCall).toBeDefined();
     });
 
@@ -93,9 +91,7 @@ describe('Collision Listener', () => {
       gameServer.emit(EventTypes.BUMP, eventData);
 
       expect(logger.debug).toHaveBeenCalled();
-      const logCall = logger.debug.mock.calls.find(call =>
-        call[0].includes('Collision event')
-      );
+      const logCall = logger.debug.mock.calls.find(call => call[0].includes('Collision event'));
       expect(logCall).toBeDefined();
     });
 
@@ -114,9 +110,7 @@ describe('Collision Listener', () => {
 
       gameServer.emit(EventTypes.BUMP, eventData);
 
-      expect(logger.debug).toHaveBeenCalledWith(
-        expect.stringContaining('Collision event')
-      );
+      expect(logger.debug).toHaveBeenCalledWith(expect.stringContaining('Collision event'));
     });
 
     it('should handle errors gracefully', () => {
@@ -143,4 +137,3 @@ describe('Collision Listener', () => {
     });
   });
 });
-

@@ -538,164 +538,160 @@ describe('WebSocket Integration', () => {
       });
     });
 
-    test(
-      'should restore player state after reconnection',
-      async () => {
-        return new Promise((resolve, reject) => {
-          let firstClient = null;
-          let playerId = null;
-          let playerPosition = null;
-          let timeoutId;
-          let restoreResolved = false;
-          let moveSent = false;
+    test('should restore player state after reconnection', async () => {
+      return new Promise((resolve, reject) => {
+        let firstClient = null;
+        let playerId = null;
+        let playerPosition = null;
+        let timeoutId;
+        let restoreResolved = false;
+        let moveSent = false;
 
-          // First connection
-          firstClient = new WebSocket('ws://localhost:3000');
+        // First connection
+        firstClient = new WebSocket('ws://localhost:3000');
 
-          firstClient.on('message', data => {
-            try {
-              const message = JSON.parse(data.toString());
-              if (message.type === 'CONNECT' && !message.payload.playerId) {
-                // Initial CONNECT message, join as player
-                firstClient.send(
-                  JSON.stringify({
-                    type: 'CONNECT',
-                    payload: { playerName: 'StateRestorePlayer' },
-                  })
-                );
-              } else if (message.type === 'CONNECT' && message.payload.playerId && !playerId) {
-                // Response to CONNECT
-                playerId = message.payload.playerId;
+        firstClient.on('message', data => {
+          try {
+            const message = JSON.parse(data.toString());
+            if (message.type === 'CONNECT' && !message.payload.playerId) {
+              // Initial CONNECT message, join as player
+              firstClient.send(
+                JSON.stringify({
+                  type: 'CONNECT',
+                  payload: { playerName: 'StateRestorePlayer' },
+                })
+              );
+            } else if (message.type === 'CONNECT' && message.payload.playerId && !playerId) {
+              // Response to CONNECT
+              playerId = message.payload.playerId;
 
-                // Wait a bit for server to fully process player join, then move player
-                if (!moveSent) {
-                  moveSent = true;
-                  setTimeout(() => {
-                    firstClient.send(
-                      JSON.stringify({
-                        type: 'MOVE',
-                        payload: { dx: 1, dy: 0 },
-                      })
-                    );
-                  }, 100);
-                }
-              } else if (message.type === 'STATE_UPDATE' && playerId && !playerPosition) {
-                const state = message.payload.gameState;
-                const player = state.players.find(p => p.playerId === playerId);
-                // Wait for player to move (check if position changed from initial)
-                // If player hasn't moved yet, wait for next STATE_UPDATE
-                if (player) {
-                  playerPosition = { x: player.x, y: player.y };
+              // Wait a bit for server to fully process player join, then move player
+              if (!moveSent) {
+                moveSent = true;
+                setTimeout(() => {
+                  firstClient.send(
+                    JSON.stringify({
+                      type: 'MOVE',
+                      payload: { dx: 1, dy: 0 },
+                    })
+                  );
+                }, 100);
+              }
+            } else if (message.type === 'STATE_UPDATE' && playerId && !playerPosition) {
+              const state = message.payload.gameState;
+              const player = state.players.find(p => p.playerId === playerId);
+              // Wait for player to move (check if position changed from initial)
+              // If player hasn't moved yet, wait for next STATE_UPDATE
+              if (player) {
+                playerPosition = { x: player.x, y: player.y };
 
-                  // Disconnect
-                  firstClient.close();
+                // Disconnect
+                firstClient.close();
 
-                  // Wait a bit longer for server to process disconnect and mark player as disconnected
-                  setTimeout(() => {
-                    const secondClient = new WebSocket('ws://localhost:3000');
+                // Wait a bit longer for server to process disconnect and mark player as disconnected
+                setTimeout(() => {
+                  const secondClient = new WebSocket('ws://localhost:3000');
 
-                    secondClient.on('message', reconnectData => {
-                      try {
-                        if (restoreResolved) return;
-                        const reconnectMessage = JSON.parse(reconnectData.toString());
-                        if (
-                          reconnectMessage.type === 'CONNECT' &&
-                          !reconnectMessage.payload.playerId
-                        ) {
-                          // Initial CONNECT message, reconnect with same playerId
-                          secondClient.send(
-                            JSON.stringify({
-                              type: 'CONNECT',
-                              payload: { playerId, playerName: 'StateRestorePlayer' },
-                            })
-                          );
-                        } else if (
-                          reconnectMessage.type === 'CONNECT' &&
-                          reconnectMessage.payload.playerId === playerId &&
-                          reconnectMessage.payload.gameState &&
-                          playerPosition
-                        ) {
-                          // CONNECT response with gameState - check player position
-                          const reconnectState = reconnectMessage.payload.gameState;
-                          const reconnectedPlayer = reconnectState.players.find(
-                            p => p.playerId === playerId
-                          );
+                  secondClient.on('message', reconnectData => {
+                    try {
+                      if (restoreResolved) return;
+                      const reconnectMessage = JSON.parse(reconnectData.toString());
+                      if (
+                        reconnectMessage.type === 'CONNECT' &&
+                        !reconnectMessage.payload.playerId
+                      ) {
+                        // Initial CONNECT message, reconnect with same playerId
+                        secondClient.send(
+                          JSON.stringify({
+                            type: 'CONNECT',
+                            payload: { playerId, playerName: 'StateRestorePlayer' },
+                          })
+                        );
+                      } else if (
+                        reconnectMessage.type === 'CONNECT' &&
+                        reconnectMessage.payload.playerId === playerId &&
+                        reconnectMessage.payload.gameState &&
+                        playerPosition
+                      ) {
+                        // CONNECT response with gameState - check player position
+                        const reconnectState = reconnectMessage.payload.gameState;
+                        const reconnectedPlayer = reconnectState.players.find(
+                          p => p.playerId === playerId
+                        );
 
-                          if (reconnectedPlayer) {
-                            // Verify player position was restored
-                            restoreResolved = true;
-                            expect(reconnectedPlayer.x).toBe(playerPosition.x);
-                            expect(reconnectedPlayer.y).toBe(playerPosition.y);
-                            clearTimeout(timeoutId);
-                            secondClient.close();
-                            resolve();
-                          } else if (reconnectMessage.payload.gameState) {
-                            // Player not found in CONNECT response gameState
-                            // This might happen if player wasn't restored yet
-                            // Wait for STATE_UPDATE which should have the restored player
-                          }
-                        } else if (reconnectMessage.type === 'STATE_UPDATE' && playerPosition) {
-                          // STATE_UPDATE message - check player position
-                          const reconnectState = reconnectMessage.payload.gameState;
-                          const reconnectedPlayer = reconnectState.players.find(
-                            p => p.playerId === playerId
-                          );
-
-                          if (reconnectedPlayer) {
-                            // Verify player position was restored
-                            restoreResolved = true;
-                            expect(reconnectedPlayer.x).toBe(playerPosition.x);
-                            expect(reconnectedPlayer.y).toBe(playerPosition.y);
-                            clearTimeout(timeoutId);
-                            secondClient.close();
-                            resolve();
-                          }
-                        }
-                      } catch (error) {
-                        if (!restoreResolved) {
+                        if (reconnectedPlayer) {
+                          // Verify player position was restored
+                          restoreResolved = true;
+                          expect(reconnectedPlayer.x).toBe(playerPosition.x);
+                          expect(reconnectedPlayer.y).toBe(playerPosition.y);
                           clearTimeout(timeoutId);
                           secondClient.close();
-                          reject(error);
+                          resolve();
+                        } else if (reconnectMessage.payload.gameState) {
+                          // Player not found in CONNECT response gameState
+                          // This might happen if player wasn't restored yet
+                          // Wait for STATE_UPDATE which should have the restored player
+                        }
+                      } else if (reconnectMessage.type === 'STATE_UPDATE' && playerPosition) {
+                        // STATE_UPDATE message - check player position
+                        const reconnectState = reconnectMessage.payload.gameState;
+                        const reconnectedPlayer = reconnectState.players.find(
+                          p => p.playerId === playerId
+                        );
+
+                        if (reconnectedPlayer) {
+                          // Verify player position was restored
+                          restoreResolved = true;
+                          expect(reconnectedPlayer.x).toBe(playerPosition.x);
+                          expect(reconnectedPlayer.y).toBe(playerPosition.y);
+                          clearTimeout(timeoutId);
+                          secondClient.close();
+                          resolve();
                         }
                       }
-                    });
-
-                    secondClient.on('error', error => {
+                    } catch (error) {
                       if (!restoreResolved) {
                         clearTimeout(timeoutId);
                         secondClient.close();
                         reject(error);
                       }
-                    });
-                  }, 1000);
-                }
-              }
-            } catch (error) {
-              if (!restoreResolved) {
-                clearTimeout(timeoutId);
-                if (firstClient) firstClient.close();
-                reject(error);
+                    }
+                  });
+
+                  secondClient.on('error', error => {
+                    if (!restoreResolved) {
+                      clearTimeout(timeoutId);
+                      secondClient.close();
+                      reject(error);
+                    }
+                  });
+                }, 1000);
               }
             }
-          });
-
-          firstClient.on('error', error => {
+          } catch (error) {
             if (!restoreResolved) {
               clearTimeout(timeoutId);
               if (firstClient) firstClient.close();
               reject(error);
             }
-          });
-
-          timeoutId = setTimeout(() => {
-            if (!restoreResolved) {
-              if (firstClient) firstClient.close();
-              reject(new Error('State restoration timeout'));
-            }
-          }, 15000);
+          }
         });
-      },
-      20000
-    );
+
+        firstClient.on('error', error => {
+          if (!restoreResolved) {
+            clearTimeout(timeoutId);
+            if (firstClient) firstClient.close();
+            reject(error);
+          }
+        });
+
+        timeoutId = setTimeout(() => {
+          if (!restoreResolved) {
+            if (firstClient) firstClient.close();
+            reject(new Error('State restoration timeout'));
+          }
+        }, 15000);
+      });
+    }, 20000);
   });
 });

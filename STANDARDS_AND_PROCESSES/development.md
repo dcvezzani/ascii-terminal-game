@@ -118,7 +118,8 @@ docs/development/
 
 **Example**: `FEATURE_reconciliation_session_management.md`, `FEATURE_navigation_menu.md`
 
-**Completion**: When a card is finished, rename it with "X_" prefix:
+**Completion**: When a card is finished, rename it with "X\_" prefix:
+
 - `FEATURE_navigation_menu.md` → `X_FEATURE_navigation_menu.md`
 - `ENHANCE_quantity_validation.md` → `X_ENHANCE_quantity_validation.md`
 - `BUG_report_duplicate_minifigs.md` → `X_BUG_report_duplicate_minifigs.md`
@@ -146,7 +147,8 @@ docs/development/
 
 **Example**: `ENHANCE_quantity_validation.md`, `ENHANCE_lazy_loading_images.md`
 
-**Completion**: When an enhancement card is finished, rename it with "X_" prefix:
+**Completion**: When an enhancement card is finished, rename it with "X\_" prefix:
+
 - `ENHANCE_quantity_validation.md` → `X_ENHANCE_quantity_validation.md`
 
 **When to Create**:
@@ -173,7 +175,8 @@ docs/development/
 
 **Example**: `BUG_report_duplicate_minifigs_in_sets.md`
 
-**Completion**: When a bug report is fixed, rename it with "X_" prefix:
+**Completion**: When a bug report is fixed, rename it with "X\_" prefix:
+
 - `BUG_report_duplicate_minifigs.md` → `X_BUG_report_duplicate_minifigs.md`
 
 **When to Create**:
@@ -189,16 +192,17 @@ docs/development/
 3. **Specification**: SPECS document is created from the card
 4. **Gameplan**: GAMEPLAN document is created from the SPECS
 5. **Implementation**: Gameplan is followed to implement
-6. **Completion**: 
+6. **Completion**:
    - Card status updated to COMPLETE in the card content
-   - **Card file renamed with "X_" prefix** to visually indicate completion
+   - **Card file renamed with "X\_" prefix** to visually indicate completion
    - Example: `FEATURE_navigation_menu.md` → `X_FEATURE_navigation_menu.md`
-   - **Gameplan directory renamed with "X_" prefix** to visually indicate completion
+   - **Gameplan directory renamed with "X\_" prefix** to visually indicate completion
    - Example: `docs/development/gameplans/event-system/` → `docs/development/gameplans/X_event-system/`
 
 **Note**: Cards and gameplans use different completion markers:
-- **Cards**: Rename the **file** with "X_" prefix (e.g., `FEATURE_name.md` → `X_FEATURE_name.md`)
-- **Gameplans**: Rename the **directory** with "X_" prefix (e.g., `gameplans/event-system/` → `gameplans/X_event-system/`)
+
+- **Cards**: Rename the **file** with "X\_" prefix (e.g., `FEATURE_name.md` → `X_FEATURE_name.md`)
+- **Gameplans**: Rename the **directory** with "X\_" prefix (e.g., `gameplans/event-system/` → `gameplans/X_event-system/`)
 
 ---
 
@@ -448,7 +452,7 @@ After all phases in a gameplan are complete:
 
 1. **Update Gameplan**: Mark all phases as COMPLETE in gameplan progress summary
 2. **Final Verification**: Ensure all verification items are complete
-3. **Rename Gameplan Directory**: Rename the gameplan directory with "X_" prefix to visually indicate completion
+3. **Rename Gameplan Directory**: Rename the gameplan directory with "X\_" prefix to visually indicate completion
 4. **Final Commit**: Create final commit marking gameplan as complete
 
 **Gameplan Completion Process**:
@@ -459,10 +463,12 @@ mv docs/development/gameplans/{feature-name} docs/development/gameplans/X_{featu
 ```
 
 **Example**:
+
 - Before: `docs/development/gameplans/event-system/`
 - After: `docs/development/gameplans/X_event-system/`
 
 **Note**: This is different from card completion:
+
 - **Cards**: Rename the **file** (e.g., `FEATURE_name.md` → `X_FEATURE_name.md`)
 - **Gameplans**: Rename the **directory** (e.g., `gameplans/event-system/` → `gameplans/X_event-system/`)
 
@@ -755,14 +761,15 @@ During review:
 
 9. **Feature Complete**:
    - Update card status to COMPLETE in card content
-   - **Rename card file with "X_" prefix** (e.g., `FEATURE_name.md` → `X_FEATURE_name.md`)
-   - **Rename gameplan directory with "X_" prefix** (e.g., `gameplans/event-system/` → `gameplans/X_event-system/`)
+   - **Rename card file with "X\_" prefix** (e.g., `FEATURE_name.md` → `X_FEATURE_name.md`)
+   - **Rename gameplan directory with "X\_" prefix** (e.g., `gameplans/event-system/` → `gameplans/X_event-system/`)
    - Update gameplan progress to mark all phases complete
    - Final documentation update
 
 **Completion Markers**:
-- **Cards**: File renamed with "X_" prefix (e.g., `FEATURE_name.md` → `X_FEATURE_name.md`)
-- **Gameplans**: Directory renamed with "X_" prefix (e.g., `gameplans/event-system/` → `gameplans/X_event-system/`)
+
+- **Cards**: File renamed with "X\_" prefix (e.g., `FEATURE_name.md` → `X_FEATURE_name.md`)
+- **Gameplans**: Directory renamed with "X\_" prefix (e.g., `gameplans/event-system/` → `gameplans/X_event-system/`)
 
 ---
 
@@ -843,7 +850,7 @@ During review:
    - User approves → Continue to Phase 2
    - ... (repeat for all phases)
 
-6. **Feature Complete**: 
+6. **Feature Complete**:
    - Card status updated to COMPLETE in card content
    - Card file renamed: `FEATURE_navigation_menu.md` → `X_FEATURE_navigation_menu.md`
    - Gameplan directory renamed: `gameplans/navigation-menu/` → `gameplans/X_navigation-menu/`
@@ -865,7 +872,7 @@ During review:
 
 4. **Implementation**: Follow gameplan with commits after each step
 
-5. **Enhancement Complete**: 
+5. **Enhancement Complete**:
    - Card status updated to COMPLETE in card content
    - Card file renamed: `ENHANCE_quantity_validation.md` → `X_ENHANCE_quantity_validation.md`
    - Gameplan directory renamed: `gameplans/quantity-validation/` → `gameplans/X_quantity-validation/`
@@ -888,7 +895,7 @@ During review:
 
 4. **Implementation**: Follow gameplan with commits after each step
 
-5. **Bug Fixed**: 
+5. **Bug Fixed**:
    - Card status updated to COMPLETE in card content
    - Card file renamed: `BUG_report_duplicate_minifigs.md` → `X_BUG_report_duplicate_minifigs.md`
    - Gameplan directory renamed: `gameplans/bug-fix-duplicate-minifigs/` → `gameplans/X_bug-fix-duplicate-minifigs/`

@@ -118,7 +118,9 @@ export class GameServer extends EventEmitter {
                   startX = testX;
                   startY = testY;
                   foundPosition = true;
-                  logger.debug(`Found available position for player ${playerId} at (${testX}, ${testY})`);
+                  logger.debug(
+                    `Found available position for player ${playerId} at (${testX}, ${testY})`
+                  );
                 }
               }
             }
@@ -239,7 +241,9 @@ export class GameServer extends EventEmitter {
         solid: true, // Players are solid entities
       });
     } catch (error) {
-      logger.warn(`Failed to restore player to board at (${player.x}, ${player.y}): ${error.message}`);
+      logger.warn(
+        `Failed to restore player to board at (${player.x}, ${player.y}): ${error.message}`
+      );
       // Still restore player even if board add fails
     }
 

@@ -244,4 +244,3 @@ describe('GameServer Event Performance', () => {
     });
   });
 });
-

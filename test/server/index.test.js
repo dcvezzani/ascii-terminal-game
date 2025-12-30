@@ -3,7 +3,6 @@ import { serverConfig } from '../../src/config/serverConfig.js';
 import WebSocket from 'ws';
 
 describe('Server Entry Point', () => {
-
   test('should have server running and accepting connections', async () => {
     return new Promise((resolve, reject) => {
       const ws = new WebSocket('ws://localhost:3000');

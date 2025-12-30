@@ -144,14 +144,18 @@ Based on specification answers:
 - [x] Create `compareEntities(previousEntities, currentEntities)` function
 - [x] Create Maps for O(1) lookups:
   ```javascript
-  const prevMap = new Map(previousEntities.map(e => [
-    e.entityId,
-    { x: e.x, y: e.y, glyph: e.glyph, animationFrame: e.animationFrame }
-  ]));
-  const currMap = new Map(currentEntities.map(e => [
-    e.entityId,
-    { x: e.x, y: e.y, glyph: e.glyph, animationFrame: e.animationFrame }
-  ]));
+  const prevMap = new Map(
+    previousEntities.map(e => [
+      e.entityId,
+      { x: e.x, y: e.y, glyph: e.glyph, animationFrame: e.animationFrame },
+    ])
+  );
+  const currMap = new Map(
+    currentEntities.map(e => [
+      e.entityId,
+      { x: e.x, y: e.y, glyph: e.glyph, animationFrame: e.animationFrame },
+    ])
+  );
   ```
 - [x] Detect moved entities (same `entityId`, different position)
 - [x] Detect spawned entities (`entityId` in current but not previous)
@@ -323,11 +327,11 @@ Based on specification answers:
   ```javascript
   wsClient.onStateUpdate(gameState => {
     currentState = gameState;
-    
+
     if (!renderer || !localPlayerId) {
       return; // Wait for renderer and localPlayerId
     }
-    
+
     try {
       if (previousState === null) {
         // First render - use renderFull()
@@ -355,30 +359,31 @@ Based on specification answers:
 ### Step 4.3: Implement Incremental Update Logic
 
 - [x] After state comparison, apply incremental updates:
+
   ```javascript
   // Update players
-  if (changes.players.moved.length > 0 || 
-      changes.players.joined.length > 0 || 
-      changes.players.left.length > 0) {
-    renderer.updatePlayersIncremental(
-      previousState.players,
-      gameState.players,
-      boardAdapter
-    );
+  if (
+    changes.players.moved.length > 0 ||
+    changes.players.joined.length > 0 ||
+    changes.players.left.length > 0
+  ) {
+    renderer.updatePlayersIncremental(previousState.players, gameState.players, boardAdapter);
   }
-  
+
   // Update entities
-  if (changes.entities.moved.length > 0 || 
-      changes.entities.spawned.length > 0 || 
-      changes.entities.despawned.length > 0 ||
-      changes.entities.animated.length > 0) {
+  if (
+    changes.entities.moved.length > 0 ||
+    changes.entities.spawned.length > 0 ||
+    changes.entities.despawned.length > 0 ||
+    changes.entities.animated.length > 0
+  ) {
     renderer.updateEntitiesIncremental(
       previousState.entities || [],
       gameState.entities || [],
       boardAdapter
     );
   }
-  
+
   // Update status bar if changed
   const localPlayer = gameState.players.find(p => p.playerId === localPlayerId);
   if (localPlayer) {
@@ -425,8 +430,9 @@ Based on specification answers:
 - [x] Add fallback threshold check (per Q4: Option D)
 - [x] Calculate total changes (players + entities)
 - [x] If changes exceed threshold, fall back to full render:
+
   ```javascript
-  const totalChanges = 
+  const totalChanges =
     changes.players.moved.length +
     changes.players.joined.length +
     changes.players.left.length +
@@ -434,9 +440,9 @@ Based on specification answers:
     changes.entities.spawned.length +
     changes.entities.despawned.length +
     changes.entities.animated.length;
-  
+
   const FALLBACK_THRESHOLD = 10; // Configurable
-  
+
   if (totalChanges > FALLBACK_THRESHOLD) {
     renderer.renderFull(game, gameState, localPlayerId);
     previousState = JSON.parse(JSON.stringify(gameState));
@@ -454,10 +460,11 @@ Based on specification answers:
 
 - [x] Add try-catch around incremental update logic
 - [x] Implement retry logic (per Q8: Option C):
+
   ```javascript
   let retryCount = 0;
   const MAX_RETRIES = 1;
-  
+
   try {
     // Incremental updates...
   } catch (error) {
@@ -471,6 +478,7 @@ Based on specification answers:
     }
   }
   ```
+
 - [x] Log errors for debugging
 
 **Note**: Simplified error recovery - on error, immediately fall back to full render rather than retrying incremental updates. This is simpler and more reliable.
@@ -687,4 +695,3 @@ Based on specification answers:
 - Simple array iteration for state comparison (per Q5: Option A)
 - Double buffering for update batching (per Q11: Option C)
 - Both unit and integration tests required (per Q12: Option C)
-

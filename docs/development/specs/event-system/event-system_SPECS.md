@@ -122,12 +122,14 @@ This specification details the implementation of a general-purpose scoped event 
 **Details**:
 
 **Global Events**:
+
 - Affect all entities (players and AI entities)
 - No target filtering needed
 - Example: Game state changes, global effects
 - Scope identifier: `"global"`
 
 **Group Events**:
+
 - Affect a specific group of entities
 - Groups can be: `'players'`, `'entities'`, `'enemies'`, `'collectibles'`, custom groups, or entities in a region
 - Only entities in the specified group receive the event
@@ -135,6 +137,7 @@ This specification details the implementation of a general-purpose scoped event 
 - Requires `group` field in event data
 
 **Targeted Events**:
+
 - Affect a single specific entity
 - Target can be a `playerId` or `entityId`
 - Only the specified entity receives the event
@@ -216,6 +219,7 @@ This specification details the implementation of a general-purpose scoped event 
 **Event-Specific Data** (varies by event type, but must be consistent for each event type):
 
 **Collision Events**:
+
 ```javascript
 {
   scope: 'targeted',
@@ -231,6 +235,7 @@ This specification details the implementation of a general-purpose scoped event 
 ```
 
 **Combat Events**:
+
 ```javascript
 {
   scope: 'targeted',
@@ -245,6 +250,7 @@ This specification details the implementation of a general-purpose scoped event 
 ```
 
 **Alignment Events**:
+
 ```javascript
 {
   scope: 'group',
@@ -259,6 +265,7 @@ This specification details the implementation of a general-purpose scoped event 
 ```
 
 **Entity Events**:
+
 ```javascript
 {
   scope: 'targeted',
@@ -274,6 +281,7 @@ This specification details the implementation of a general-purpose scoped event 
 ```
 
 **State Events**:
+
 ```javascript
 {
   scope: 'global' | 'group' | 'targeted',
@@ -308,16 +316,19 @@ This specification details the implementation of a general-purpose scoped event 
 **Details**:
 
 **Player Collision**:
+
 - When player attempts to move into another player's position
 - Emit targeted event to the colliding player
 - Include collision information (attempted position, current position, other player ID)
 
 **Wall Collision**:
+
 - When player attempts to move into a wall
 - Emit targeted event to the colliding player
 - Include collision information (attempted position, current position, collision type)
 
 **Entity Collision** (future):
+
 - When player attempts to move into an entity's position
 - Emit targeted event to the colliding player
 - Include collision information (attempted position, current position, entity ID)
@@ -345,16 +356,19 @@ This specification details the implementation of a general-purpose scoped event 
 **Details**:
 
 **Listener Setup**:
+
 - Event listeners set up in `src/server/index.js` during server initialization
 - Listeners can be added/removed dynamically
 - Multiple listeners can handle same event type
 
 **Event Processing**:
+
 - Listeners process events synchronously (in order of registration)
 - Listeners can modify game state, log events, include info in state updates, etc.
 - Listeners should not throw errors (wrap in try-catch if needed)
 
 **Initial Listeners** (Phase 1):
+
 - Collision event listener → Include collision info in state updates (future)
 - Event logging listener → Log events for debugging
 - State update listener → Trigger state broadcasts when needed
@@ -375,17 +389,20 @@ This specification details the implementation of a general-purpose scoped event 
 **Details**:
 
 **Server Event Isolation**:
+
 - Server events are internal to server codebase
 - Events are **not** transmitted directly over WebSocket
 - Events are processed by server listeners
 - Server listeners can include event information in WebSocket messages
 
 **WebSocket Communication**:
+
 - Server emits event → Server listener processes → Server sends WebSocket message (e.g., STATE_UPDATE with event info)
 - Client receives WebSocket message → Client processes → (Future) Client may emit local events
 - WebSocket messages are the **only** bridge between server and client
 
 **Event Flow Example**:
+
 ```
 Server: Collision detected
   → Server emits 'bump' event (internal)
@@ -481,14 +498,14 @@ this.emit('bump', {
   scope: 'targeted',
   targetId: playerId,
   position: { x: player.x, y: player.y }, // Copy, not reference
-  timestamp: Date.now()
+  timestamp: Date.now(),
 });
 
 // Bad: Pass reference
 this.emit('bump', {
   scope: 'targeted',
   targetId: playerId,
-  player: player // Reference - can be modified by listeners
+  player: player, // Reference - can be modified by listeners
 });
 ```
 
@@ -529,6 +546,7 @@ this.emit('bump', {
 ### Event Data Structure
 
 **Standard Event**:
+
 ```javascript
 {
   scope: 'global' | 'group' | 'targeted',
@@ -544,6 +562,7 @@ this.emit('bump', {
 ### Collision Event Data
 
 **Player Collision**:
+
 ```javascript
 {
   scope: 'targeted',
@@ -559,6 +578,7 @@ this.emit('bump', {
 ```
 
 **Wall Collision**:
+
 ```javascript
 {
   scope: 'targeted',
@@ -575,6 +595,7 @@ this.emit('bump', {
 ### Combat Event Data
 
 **Shot Event**:
+
 ```javascript
 {
   scope: 'targeted',
@@ -591,6 +612,7 @@ this.emit('bump', {
 ### Alignment Event Data
 
 **Vertical Alignment**:
+
 ```javascript
 {
   scope: 'group',
@@ -804,4 +826,3 @@ this.emit('bump', {
 - Communication between server and client happens only through WebSocket messages
 - Event patterns should be designed for future client-side adaptation
 - Event system should be extensible without modifying core code
-

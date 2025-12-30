@@ -53,9 +53,7 @@ describe('Player Visibility Integration Tests', () => {
                   // Player B should receive state update with Player A
                   const gameState = bMessage.payload.gameState;
                   if (gameState && gameState.players) {
-                    const playerAInState = gameState.players.find(
-                      p => p.playerId === playerAId
-                    );
+                    const playerAInState = gameState.players.find(p => p.playerId === playerAId);
                     if (playerAInState) {
                       playerBReceivedState = true;
                       // Verify Player A is in the state
@@ -168,7 +166,11 @@ describe('Player Visibility Integration Tests', () => {
           clients.forEach(client => client.close());
           reject(
             new Error(
-              `Test timeout. Players joined: ${playerIds.size}, States received: ${Array.from(receivedStates.values()).map(s => s.length).join(',')}`
+              `Test timeout. Players joined: ${playerIds.size}, States received: ${Array.from(
+                receivedStates.values()
+              )
+                .map(s => s.length)
+                .join(',')}`
             )
           );
         }, 10000);
@@ -226,9 +228,7 @@ describe('Player Visibility Integration Tests', () => {
                 } else if (bMessage.type === 'STATE_UPDATE') {
                   const gameState = bMessage.payload.gameState;
                   if (gameState && gameState.players) {
-                    const playerAInState = gameState.players.find(
-                      p => p.playerId === playerAId
-                    );
+                    const playerAInState = gameState.players.find(p => p.playerId === playerAId);
                     if (playerAInState && playerAPosition) {
                       // Verify Player A is visible and at the same position (hasn't moved)
                       expect(playerAInState.x).toBe(playerAPosition.x);
@@ -330,7 +330,10 @@ describe('Player Visibility Integration Tests', () => {
             playerBStates.push(gameState);
 
             // Check for collision information
-            if (gameState.hasCollisions || (gameState.collisions && gameState.collisions.length > 0)) {
+            if (
+              gameState.hasCollisions ||
+              (gameState.collisions && gameState.collisions.length > 0)
+            ) {
               collisionDetected = true;
 
               // After collision, verify Player A is still visible
@@ -454,7 +457,10 @@ describe('Player Visibility Integration Tests', () => {
             playerBStates.push(gameState);
 
             // Check for collision
-            if (gameState.hasCollisions || (gameState.collisions && gameState.collisions.length > 0)) {
+            if (
+              gameState.hasCollisions ||
+              (gameState.collisions && gameState.collisions.length > 0)
+            ) {
               // After collision, verify both players are visible
               const playersInState = gameState.players || [];
               const playerAInState = playersInState.find(p => p.playerId === playerAId);
@@ -572,7 +578,10 @@ describe('Player Visibility Integration Tests', () => {
             playerBStates.push(gameState);
 
             // Count collisions
-            if (gameState.hasCollisions || (gameState.collisions && gameState.collisions.length > 0)) {
+            if (
+              gameState.hasCollisions ||
+              (gameState.collisions && gameState.collisions.length > 0)
+            ) {
               collisionCount++;
 
               // After 3 collisions, verify both players are still visible
@@ -714,4 +723,3 @@ describe('Player Visibility Integration Tests', () => {
     });
   });
 });
-

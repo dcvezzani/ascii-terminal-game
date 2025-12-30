@@ -117,13 +117,9 @@ describe('Incremental Rendering Integration - Phase 5.3', () => {
           );
         }
 
-        const localPlayer = gameState.players.find(
-          p => p.playerId === localPlayerId
-        );
+        const localPlayer = gameState.players.find(p => p.playerId === localPlayerId);
         if (localPlayer) {
-          const prevLocalPlayer = previousState.players.find(
-            p => p.playerId === localPlayerId
-          );
+          const prevLocalPlayer = previousState.players.find(p => p.playerId === localPlayerId);
           renderer.updateStatusBarIfChanged(
             gameState.score || 0,
             localPlayer.x,
@@ -158,11 +154,7 @@ describe('Incremental Rendering Integration - Phase 5.3', () => {
       simulateStateUpdate(initialState);
 
       expect(mockRenderer.renderFull).toHaveBeenCalledTimes(1);
-      expect(mockRenderer.renderFull).toHaveBeenCalledWith(
-        game,
-        initialState,
-        localPlayerId
-      );
+      expect(mockRenderer.renderFull).toHaveBeenCalledWith(game, initialState, localPlayerId);
       expect(mockRenderer.updatePlayersIncremental).not.toHaveBeenCalled();
       expect(previousState).not.toBeNull();
     });
@@ -310,9 +302,7 @@ describe('Incremental Rendering Integration - Phase 5.3', () => {
       const initialState = {
         board: { width: 20, height: 10, grid: [['#', ' ', ' ']] },
         players: [{ playerId: 'player-1', x: 5, y: 5, playerName: 'Player 1' }],
-        entities: [
-          { entityId: 'entity-1', x: 3, y: 3, entityType: 'enemy', glyph: 'E' },
-        ],
+        entities: [{ entityId: 'entity-1', x: 3, y: 3, entityType: 'enemy', glyph: 'E' }],
         score: 0,
       };
       simulateStateUpdate(initialState);
@@ -320,9 +310,7 @@ describe('Incremental Rendering Integration - Phase 5.3', () => {
       const updatedState = {
         board: { width: 20, height: 10, grid: [['#', ' ', ' ']] },
         players: [{ playerId: 'player-1', x: 5, y: 5, playerName: 'Player 1' }],
-        entities: [
-          { entityId: 'entity-1', x: 4, y: 3, entityType: 'enemy', glyph: 'E' },
-        ],
+        entities: [{ entityId: 'entity-1', x: 4, y: 3, entityType: 'enemy', glyph: 'E' }],
         score: 0,
       };
       simulateStateUpdate(updatedState);
@@ -373,9 +361,7 @@ describe('Incremental Rendering Integration - Phase 5.3', () => {
       const initialState = {
         board: { width: 20, height: 10, grid: [['#', ' ', ' ']] },
         players: [{ playerId: 'player-1', x: 5, y: 5, playerName: 'Player 1' }],
-        entities: [
-          { entityId: 'entity-1', x: 3, y: 3, entityType: 'enemy', glyph: 'E' },
-        ],
+        entities: [{ entityId: 'entity-1', x: 3, y: 3, entityType: 'enemy', glyph: 'E' }],
         score: 0,
       };
       simulateStateUpdate(initialState);
@@ -586,9 +572,7 @@ describe('Incremental Rendering Integration - Phase 5.3', () => {
       for (let i = 1; i <= 5; i++) {
         const state = {
           board: { width: 20, height: 10, grid: [['#', ' ', ' ']] },
-          players: [
-            { playerId: 'player-1', x: 5 + i, y: 5, playerName: 'Player 1' },
-          ],
+          players: [{ playerId: 'player-1', x: 5 + i, y: 5, playerName: 'Player 1' }],
           entities: [],
           score: 0,
         };

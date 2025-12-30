@@ -5,6 +5,7 @@
 In multiplayer mode, when Player A starts the game and doesn't press any keys, and Player B starts the game and presses keys, Player A's glyph doesn't show up in Player B's terminal until Player A presses a key.
 
 **Location**:
+
 - Client rendering: `src/index.js` - `runNetworkedMode()` function
 - State update handling: `wsClient.onStateUpdate()` callback
 - Initial render logic: `renderFull()` call
@@ -53,6 +54,7 @@ The issue appears to be related to when the initial render occurs and how state 
 ## Desired Fix
 
 Player glyphs should show up in all clients as soon as the game client is created, regardless of whether:
+
 - The player has pressed any keys
 - Other players have moved
 - The local player has received their `localPlayerId` yet
@@ -107,19 +109,23 @@ wsClient.onStateUpdate(gameState => {
 ### Proposed Solutions
 
 **Option 1: Render other players even if localPlayerId is not set**
+
 - Allow rendering of other players before `localPlayerId` is set
 - Only require `localPlayerId` for local player-specific logic (prediction, status bar)
 
 **Option 2: Queue state updates until localPlayerId is set** ✅ **SELECTED**
+
 - Store incoming state updates if `localPlayerId` is not set
 - Process queued updates once `localPlayerId` is set
 - **Status**: Partially implemented in Phase 4, needs verification/enhancement
 
 **Option 3: Ensure localPlayerId is set before first STATE_UPDATE**
+
 - Modify server to send PLAYER_JOINED before STATE_UPDATE
 - Or, set `localPlayerId` from CONNECT response instead of PLAYER_JOINED
 
 **Option 4: Render on CONNECT response**
+
 - Use the gameState from CONNECT response for initial render
 - Don't wait for STATE_UPDATE
 
@@ -128,16 +134,19 @@ wsClient.onStateUpdate(gameState => {
 **Option 2: Queue state updates until localPlayerId is set**
 
 This solution has been partially implemented in Phase 4 of the client-side prediction feature:
+
 - State updates are queued when `localPlayerId` is not set
 - Queued state updates are processed when `localPlayerId` is set in `onPlayerJoined`
 
 **Current Implementation Status**:
+
 - ✅ Queuing mechanism exists (`queuedStateUpdate` variable)
 - ✅ State updates are queued when `localPlayerId` is null
 - ✅ Queued state is processed in `onPlayerJoined` callback
 - ⚠️ May need verification that all players are rendered correctly
 
 **Next Steps**:
+
 1. Verify current implementation works correctly
 2. Test that all players are visible after queued state is processed
 3. Ensure `renderFull()` renders all players, not just local player
@@ -160,10 +169,12 @@ This solution has been partially implemented in Phase 4 of the client-side predi
 **Option 2: Queue state updates until localPlayerId is set** ✅ **SELECTED**
 
 This solution has been partially implemented in Phase 4 of the client-side prediction feature:
+
 - State updates are queued when `localPlayerId` is not set (line 348-351 in `src/index.js`)
 - Queued state updates are processed when `localPlayerId` is set in `onPlayerJoined` callback (line 519-567)
 
 **Current Implementation**:
+
 - ✅ Queuing mechanism exists (`queuedStateUpdate` variable)
 - ✅ State updates are queued when `localPlayerId` is null
 - ✅ Queued state is processed in `onPlayerJoined` callback
@@ -171,11 +182,13 @@ This solution has been partially implemented in Phase 4 of the client-side predi
 - ✅ `renderBoard()` checks all players in the array and renders them
 
 **Potential Issue**:
+
 - The CONNECT response includes `playerId` in the payload, but we're not extracting it to set `localPlayerId` earlier
 - This means state updates from CONNECT response get queued even though we could set `localPlayerId` from CONNECT
 - May need to extract `playerId` from CONNECT response to set `localPlayerId` earlier, allowing queued state to be processed immediately
 
 **Next Steps**:
+
 1. Verify current implementation works correctly
 2. Consider extracting `playerId` from CONNECT response to set `localPlayerId` earlier
 3. Test that all players are visible after queued state is processed
@@ -199,4 +212,3 @@ This solution has been partially implemented in Phase 4 of the client-side predi
 - The client is receiving the information but not rendering it at the right time
 - Option 2 (queue state updates) is partially implemented and should work
 - May need to enhance by extracting `playerId` from CONNECT response to process queue earlier
-

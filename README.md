@@ -86,6 +86,7 @@ The game supports multiplayer via WebSocket. To run in multiplayer mode:
    ```
 
    The server will start on port 3000 by default and display:
+
    ```
    WebSocket game server is running. Press Ctrl+C to stop.
    ```
@@ -245,18 +246,18 @@ Server settings can be configured in `src/config/serverConfig.js`:
 ```javascript
 export const serverConfig = {
   websocket: {
-    enabled: false,        // Enable/disable WebSocket mode
-    port: 3000,            // WebSocket server port
-    host: '0.0.0.0',       // Server host (0.0.0.0 = accessible from network)
-    updateInterval: 250,   // State update interval in milliseconds (4 updates/second)
+    enabled: false, // Enable/disable WebSocket mode
+    port: 3000, // WebSocket server port
+    host: '0.0.0.0', // Server host (0.0.0.0 = accessible from network)
+    updateInterval: 250, // State update interval in milliseconds (4 updates/second)
   },
   logging: {
-    level: 'info',         // Logging level: 'debug', 'info', 'warn', 'error'
+    level: 'info', // Logging level: 'debug', 'info', 'warn', 'error'
   },
   reconnection: {
-    enabled: true,         // Enable reconnection support
-    maxAttempts: 5,        // Maximum reconnection attempts
-    retryDelay: 1000,     // Delay between reconnection attempts (milliseconds)
+    enabled: true, // Enable reconnection support
+    maxAttempts: 5, // Maximum reconnection attempts
+    retryDelay: 1000, // Delay between reconnection attempts (milliseconds)
   },
 };
 ```

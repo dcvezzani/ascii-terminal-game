@@ -10,4 +10,3 @@ import { clientConfig } from '../config/clientConfig.js';
  * Client logger instance created from client configuration
  */
 export const clientLogger = createLogger(clientConfig.logging);
-

@@ -7,6 +7,7 @@ Currently, when game events occur (like collisions, player movements, entity spa
 **Note**: While this enhancement is initially motivated by collision events (see `BUG_player_not_rendered_after_collision.md`), the solution must be **general-purpose** and capable of handling **any type of game event** (collisions, combat, alignment detection, spawns, despawns, state changes, etc.).
 
 **Current Implementation**:
+
 - Collision detection happens in `src/server/GameServer.js` in the `movePlayer()` method (lines 262-271)
 - When a collision is detected, the method returns `false`
 - The caller (`handleMoveMessage()` in `src/server/index.js`) receives `false` and sends a `MOVE_FAILED` error message
@@ -14,6 +15,7 @@ Currently, when game events occur (like collisions, player movements, entity spa
 - No way to target events to specific entities, groups, or all entities
 
 **Location**:
+
 - Server-side game logic: `src/server/GameServer.js`
 - Message handling: `src/server/index.js`
 - Game entities: Players (human-controlled) and Entities (AI-controlled: enemies, collectibles, animated objects)
@@ -30,6 +32,7 @@ Without a scoped event system:
 - **Limited extensibility**: Adding new event-related features requires modifying core game logic
 
 **Current Limitations**:
+
 - State updates don't include event information
 - Clients can't distinguish between different event types
 - Rendering system can't react to events (see `BUG_player_not_rendered_after_collision.md`)
@@ -72,12 +75,10 @@ A **general-purpose** event system that supports scoped event emission and liste
 - [ ] **Global Events**: Emit to all entities (players and AI entities)
   - Example: `emit('gameStart', { scope: 'global', ... })`
   - All players and entities receive the event
-  
 - [ ] **Group Events**: Emit to a specific group of entities
   - Example: `emit('bump', { scope: 'group', group: 'players', ... })`
   - Only players receive the event
   - Groups can be: `'players'`, `'entities'`, `'enemies'`, `'collectibles'`, custom groups, or entities in a region
-  
 - [ ] **Targeted Events**: Emit to a single specific entity
   - Example: `emit('bump', { scope: 'targeted', targetId: 'player-123', ... })`
   - Only the specified entity receives the event
@@ -107,16 +108,19 @@ The system must support **any event type**, not just collisions. Examples includ
 ### Event Data Structure
 
 **Standard Event Structure** (all events must include):
+
 - [ ] Event type: String identifier (e.g., `"bump"`, `"shot"`, `"alignedVertically"`, `"spawn"`, etc.)
 - [ ] Scope: `"global"`, `"group"`, or `"targeted"`
 - [ ] Timestamp: When the event occurred
 
 **Scope-Specific Fields**:
+
 - [ ] For `"targeted"`: `targetId` (playerId or entityId)
 - [ ] For `"group"`: `group` (group identifier: 'players', 'entities', 'enemies', etc.)
 - [ ] For `"global"`: no target needed
 
 **Event-Specific Data** (varies by event type, but must be consistent for each event type):
+
 - [ ] Collision events: `playerId`, `attemptedPosition`, `currentPosition`, `collisionType`, `otherPlayerId` (if applicable)
 - [ ] Combat events: `attackerId`, `targetId`, `damage`, `weaponType`, `position`
 - [ ] Alignment events: `entityId`, `alignmentType` ('vertical' | 'horizontal'), `alignedWith` (array of entityIds), `position`
@@ -139,18 +143,21 @@ The system must support **any event type**, not just collisions. Examples includ
 ### Event System Options
 
 **Option 1: Use Node.js EventEmitter with Scope Wrapper**
+
 - Extend `GameServer` class with `EventEmitter`
 - Create wrapper methods for scoped events: `emitGlobal()`, `emitGroup()`, `emitTargeted()`
 - Use `this.emit('bump', eventData)` with scope information in eventData
 - Listeners can filter by scope: `gameServer.on('bump', (event) => { if (event.scope === 'targeted' && event.targetId === myId) { ... } })`
 
 **Option 2: Custom Scoped Event System**
+
 - Create a custom event emitter class with built-in scope support
 - Methods: `emitGlobal(type, data)`, `emitGroup(type, group, data)`, `emitTargeted(type, targetId, data)`
 - Listeners register with scope filters: `on('bump', { scope: 'targeted', targetId: 'player-123' }, callback)`
 - More control, but requires more implementation
 
 **Option 3: Multiple Event Emitters**
+
 - Separate emitters for global, group, and targeted events
 - `globalEvents.emit('bump', data)`, `groupEvents.emit('bump', group, data)`, `targetedEvents.emit('bump', targetId, data)`
 - Listeners subscribe to specific emitters
@@ -236,13 +243,13 @@ this.emit('spawn', {
 
 ```javascript
 // Example 1: Listen for all collision events (any scope)
-gameServer.on('bump', (eventData) => {
+gameServer.on('bump', eventData => {
   logger.debug(`Collision event: ${eventData.playerId} bumped`);
   // Include collision info in state update
 });
 
 // Example 2: Listen for targeted combat events (player shot)
-gameServer.on('shot', (eventData) => {
+gameServer.on('shot', eventData => {
   if (eventData.scope === 'targeted') {
     const target = this.getEntity(eventData.targetId);
     if (target) {
@@ -253,21 +260,21 @@ gameServer.on('shot', (eventData) => {
 });
 
 // Example 3: Listen for alignment events (entities aligned)
-gameServer.on('alignedVertically', (eventData) => {
+gameServer.on('alignedVertically', eventData => {
   if (eventData.scope === 'group') {
     // Trigger formation bonuses, special abilities, etc.
     logger.debug(`Entities aligned vertically: ${eventData.alignedWith.join(', ')}`);
   }
 });
 
-gameServer.on('alignedHorizontally', (eventData) => {
+gameServer.on('alignedHorizontally', eventData => {
   if (eventData.scope === 'group') {
     // Handle horizontal alignment
   }
 });
 
 // Example 4: Listen for group events affecting all players
-gameServer.on('areaEffect', (eventData) => {
+gameServer.on('areaEffect', eventData => {
   if (eventData.scope === 'group' && eventData.group === 'players') {
     // Apply area effect to all players
     this.players.forEach(player => {
@@ -277,18 +284,18 @@ gameServer.on('areaEffect', (eventData) => {
 });
 
 // Example 5: Listen for global events
-gameServer.on('gameStateChange', (eventData) => {
+gameServer.on('gameStateChange', eventData => {
   if (eventData.scope === 'global') {
     // Handle global game state change (pause, game over, etc.)
   }
 });
 
 // Example 6: Listen for entity spawn/despawn events
-gameServer.on('spawn', (eventData) => {
+gameServer.on('spawn', eventData => {
   // Handle entity spawning (add to game state, notify clients, etc.)
 });
 
-gameServer.on('despawn', (eventData) => {
+gameServer.on('despawn', eventData => {
   // Handle entity despawning (remove from game state, cleanup, etc.)
 });
 ```
@@ -351,12 +358,14 @@ gameServer.on('despawn', (eventData) => {
 **Design for Extensibility**: The event handling patterns should be designed so they can be easily adapted for client-side use in the future.
 
 **Considerations**:
+
 - Use standard patterns (Node.js EventEmitter) that work in both server and client environments
 - Keep event data structures serializable (for potential future WebSocket transmission)
 - Design event scopes (global, group, targeted) that make sense for both server and client contexts
 - Ensure event system is modular and can be imported/used independently
 
 **Client Event Use Cases** (Future):
+
 - Client-side prediction events (movement prediction, reconciliation triggers)
 - Local rendering events (collision rendering, animation triggers)
 - UI events (status bar updates, help screen toggles)
@@ -365,24 +374,28 @@ gameServer.on('despawn', (eventData) => {
 ### Event Isolation
 
 **Server and Client Events Must Be Isolated**:
+
 - Server events are internal to server codebase
 - Client events (future) will be internal to client codebase
 - **No direct event communication** between server and client
 - Communication between server and client happens **only through official WebSocket messages**
 
 **WebSocket Communication**:
+
 - Server emits events → Server listeners process → Server sends WebSocket messages (e.g., STATE_UPDATE with collision info)
 - Client receives WebSocket messages → Client processes → Client may emit local events (future) for client-side handling
 - Events are **not** transmitted directly over WebSocket
 - WebSocket messages are the **only** bridge between server and client event systems
 
 **Example Flow**:
+
 ```
 Server: Collision detected → Server emits 'bump' event → Server listener includes collision info in STATE_UPDATE → WebSocket message sent
 Client: Receives STATE_UPDATE → Processes state → (Future) Client may emit local 'collisionReceived' event for rendering
 ```
 
 **Benefits of Isolation**:
+
 - Server and client can evolve independently
 - Different event types and scopes for server vs client
 - No tight coupling between server and client event systems
@@ -444,4 +457,3 @@ Once the scoped event system is in place, it can be used for:
   - Event logging and replay
   - Event-based achievements
   - Event-driven animations and effects
-

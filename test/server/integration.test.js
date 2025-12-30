@@ -2,7 +2,6 @@ import { describe, test, expect } from 'vitest';
 import WebSocket from 'ws';
 
 describe('Server Integration', () => {
-
   test('should accept new connections', async () => {
     return new Promise((resolve, reject) => {
       const ws = new WebSocket('ws://localhost:3000');

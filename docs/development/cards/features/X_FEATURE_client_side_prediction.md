@@ -7,6 +7,7 @@ Currently, the game uses server-authoritative movement where all player movement
 ## Problem
 
 When a player presses a movement key:
+
 1. The client sends a MOVE message to the server
 2. The server validates and processes the move
 3. The server broadcasts a STATE_UPDATE to all clients
@@ -52,22 +53,26 @@ Implement client-side prediction for the local player to provide immediate visua
 ## Implementation Approach
 
 ### Phase 1: Configuration and State Tracking
+
 - Add `reconciliationInterval` to `clientConfig.js` (default: 5000ms)
 - Add local player prediction state tracking in `src/index.js`
 - Track predicted position separately from server position
 
 ### Phase 2: Immediate Local Rendering
+
 - Modify input handler to update local player position immediately
 - Render local player at predicted position
 - Continue sending MOVE messages to server
 
 ### Phase 3: Server Reconciliation
+
 - Implement reconciliation timer that triggers every N seconds
 - Compare predicted position with server position
 - If discrepancy exists, smoothly correct local player position
 - Log reconciliation events for debugging
 
 ### Phase 4: Integration and Testing
+
 - Integrate with existing incremental rendering
 - Ensure other players/entities continue using server state
 - Add unit tests for prediction and reconciliation logic
@@ -101,7 +106,7 @@ onMoveUp: () => {
   }
   // Still send to server
   wsClient.sendMove(0, -1);
-}
+};
 ```
 
 ### Reconciliation Logic
@@ -110,10 +115,10 @@ onMoveUp: () => {
 function reconcileWithServer(gameState) {
   const serverPlayer = gameState.players.find(p => p.playerId === localPlayerId);
   if (!serverPlayer) return;
-  
+
   const predicted = localPlayerPredictedPosition;
   const server = { x: serverPlayer.x, y: serverPlayer.y };
-  
+
   if (predicted.x !== server.x || predicted.y !== server.y) {
     // Discrepancy detected - correct to server position
     // Could implement smooth interpolation here
@@ -139,18 +144,21 @@ export const clientConfig = {
 ## Testing Strategy
 
 ### Unit Tests
+
 - Test prediction state tracking
 - Test reconciliation logic
 - Test position discrepancy detection
 - Test configuration loading
 
 ### Integration Tests
+
 - Test immediate rendering on input
 - Test reconciliation at configured intervals
 - Test handling of server position updates
 - Test interaction with incremental rendering
 
 ### Manual Testing
+
 - Verify smooth local player movement
 - Verify other players still use server state
 - Verify reconciliation corrects drift
@@ -187,4 +195,3 @@ export const clientConfig = {
 - The reconciliation interval should balance between responsiveness and accuracy
 - Too frequent reconciliation may cause jitter, too infrequent may allow drift
 - Default 5 seconds is a reasonable starting point but may need tuning based on gameplay
-

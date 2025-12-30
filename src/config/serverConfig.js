@@ -12,7 +12,7 @@ export const serverConfig = {
       state: 250, // State update interval in milliseconds (default: 250ms = 4 updates/second)
       ping: 30000, // Ping interval in milliseconds (default: 30 seconds)
       purge: 30000, // Purge interval in milliseconds (default: 30 seconds)
-      movement: "immediate", // Movement update interval: "immediate" or "periodic"
+      movement: 'immediate', // Movement update interval: "immediate" or "periodic"
     },
   },
   logging: {

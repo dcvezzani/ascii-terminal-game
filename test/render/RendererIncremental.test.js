@@ -56,16 +56,12 @@ describe('Renderer Incremental Methods - Phase 3', () => {
 
     test('should handle moved players', () => {
       const board = new Board();
-      const previousPlayers = [
-        { playerId: 'player-1', x: 5, y: 5, playerName: 'Player 1' },
-      ];
+      const previousPlayers = [{ playerId: 'player-1', x: 5, y: 5, playerName: 'Player 1' }];
       const currentPlayers = [
         { playerId: 'player-1', x: 6, y: 5, playerName: 'Player 1' }, // Moved
       ];
       const changes = {
-        moved: [
-          { playerId: 'player-1', oldX: 5, oldY: 5, newX: 6, newY: 5 },
-        ],
+        moved: [{ playerId: 'player-1', oldX: 5, oldY: 5, newX: 6, newY: 5 }],
         joined: [],
         left: [],
       };
@@ -79,9 +75,7 @@ describe('Renderer Incremental Methods - Phase 3', () => {
     test('should handle joined players', () => {
       const board = new Board();
       const previousPlayers = [];
-      const currentPlayers = [
-        { playerId: 'player-1', x: 5, y: 5, playerName: 'Player 1' },
-      ];
+      const currentPlayers = [{ playerId: 'player-1', x: 5, y: 5, playerName: 'Player 1' }];
       const changes = {
         moved: [],
         joined: [{ playerId: 'player-1', x: 5, y: 5, playerName: 'Player 1' }],
@@ -96,9 +90,7 @@ describe('Renderer Incremental Methods - Phase 3', () => {
 
     test('should handle left players', () => {
       const board = new Board();
-      const previousPlayers = [
-        { playerId: 'player-1', x: 5, y: 5, playerName: 'Player 1' },
-      ];
+      const previousPlayers = [{ playerId: 'player-1', x: 5, y: 5, playerName: 'Player 1' }];
       const currentPlayers = [];
       const changes = {
         moved: [],
@@ -115,16 +107,10 @@ describe('Renderer Incremental Methods - Phase 3', () => {
     test('should restore correct cell content for old positions', () => {
       const board = new Board();
       // Set up a wall at position (5, 5)
-      const previousPlayers = [
-        { playerId: 'player-1', x: 5, y: 5, playerName: 'Player 1' },
-      ];
-      const currentPlayers = [
-        { playerId: 'player-1', x: 6, y: 5, playerName: 'Player 1' },
-      ];
+      const previousPlayers = [{ playerId: 'player-1', x: 5, y: 5, playerName: 'Player 1' }];
+      const currentPlayers = [{ playerId: 'player-1', x: 6, y: 5, playerName: 'Player 1' }];
       const changes = {
-        moved: [
-          { playerId: 'player-1', oldX: 5, oldY: 5, newX: 6, newY: 5 },
-        ],
+        moved: [{ playerId: 'player-1', oldX: 5, oldY: 5, newX: 6, newY: 5 }],
         joined: [],
         left: [],
       };
@@ -165,12 +151,7 @@ describe('Renderer Incremental Methods - Phase 3', () => {
         animated: [],
       };
 
-      renderer.updateEntitiesIncremental(
-        previousEntities,
-        currentEntities,
-        board,
-        changes
-      );
+      renderer.updateEntitiesIncremental(previousEntities, currentEntities, board, changes);
 
       // Should update old position (restore cell) and new position (draw entity)
       expect(writeSpy).toHaveBeenCalled();
@@ -204,12 +185,7 @@ describe('Renderer Incremental Methods - Phase 3', () => {
         animated: [],
       };
 
-      renderer.updateEntitiesIncremental(
-        previousEntities,
-        currentEntities,
-        board,
-        changes
-      );
+      renderer.updateEntitiesIncremental(previousEntities, currentEntities, board, changes);
 
       // Should draw entity at new position
       expect(writeSpy).toHaveBeenCalled();
@@ -228,12 +204,7 @@ describe('Renderer Incremental Methods - Phase 3', () => {
         animated: [],
       };
 
-      renderer.updateEntitiesIncremental(
-        previousEntities,
-        currentEntities,
-        board,
-        changes
-      );
+      renderer.updateEntitiesIncremental(previousEntities, currentEntities, board, changes);
 
       // Should clear entity position (restore cell)
       expect(writeSpy).toHaveBeenCalled();
@@ -277,12 +248,7 @@ describe('Renderer Incremental Methods - Phase 3', () => {
         ],
       };
 
-      renderer.updateEntitiesIncremental(
-        previousEntities,
-        currentEntities,
-        board,
-        changes
-      );
+      renderer.updateEntitiesIncremental(previousEntities, currentEntities, board, changes);
 
       // Should update glyph at same position
       expect(writeSpy).toHaveBeenCalled();
@@ -331,12 +297,7 @@ describe('Renderer Incremental Methods - Phase 3', () => {
         animated: [],
       };
 
-      renderer.updateEntitiesIncremental(
-        previousEntities,
-        currentEntities,
-        board,
-        changes
-      );
+      renderer.updateEntitiesIncremental(previousEntities, currentEntities, board, changes);
 
       // Should use different glyphs and colors for different entity types
       expect(writeSpy).toHaveBeenCalled();
@@ -379,4 +340,3 @@ describe('Renderer Incremental Methods - Phase 3', () => {
     });
   });
 });
-

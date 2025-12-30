@@ -5,4 +5,3 @@
 
 export { setupCollisionListener } from './collisionListener.js';
 // Future: export other listeners here
-

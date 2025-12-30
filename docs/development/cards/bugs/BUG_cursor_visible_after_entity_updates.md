@@ -5,6 +5,7 @@
 When updates for entities (other than the player's glyph) are made, the cursor is left visible at the bottom of the terminal. The cursor should be hidden after all rendering takes place.
 
 **Location**:
+
 - Entity rendering: `src/render/Renderer.js` - `updateEntitiesIncremental()` method
 - Cursor management: `src/render/Renderer.js` - `initialize()` method
 
@@ -74,7 +75,7 @@ The cursor should be hidden after all rendering operations complete, not just mo
 ```javascript
 updateEntitiesIncremental(previousEntities, currentEntities, board, changes) {
   // ... render entity changes ...
-  
+
   // Move cursor out of the way to prevent it from being visible on screen
   process.stdout.write(ansiEscapes.cursorTo(0, this.statusBarOffset + 1));
 }
@@ -85,7 +86,7 @@ updateEntitiesIncremental(previousEntities, currentEntities, board, changes) {
 ```javascript
 updateEntitiesIncremental(previousEntities, currentEntities, board, changes) {
   // ... render entity changes ...
-  
+
   // Move cursor out of the way and hide it
   process.stdout.write(ansiEscapes.cursorTo(0, this.statusBarOffset + 1));
   cliCursor.hide(); // or: process.stdout.write(ansiEscapes.cursorHide);
@@ -95,6 +96,7 @@ updateEntitiesIncremental(previousEntities, currentEntities, board, changes) {
 ### Cursor Hiding Methods Available
 
 The renderer already uses:
+
 - `cliCursor.hide()` - Used in `initialize()`
 - `ansiEscapes.cursorHide` - Also used in `initialize()`
 
@@ -131,4 +133,3 @@ Both methods are available and should be used after entity updates.
 - Fix should be straightforward - add cursor hiding after entity updates
 - Consider checking `updatePlayersIncremental()` for the same issue
 - Cursor is already hidden during initialization, just needs to be hidden after updates
-

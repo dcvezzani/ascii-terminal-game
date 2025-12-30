@@ -21,6 +21,7 @@ This gameplan implements a general-purpose scoped event system for the WebSocket
 ## Current State
 
 **Current Architecture**:
+
 - `src/server/GameServer.js` - Manages server-side game state
   - `movePlayer()` - Detects collisions but only returns `false`, no event emission
   - No event system exists
@@ -31,6 +32,7 @@ This gameplan implements a general-purpose scoped event system for the WebSocket
 - Events are handled silently (collision detected → move blocked → error sent)
 
 **Current Game Flow (Event Handling)**:
+
 1. Player attempts move → `GameServer.movePlayer()` called
 2. Collision detected → Method returns `false`
 3. `handleMoveMessage()` receives `false` → Sends `MOVE_FAILED` error to client
@@ -38,6 +40,7 @@ This gameplan implements a general-purpose scoped event system for the WebSocket
 5. State update broadcasted (periodic) → No collision information included
 
 **Problems**:
+
 - No visibility into game events (collisions, spawns, movements, etc.)
 - No way to target events to specific entities, groups, or all entities
 - Difficult to handle event-related rendering (see `BUG_player_not_rendered_after_collision.md`)
@@ -48,6 +51,7 @@ This gameplan implements a general-purpose scoped event system for the WebSocket
 ## Target State
 
 **New Architecture**:
+
 - `src/server/GameServer.js` - Enhanced with EventEmitter
   - Extends Node.js `EventEmitter`
   - Emits events when collisions, spawns, or other game events occur
@@ -63,6 +67,7 @@ This gameplan implements a general-purpose scoped event system for the WebSocket
   - Event listeners can include event info in state updates (future)
 
 **New Game Flow (Event-Driven)**:
+
 1. Player attempts move → `GameServer.movePlayer()` called
 2. Collision detected → Event emitted with scope and event data
 3. Event listeners process event → Include collision info in state update (future)
@@ -70,6 +75,7 @@ This gameplan implements a general-purpose scoped event system for the WebSocket
 5. Client receives update → Can react to collision (future: client events)
 
 **Benefits**:
+
 - Decoupled event detection and handling
 - Extensible (easy to add new event types)
 - Scoped targeting (efficient event processing)
@@ -103,6 +109,7 @@ This gameplan implements a general-purpose scoped event system for the WebSocket
   ```
 
 **Verification**:
+
 - [x] `EventEmitter` imported from `'events'` module
 - [x] Import statement is at the top of the file
 
@@ -119,6 +126,7 @@ This gameplan implements a general-purpose scoped event system for the WebSocket
   ```
 
 **Verification**:
+
 - [x] `GameServer` extends `EventEmitter`
 - [x] `super()` is called in constructor
 - [x] Existing constructor logic is preserved
@@ -134,6 +142,7 @@ This gameplan implements a general-purpose scoped event system for the WebSocket
   - `gameServer.removeAllListeners(eventType)`
 
 **Verification**:
+
 - [x] EventEmitter methods are accessible on `GameServer` instances
 - [x] Can call `emit()`, `on()`, `once()`, `off()`, `removeAllListeners()`
 - [x] No errors when using EventEmitter methods
@@ -147,6 +156,7 @@ This gameplan implements a general-purpose scoped event system for the WebSocket
 - [x] Test that events can be emitted and received
 
 **Test Cases**:
+
 - [x] `should extend EventEmitter`
 - [x] `should have EventEmitter methods available`
 - [x] `should emit events`
@@ -155,6 +165,7 @@ This gameplan implements a general-purpose scoped event system for the WebSocket
 - [x] `should support removing listeners`
 
 **Verification**:
+
 - [x] All tests pass
 - [x] Tests verify EventEmitter integration
 - [x] Tests verify no breaking changes to existing API
@@ -180,7 +191,7 @@ This gameplan implements a general-purpose scoped event system for the WebSocket
     PLAYER_COLLISION: 'playerCollision',
     WALL_COLLISION: 'wallCollision',
     ENTITY_COLLISION: 'entityCollision',
-    
+
     // Combat Events (for future use)
     SHOT: 'shot',
     DAMAGE: 'damage',
@@ -188,20 +199,20 @@ This gameplan implements a general-purpose scoped event system for the WebSocket
     DEATH: 'death',
     ATTACK: 'attack',
     DEFEND: 'defend',
-    
+
     // Alignment Events (for future use)
     ALIGNED_VERTICALLY: 'alignedVertically',
     ALIGNED_HORIZONTALLY: 'alignedHorizontally',
     FORMATION: 'formation',
     LINE_OF_SIGHT: 'lineOfSight',
-    
+
     // Entity Events (for future use)
     SPAWN: 'spawn',
     DESPAWN: 'despawn',
     MOVE: 'move',
     ANIMATE: 'animate',
     STATE_CHANGE: 'stateChange',
-    
+
     // State Events (for future use)
     PLAYER_JOINED: 'playerJoined',
     PLAYER_LEFT: 'playerLeft',
@@ -211,6 +222,7 @@ This gameplan implements a general-purpose scoped event system for the WebSocket
   ```
 
 **Verification**:
+
 - [x] `EventTypes.js` file created
 - [x] All event types defined as constants
 - [x] Constants use descriptive names
@@ -222,6 +234,7 @@ This gameplan implements a general-purpose scoped event system for the WebSocket
 - [x] Add JSDoc comments for documentation
 
 **Verification**:
+
 - [x] `EventTypes` is exported
 - [x] JSDoc comments are present
 - [x] File follows project code style
@@ -234,6 +247,7 @@ This gameplan implements a general-purpose scoped event system for the WebSocket
 - [x] Test that constants are unique
 
 **Test Cases**:
+
 - [x] `should define all collision event types`
 - [x] `should define all combat event types`
 - [x] `should define all alignment event types`
@@ -243,6 +257,7 @@ This gameplan implements a general-purpose scoped event system for the WebSocket
 - [x] `should have unique values for all constants`
 
 **Verification**:
+
 - [x] All tests pass
 - [x] Tests verify all event types are defined
 - [x] Tests verify type safety
@@ -262,6 +277,7 @@ This gameplan implements a general-purpose scoped event system for the WebSocket
   ```
 
 **Verification**:
+
 - [x] `EventTypes` imported
 - [x] Import statement is correct
 
@@ -269,6 +285,7 @@ This gameplan implements a general-purpose scoped event system for the WebSocket
 
 - [x] Find the player collision detection code in `movePlayer()` method
 - [x] Before returning `false` for player collision, emit a targeted event:
+
   ```javascript
   // Check for collision with other players
   const hasCollision = Array.from(this.players.values()).some(
@@ -280,7 +297,7 @@ This gameplan implements a general-purpose scoped event system for the WebSocket
     const otherPlayer = Array.from(this.players.values()).find(
       p => p.playerId !== playerId && p.x === newX && p.y === newY
     );
-    
+
     // Emit targeted collision event
     this.emit(EventTypes.BUMP, {
       scope: 'targeted',
@@ -293,13 +310,14 @@ This gameplan implements a general-purpose scoped event system for the WebSocket
       otherPlayerId: otherPlayer.playerId,
       timestamp: Date.now(),
     });
-    
+
     logger.debug(`Player collision for player ${playerId} at (${newX}, ${newY})`);
     return false;
   }
   ```
 
 **Verification**:
+
 - [x] Player collision event is emitted before returning `false`
 - [x] Event includes all required fields (scope, type, targetId, etc.)
 - [x] Event data is immutable (copies, not references)
@@ -323,13 +341,14 @@ This gameplan implements a general-purpose scoped event system for the WebSocket
       collisionType: 'wall',
       timestamp: Date.now(),
     });
-    
+
     logger.debug(`Wall collision for player ${playerId} at (${newX}, ${newY})`);
     return false;
   }
   ```
 
 **Verification**:
+
 - [x] Wall collision event is emitted before returning `false`
 - [x] Event includes all required fields
 - [x] Event data is immutable
@@ -344,6 +363,7 @@ This gameplan implements a general-purpose scoped event system for the WebSocket
 - [x] Verify that event emission is synchronous
 
 **Verification**:
+
 - [x] Existing collision handling logic works correctly
 - [x] Event emission doesn't affect return values
 - [x] Event emission is non-blocking
@@ -359,6 +379,7 @@ This gameplan implements a general-purpose scoped event system for the WebSocket
 - [x] Test that event emission doesn't break move logic
 
 **Test Cases**:
+
 - [x] `should emit player collision event when player collides with another player`
 - [x] `should emit wall collision event when player collides with wall`
 - [x] `should include correct event data in player collision event`
@@ -369,6 +390,7 @@ This gameplan implements a general-purpose scoped event system for the WebSocket
 - [x] `should not block move operation`
 
 **Verification**:
+
 - [x] All tests pass
 - [x] Tests verify event emission
 - [x] Tests verify event data structure
@@ -386,6 +408,7 @@ This gameplan implements a general-purpose scoped event system for the WebSocket
 - [x] Create `src/server/listeners/index.js` for exporting all listeners
 
 **Verification**:
+
 - [x] `listeners/` directory exists
 - [x] `index.js` file created
 
@@ -393,6 +416,7 @@ This gameplan implements a general-purpose scoped event system for the WebSocket
 
 - [x] Create `src/server/listeners/collisionListener.js`
 - [ ] Implement collision event listener:
+
   ```javascript
   import { EventTypes } from '../EventTypes.js';
   import { logger } from '../../utils/logger.js';
@@ -403,11 +427,13 @@ This gameplan implements a general-purpose scoped event system for the WebSocket
    */
   export function setupCollisionListener(gameServer) {
     // Listen for all collision events
-    gameServer.on(EventTypes.BUMP, (eventData) => {
+    gameServer.on(EventTypes.BUMP, eventData => {
       try {
         // Log collision event
-        logger.debug(`Collision event: ${eventData.type} for player ${eventData.playerId} at (${eventData.attemptedPosition.x}, ${eventData.attemptedPosition.y})`);
-        
+        logger.debug(
+          `Collision event: ${eventData.type} for player ${eventData.playerId} at (${eventData.attemptedPosition.x}, ${eventData.attemptedPosition.y})`
+        );
+
         // Future: Include collision info in state updates
         // Future: Trigger special rendering logic
         // Future: Play collision sound effects
@@ -419,6 +445,7 @@ This gameplan implements a general-purpose scoped event system for the WebSocket
   ```
 
 **Verification**:
+
 - [x] `collisionListener.js` file created
 - [x] Listener function is exported
 - [x] Listener handles collision events
@@ -435,6 +462,7 @@ This gameplan implements a general-purpose scoped event system for the WebSocket
   ```
 
 **Verification**:
+
 - [x] All listeners are exported
 - [x] Exports are named exports
 - [x] File follows project code style
@@ -447,6 +475,7 @@ This gameplan implements a general-purpose scoped event system for the WebSocket
 - [x] Test that listener handles errors gracefully
 
 **Test Cases**:
+
 - [x] `should set up collision listener`
 - [x] `should receive player collision events`
 - [x] `should receive wall collision events`
@@ -454,6 +483,7 @@ This gameplan implements a general-purpose scoped event system for the WebSocket
 - [x] `should handle errors gracefully`
 
 **Verification**:
+
 - [x] All tests pass
 - [x] Tests verify listener setup
 - [x] Tests verify event handling
@@ -474,6 +504,7 @@ This gameplan implements a general-purpose scoped event system for the WebSocket
   ```
 
 **Verification**:
+
 - [x] Listeners imported
 - [x] Import statement is correct
 
@@ -481,10 +512,11 @@ This gameplan implements a general-purpose scoped event system for the WebSocket
 
 - [x] Find server initialization code (where `gameServer` is created)
 - [x] Register event listeners after `gameServer` is created:
+
   ```javascript
   // Create game server instance
   const gameServer = new GameServer();
-  
+
   // Set up event listeners
   setupCollisionListener(gameServer);
   // Future: setupCombatListener(gameServer);
@@ -492,6 +524,7 @@ This gameplan implements a general-purpose scoped event system for the WebSocket
   ```
 
 **Verification**:
+
 - [x] Event listeners are registered during server initialization
 - [x] Listeners are registered after `gameServer` is created
 - [x] All listeners are registered
@@ -504,6 +537,7 @@ This gameplan implements a general-purpose scoped event system for the WebSocket
 - [x] Verify that multiple listeners can be registered
 
 **Verification**:
+
 - [x] Collision events trigger listeners
 - [x] Listeners log events
 - [x] Multiple listeners work correctly
@@ -516,6 +550,7 @@ This gameplan implements a general-purpose scoped event system for the WebSocket
 - [x] Test that listeners process events correctly
 
 **Test Cases**:
+
 - [x] `should emit and receive collision events`
 - [x] `should trigger listeners when events are emitted`
 - [x] `should process events in correct order`
@@ -523,6 +558,7 @@ This gameplan implements a general-purpose scoped event system for the WebSocket
 - [x] `should not crash on listener errors`
 
 **Verification**:
+
 - [x] All tests pass
 - [x] Tests verify end-to-end event flow
 - [x] Tests verify listener processing
@@ -541,11 +577,13 @@ This gameplan implements a general-purpose scoped event system for the WebSocket
 - [x] Ensure test coverage is adequate
 
 **Verification**:
+
 - [x] All unit tests pass (108 tests passing across 10 test files)
 - [x] Test coverage is adequate for implemented features
 - [x] Tests are well-structured
 
 **Existing Test Files**:
+
 - ✅ `test/server/GameServer.eventEmitter.test.js` - EventEmitter integration (9 tests)
 - ✅ `test/server/EventTypes.test.js` - Event type constants (25 tests)
 - ✅ `test/server/GameServer.collisionEvents.test.js` - Collision event emission (9 tests)
@@ -560,6 +598,7 @@ This gameplan implements a general-purpose scoped event system for the WebSocket
 - [x] Test error handling in listeners (covered in collisionListener.test.js and eventSystem.test.js)
 
 **Test Cases**:
+
 - [x] `should support global events` - **CREATED** (GameServer.eventScoping.test.js)
 - [x] `should support group events` - **CREATED** (GameServer.eventScoping.test.js)
 - [x] `should support targeted events` - **CREATED** (GameServer.eventScoping.test.js)
@@ -568,12 +607,14 @@ This gameplan implements a general-purpose scoped event system for the WebSocket
 - [x] `should handle listener errors gracefully` - **COVERED** (in collisionListener.test.js and eventSystem.test.js)
 
 **Verification**:
+
 - [x] All additional tests pass (25 tests passing)
 - [x] Tests verify event scoping (10 tests)
 - [x] Tests verify data immutability (8 tests)
 - [x] Tests verify performance (7 tests)
 
 **Test Files Created**:
+
 - ✅ `test/server/GameServer.eventScoping.test.js` - Tests all three event scopes (10 tests)
 - ✅ `test/server/GameServer.eventDataImmutability.test.js` - Verifies event data is immutable (8 tests)
 - ✅ `test/server/GameServer.eventPerformance.test.js` - Verifies event emission performance (7 tests)
@@ -586,18 +627,21 @@ This gameplan implements a general-purpose scoped event system for the WebSocket
 - [x] Test event system isolation (server-only) - **CREATED** (websocket-event-system.test.js)
 
 **Test Cases**:
+
 - [x] `should emit collision events in multiplayer game` - **CREATED** (websocket-event-system.test.js)
 - [x] `should trigger listeners when collisions occur` - **COVERED** (eventSystem.test.js)
 - [x] `should not affect client event system` - **CREATED** (websocket-event-system.test.js)
 - [x] `should handle concurrent events` - **CREATED** (websocket-event-system.test.js)
 
 **Verification**:
+
 - [x] All integration tests pass (5/5 in eventSystem.test.js)
 - [x] Tests verify real-world scenarios (basic scenarios covered)
 - [x] Tests verify event system isolation - **CREATED** (websocket-event-system.test.js)
 - [x] Tests verify concurrent event handling - **CREATED** (websocket-event-system.test.js)
 
 **Test File Created**:
+
 - ✅ `test/integration/websocket-event-system.test.js` - Tests event system with WebSocket server and multiple clients (4 tests)
 
 ### Step 6.4: Manual Testing
@@ -609,6 +653,7 @@ This gameplan implements a general-purpose scoped event system for the WebSocket
 - [ ] Verify event system doesn't break existing functionality - **PENDING MANUAL TEST**
 
 **Manual Test Checklist**:
+
 - [ ] Server starts without errors
 - [ ] Multiple clients can connect
 - [ ] Player collisions trigger events
@@ -618,6 +663,7 @@ This gameplan implements a general-purpose scoped event system for the WebSocket
 - [ ] No performance degradation
 
 **Verification**:
+
 - [ ] All manual tests pass
 - [ ] Event system works in real scenarios
 - [ ] No regressions introduced
@@ -628,6 +674,7 @@ This gameplan implements a general-purpose scoped event system for the WebSocket
 ### Phase 6 Summary
 
 **Completed**:
+
 - ✅ Step 6.1: All existing tests reviewed (108 tests passing)
 - ✅ Basic integration tests created (eventSystem.test.js)
 - ✅ Error handling tests in listeners
@@ -657,6 +704,7 @@ This gameplan implements a general-purpose scoped event system for the WebSocket
    - ✅ Test event system with multiple connected clients
 
 **Manual Testing** (Pending):
+
 - Start WebSocket server and verify it starts without errors
 - Connect multiple clients and verify they can connect
 - Trigger player-to-player collisions and verify events are logged
@@ -696,4 +744,3 @@ This gameplan implements a general-purpose scoped event system for the WebSocket
 - **BUG_player_not_rendered_after_collision** - Event system will enable collision information in state updates
 - **FEATURE_websocket_integration** - Event system integrates with WebSocket message flow
 - **FEATURE_incremental_rendering** - Events can trigger special rendering logic
-

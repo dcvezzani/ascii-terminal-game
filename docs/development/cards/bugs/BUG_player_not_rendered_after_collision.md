@@ -5,12 +5,14 @@
 After Player B collides with Player A in Player B's terminal window, Player A isn't rendered again until Player A moves in Player A's terminal window. All players should be displayed after collision events, even if they are not moved.
 
 **Verified Behavior**:
+
 - When a player attempts to walk through/past another player, the server correctly detects the collision
 - The server resets the player's position to honor the collision (server-side collision detection works correctly)
 - However, the client-side rendering doesn't show the other player after the collision is corrected
 - The other player disappears from the colliding player's terminal until they move
 
 **Location**:
+
 - Incremental rendering: `src/index.js` - `wsClient.onStateUpdate()` callback
 - Player rendering: `src/render/Renderer.js` - `updatePlayersIncremental()` method
 - State comparison: `src/utils/stateComparison.js` - `compareStates()` function
@@ -67,11 +69,13 @@ if (
 ```
 
 The `compareStates()` function only detects players that have:
+
 - **moved**: Position changed
 - **joined**: New player added
 - **left**: Player disconnected
 
 If a player's position hasn't changed, they won't be in any of these arrays, so they won't be rendered. This is a problem when:
+
 - A collision occurs and a player's position is prevented from changing
 - A player is stationary but should still be visible
 - The previous render may have cleared the player's position (e.g., during collision handling)
@@ -115,21 +119,25 @@ All players should be displayed after collision events, even if they are not mov
 ### Implementation Options
 
 **Option 1: Always Render All Players After Changes**
+
 - If any player changes occur (moved/joined/left), render all players
 - Ensures all players are visible after collisions
 - Simple but may be less efficient
 
 **Option 2: Track Rendered Players**
+
 - Keep track of which players were rendered in the last update
 - Re-render players that weren't rendered in the last update
 - More complex but more efficient
 
 **Option 3: Render All Players Periodically**
+
 - Always render all players every N updates
 - Ensures visibility but may cause flickering
 - Not ideal for performance
 
 **Option 4: Render All Players When Changes Detected**
+
 - When any player changes are detected, render all players
 - Ensures visibility after collisions
 - Good balance between correctness and performance
@@ -180,7 +188,7 @@ if (
     boardAdapter,
     otherPlayerChanges
   );
-  
+
   // Also render all players to ensure visibility
   for (const player of otherPlayers) {
     const playerColorFn = renderer.getColorFunction(PLAYER_CHAR.color);
@@ -195,7 +203,7 @@ Or modify `updatePlayersIncremental()` to always render all players:
 updatePlayersIncremental(previousPlayers, currentPlayers, board, changes) {
   // Handle changes first
   // ... existing code for moved/joined/left ...
-  
+
   // Then ensure all current players are rendered
   for (const player of currentPlayers) {
     const playerColorFn = this.getColorFunction(PLAYER_CHAR.color);
@@ -235,4 +243,3 @@ updatePlayersIncremental(previousPlayers, currentPlayers, board, changes) {
 - Fix should ensure all visible players are rendered, not just changed ones
 - Consider performance impact of rendering all players vs. only changed players
 - May need to optimize to avoid unnecessary re-renders while ensuring visibility
-

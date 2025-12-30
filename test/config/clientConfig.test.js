@@ -26,4 +26,3 @@ describe('Client Configuration - Phase 1.1', () => {
     });
   });
 });
-

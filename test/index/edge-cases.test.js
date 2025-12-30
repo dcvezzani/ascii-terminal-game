@@ -260,7 +260,8 @@ describe('Phase 4: Edge Cases - Client-Side Prediction', () => {
       localPlayerPredictedPosition = { x: null, y: null };
 
       // Attempt to use predicted position (should not crash)
-      const canMove = localPlayerPredictedPosition.x !== null && localPlayerPredictedPosition.y !== null;
+      const canMove =
+        localPlayerPredictedPosition.x !== null && localPlayerPredictedPosition.y !== null;
       expect(canMove).toBe(false);
 
       // Should not attempt movement with null position
@@ -312,10 +313,7 @@ describe('Phase 4: Edge Cases - Client-Side Prediction', () => {
       ];
 
       moves.forEach(move => {
-        if (
-          localPlayerPredictedPosition.x !== null &&
-          localPlayerPredictedPosition.y !== null
-        ) {
+        if (localPlayerPredictedPosition.x !== null && localPlayerPredictedPosition.y !== null) {
           const newX = localPlayerPredictedPosition.x + move.dx;
           const newY = localPlayerPredictedPosition.y + move.dy;
 
@@ -396,4 +394,3 @@ describe('Phase 4: Edge Cases - Client-Side Prediction', () => {
     });
   });
 });
-

@@ -212,6 +212,7 @@ This specification details the implementation of incremental/differential render
 **Details**:
 
 **Human Players**:
+
 - For moved players:
   - Clear old position (restore cell content from board)
   - Draw player at new position
@@ -221,6 +222,7 @@ This specification details the implementation of incremental/differential render
   - Clear player position (restore cell content from board)
 
 **AI-Controlled Entities**:
+
 - Entities are separate from human players and can move or be animated
 - For moved entities:
   - Clear old position (restore cell content from board)
@@ -234,6 +236,7 @@ This specification details the implementation of incremental/differential render
   - May change visual representation without changing position
 
 **Common Behavior**:
+
 - Use existing `updateCell()` method for individual cell updates
 - Handle multiple players/entities at same position (if applicable)
 - Distinguish between players and entities in rendering (different glyphs/colors)
@@ -542,6 +545,7 @@ src/
 **Recommendation**: Option E - Prioritize players over entities, show one at a time for simplicity.
 
 **Answer**: **Option D** - Prevent multiple entities at same position (server-side validation)
+
 - In some cases, the two should not be allowed to overlap
 - In other cases, entities should overlap another tile
 
@@ -750,4 +754,3 @@ src/
 5. ✅ Performance is significantly improved (reduced terminal I/O)
 6. ✅ All existing functionality remains intact
 7. ✅ Code is well-tested and maintainable
-

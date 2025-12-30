@@ -2,7 +2,6 @@ import { describe, test, expect } from 'vitest';
 import WebSocket from 'ws';
 
 describe('Action Validation', () => {
-
   test('should reject MOVE with invalid dx/dy values (out of range)', async () => {
     return new Promise((resolve, reject) => {
       const ws = new WebSocket('ws://localhost:3000');

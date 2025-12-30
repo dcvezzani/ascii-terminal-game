@@ -136,29 +136,34 @@ Implement incremental/differential rendering for multiplayer mode:
 ## Implementation Approach
 
 ### Phase 1: State Tracking
+
 - Add `previousState` variable in `runNetworkedMode()` in `src/index.js`
 - Store previous game state after each render
 - Initialize `previousState = null` for first render
 
 ### Phase 2: State Comparison Utilities
+
 - Create helper functions to compare states:
   - `comparePlayers(prev, curr)` - Returns array of player changes (moved, joined, left)
   - `compareBoard(prev, curr)` - Returns array of changed cells (if board is mutable)
   - `compareScore(prev, curr)` - Returns boolean if score changed
 
 ### Phase 3: Incremental Renderer Methods
+
 - Add to `Renderer` class:
   - `updatePlayersIncremental(previousPlayers, currentPlayers, board)` - Handle player position updates
   - `updateStatusBarIfChanged(score, x, y, previousScore, previousX, previousY)` - Conditional status bar update
   - `updateBoardCell(x, y, cell)` - Update single cell (may already exist)
 
 ### Phase 4: Integration
+
 - Modify `wsClient.onStateUpdate()` in `src/index.js`:
   - Check if `previousState === null` → use `renderFull()` (first render)
   - Otherwise → use incremental updates
   - Update `previousState` after rendering
 
 ### Phase 5: Testing and Refinement
+
 - Test with multiple players moving simultaneously
 - Test player joins/leaves
 - Test edge cases (rapid state changes, state mismatches)
@@ -169,6 +174,7 @@ Implement incremental/differential rendering for multiplayer mode:
 ### State Structure
 
 Current state structure from server:
+
 ```javascript
 {
   board: {
@@ -193,14 +199,14 @@ Current state structure from server:
 ```javascript
 function getPlayerChanges(previousPlayers, currentPlayers) {
   const changes = {
-    moved: [],      // { playerId, oldX, oldY, newX, newY }
-    joined: [],     // { playerId, x, y }
-    left: []        // { playerId, x, y }
+    moved: [], // { playerId, oldX, oldY, newX, newY }
+    joined: [], // { playerId, x, y }
+    left: [], // { playerId, x, y }
   };
-  
+
   // Compare previous and current players
   // Identify moves, joins, and leaves
-  
+
   return changes;
 }
 ```
@@ -286,4 +292,3 @@ function getPlayerChanges(previousPlayers, currentPlayers) {
 5. ✅ Performance is significantly improved (reduced terminal I/O)
 6. ✅ All existing functionality remains intact
 7. ✅ Code is well-tested and maintainable
-

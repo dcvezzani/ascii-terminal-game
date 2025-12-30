@@ -47,7 +47,7 @@ export class InputHandler {
     });
 
     // Also handle 'data' events to drain any buffered data immediately
-    process.stdin.on('data', (chunk) => {
+    process.stdin.on('data', chunk => {
       // Data is already handled by keypress events
       // This listener just ensures we don't accumulate buffered data
       // The keypress handler will process it
@@ -90,7 +90,7 @@ export class InputHandler {
     if (!process.stdin.isTTY || !process.stdin.readable) {
       return;
     }
-    
+
     // Drain any buffered data from stdin synchronously
     // This immediately clears any pending input
     try {

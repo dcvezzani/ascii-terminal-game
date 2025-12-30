@@ -123,9 +123,7 @@ describe('GameServer Collision Event Emission', () => {
       // If move is blocked, check if it's a wall collision
       if (!moved) {
         // Check if we got a wall collision event
-        const wallCollisionEvent = receivedEvents.find(
-          e => e.type === EventTypes.WALL_COLLISION
-        );
+        const wallCollisionEvent = receivedEvents.find(e => e.type === EventTypes.WALL_COLLISION);
 
         if (wallCollisionEvent) {
           expect(wallCollisionEvent.scope).toBe('targeted');
@@ -220,4 +218,3 @@ describe('GameServer Collision Event Emission', () => {
     });
   });
 });
-

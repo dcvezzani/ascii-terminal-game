@@ -326,4 +326,3 @@ describe('WebSocket Event System Integration', () => {
     }, 10000);
   });
 });
-

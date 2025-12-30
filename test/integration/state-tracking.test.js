@@ -31,15 +31,15 @@ describe('State Tracking - Phase 1', () => {
     };
 
     mockWsClient = {
-      onConnect: vi.fn((callback) => {
+      onConnect: vi.fn(callback => {
         // Store callback for testing
         if (callback) callback();
       }),
-      onStateUpdate: vi.fn((callback) => {
+      onStateUpdate: vi.fn(callback => {
         // Store callback for testing
         stateUpdateCallback = callback;
       }),
-      onPlayerJoined: vi.fn((callback) => {
+      onPlayerJoined: vi.fn(callback => {
         // Store callback for testing
       }),
       onError: vi.fn(),
@@ -179,11 +179,7 @@ describe('State Tracking - Phase 1', () => {
         previousState = JSON.parse(JSON.stringify(gameState));
       }
 
-      expect(mockRenderer.renderFull).toHaveBeenCalledWith(
-        mockGame,
-        gameState,
-        localPlayerId
-      );
+      expect(mockRenderer.renderFull).toHaveBeenCalledWith(mockGame, gameState, localPlayerId);
       expect(previousState).not.toBeNull();
     });
 
@@ -290,4 +286,3 @@ describe('State Tracking - Phase 1', () => {
     });
   });
 });
-
