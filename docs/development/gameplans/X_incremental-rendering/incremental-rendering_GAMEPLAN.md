@@ -324,6 +324,7 @@ Based on specification answers:
 
 - [x] Locate `wsClient.onStateUpdate()` callback in `runNetworkedMode()`
 - [x] Add logic to check `previousState`:
+
   ```javascript
   wsClient.onStateUpdate(gameState => {
     currentState = gameState;

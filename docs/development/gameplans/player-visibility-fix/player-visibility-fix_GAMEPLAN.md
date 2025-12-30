@@ -115,6 +115,7 @@ This gameplan implements fixes for two related bugs:
 
 - [x] In `handleMessage()` method, find the `MessageTypes.CONNECT` case
 - [x] Add call to `onConnectResponse` callback with payload:
+
   ```javascript
   case MessageTypes.CONNECT:
     this.clientId = payload.clientId;
@@ -187,6 +188,7 @@ This gameplan implements fixes for two related bugs:
 - [x] Open `src/index.js`
 - [x] In `runNetworkedMode()`, find where `wsClient.onConnect()` is set up
 - [x] Add `wsClient.onConnectResponse()` callback after `wsClient.onConnect()`:
+
   ```javascript
   wsClient.onConnectResponse(payload => {
     // Extract playerId from CONNECT response if available
@@ -244,6 +246,7 @@ This gameplan implements fixes for two related bugs:
 
 - [x] Open `src/index.js`
 - [x] In `runNetworkedMode()`, create reusable function before `wsClient.onConnect()`:
+
   ```javascript
   // Function to process queued state update
   function processQueuedStateUpdate(gameState) {
@@ -282,6 +285,7 @@ This gameplan implements fixes for two related bugs:
 ### Step 3.2: Update onConnectResponse to Use Function
 
 - [x] Update `wsClient.onConnectResponse()` callback to use `processQueuedStateUpdate()`:
+
   ```javascript
   wsClient.onConnectResponse(payload => {
     if (payload && payload.playerId) {
@@ -305,6 +309,7 @@ This gameplan implements fixes for two related bugs:
 ### Step 3.3: Update onPlayerJoined to Use Function
 
 - [x] Update `wsClient.onPlayerJoined()` callback to use `processQueuedStateUpdate()`:
+
   ```javascript
   wsClient.onPlayerJoined(payload => {
     if (payload.clientId === wsClient.getClientId()) {

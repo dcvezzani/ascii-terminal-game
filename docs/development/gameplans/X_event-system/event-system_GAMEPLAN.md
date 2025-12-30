@@ -180,6 +180,7 @@ This gameplan implements a general-purpose scoped event system for the WebSocket
 
 - [x] Create `src/server/EventTypes.js`
 - [ ] Define event type constants as an object:
+
   ```javascript
   /**
    * Event Type Constants
@@ -328,6 +329,7 @@ This gameplan implements a general-purpose scoped event system for the WebSocket
 
 - [x] Find the wall collision detection code in `movePlayer()` method
 - [x] Before returning `false` for wall collision, emit a targeted event:
+
   ```javascript
   if (this.game.board.isWall(newX, newY)) {
     // Emit targeted collision event

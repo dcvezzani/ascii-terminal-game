@@ -133,6 +133,7 @@ This gameplan implements client-side prediction for the local player to provide 
   2. Render player at predicted position using `renderer.updateCell()`
   3. Still send MOVE message to server
 - [ ] Example for `onMoveUp`:
+
   ```javascript
   onMoveUp: () => {
     if (showingHelp) {
@@ -273,6 +274,7 @@ This gameplan implements client-side prediction for the local player to provide 
 ### Step 3.1: Implement Reconciliation Function
 
 - [x] Create `reconcileWithServer()` function in `runNetworkedMode()`:
+
   ```javascript
   function reconcileWithServer(gameState) {
     if (!localPlayerId || localPlayerPredictedPosition.x === null) {
@@ -348,6 +350,7 @@ This gameplan implements client-side prediction for the local player to provide 
 ### Step 3.2: Set Up Reconciliation Timer
 
 - [x] In `runNetworkedMode()`, set up reconciliation timer:
+
   ```javascript
   function startReconciliationTimer() {
     if (reconciliationTimer) {
@@ -362,6 +365,7 @@ This gameplan implements client-side prediction for the local player to provide 
     }, interval);
   }
   ```
+
 - [ ] Call `startReconciliationTimer()` after first state update (when `localPlayerId` is set)
 - [ ] Clear timer in cleanup/disconnect handler
 
