@@ -114,7 +114,7 @@ Both methods are available and should be used after entity updates.
 
 ## Status
 
-**Status**: 📋 NOT STARTED
+**Status**: ✅ COMPLETE
 
 **Priority**: LOW-MEDIUM
 
@@ -123,6 +123,10 @@ Both methods are available and should be used after entity updates.
 - Easy to fix (one line of code)
 - Should be fixed before release
 - May also affect player updates (should check `updatePlayersIncremental()`)
+
+**Completed**: 2025-12-29
+- Cursor hiding added after entity updates
+- Fix verified and working correctly
 
 ## Notes
 
