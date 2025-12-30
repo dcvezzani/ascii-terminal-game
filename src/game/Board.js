@@ -13,6 +13,33 @@ export class Board {
   }
 
   /**
+   * Create a Board instance from serialized board data (from server)
+   * @param {Object} boardData - Serialized board data { width, height, grid }
+   * @param {number} boardData.width - Board width
+   * @param {number} boardData.height - Board height
+   * @param {string[][]} boardData.grid - 2D array of base character strings
+   * @returns {Board} Board instance with reconstructed grid
+   */
+  static fromSerialized(boardData) {
+    const board = Object.create(Board.prototype);
+    board.width = boardData.width;
+    board.height = boardData.height;
+
+    // Reconstruct grid from serialized character data
+    board.grid = [];
+    for (let y = 0; y < boardData.height; y++) {
+      const row = [];
+      for (let x = 0; x < boardData.width; x++) {
+        const baseChar = boardData.grid[y][x];
+        row.push(new Cell(baseChar));
+      }
+      board.grid.push(row);
+    }
+
+    return board;
+  }
+
+  /**
    * Initialize the grid with outer walls and empty interior
    * Each cell is a Cell object with a queue
    * @returns {Cell[][]} 2D array of Cell objects
