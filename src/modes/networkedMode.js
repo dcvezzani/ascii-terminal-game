@@ -57,8 +57,10 @@ export async function runNetworkedMode() {
     // Set up WebSocket callbacks
     wsClient.onConnect(() => {
       clientLogger.info('Connected to server');
-      // Send CONNECT message to join game
-      wsClient.sendConnect();
+      // Only send CONNECT if not reconnecting (reconnection will send it with playerId)
+      if (!wsClient.reconnecting) {
+        wsClient.sendConnect();
+      }
     });
 
     // Phase 3: Server Reconciliation - Reconciliation function
@@ -468,6 +470,27 @@ export async function runNetworkedMode() {
       running = false;
       if (game) {
         game.stop();
+      }
+    });
+
+    wsClient.onServerRestart(() => {
+      clientLogger.info('Server restarted - resetting client state');
+      // Reset state like pressing 'r' key
+      previousState = null;
+      localPlayerPredictedPosition = { x: null, y: null };
+      lastReconciliationTime = Date.now();
+      localPlayerId = null; // Will be set when new PLAYER_JOINED arrives
+      queuedStateUpdate = null;
+      
+      // Clear reconciliation timer
+      if (reconciliationTimer) {
+        clearInterval(reconciliationTimer);
+        reconciliationTimer = null;
+      }
+      
+      // Clear help screen if showing
+      if (showingHelp) {
+        showingHelp = false;
       }
     });
 

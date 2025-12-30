@@ -177,6 +177,20 @@ export class ConnectionManager {
   }
 
   /**
+   * Get player ID for a connection
+   * @param {string} clientId - Client ID
+   * @returns {string | null} - Player ID or null if not found or not set
+   */
+  getPlayerId(clientId) {
+    const connection = this.getConnection(clientId);
+    if (!connection) {
+      return null;
+    }
+
+    return connection.playerId || null;
+  }
+
+  /**
    * Set player name for a connection
    * @param {string} clientId - Client ID
    * @param {string} playerName - Player name

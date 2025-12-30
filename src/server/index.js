@@ -399,6 +399,28 @@ function handleConnectMessage(ws, clientId, payload) {
     // console.log("handleConnectMessage payload", JSON.stringify(payload));
     const existingPlayerId = payload.playerId;
     const isReconnection = existingPlayerId && gameServer.hasRecentPlayer(existingPlayerId);
+    
+    // Check if this clientId already has a player assigned (prevent duplicate CONNECT messages)
+    const existingClientPlayerId = connectionManager.getPlayerId(clientId);
+    if (existingClientPlayerId && !isReconnection) {
+      // Client already has a player - this is a duplicate CONNECT, just return existing player info
+      logger.info(
+        `Duplicate CONNECT from client ${clientId}, returning existing player ${existingClientPlayerId}`
+      );
+      const existingPlayer = gameServer.getPlayer(existingClientPlayerId);
+      if (existingPlayer) {
+        const connectResponse = createMessage(MessageTypes.CONNECT, {
+          clientId,
+          playerId: existingClientPlayerId,
+          playerName: existingPlayer.playerName,
+          gameState: gameServer.getGameState(),
+          isReconnection: true, // Treat as reconnection since player already exists
+        });
+        sendMessage(ws, connectResponse);
+        return;
+      }
+    }
+    
     logger.info(
       `CONNECT message from client ${clientId}: existingPlayerId=${existingPlayerId}, isReconnection=${isReconnection}`
     );
