@@ -1,5 +1,6 @@
 import { describe, test, expect } from 'vitest';
 import { Board } from '../../src/game/Board.js';
+import { Cell } from '../../src/game/Cell.js';
 import { WALL_CHAR, EMPTY_SPACE_CHAR } from '../../src/constants/gameConstants.js';
 import { gameConfig } from '../../src/config/gameConfig.js';
 
@@ -304,6 +305,95 @@ describe('Board', () => {
       const { width, height } = gameConfig.board;
       expect(board.isValidPosition(Math.floor(width / 2), height + 1)).toBe(false);
       expect(board.isValidPosition(Math.floor(width / 2), height + 5)).toBe(false);
+    });
+  });
+
+  describe('fromSerialized', () => {
+    test('should create Board from serialized data', () => {
+      const boardData = {
+        width: 20,
+        height: 20,
+        grid: [
+          ['#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#'],
+          ['#', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', '#'],
+          ['#', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', '#'],
+          ['#', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', '#'],
+          ['#', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', '#'],
+          ['#', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', '#'],
+          ['#', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', '#'],
+          ['#', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', '#'],
+          ['#', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', '#'],
+          ['#', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', '#'],
+          ['#', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', '#'],
+          ['#', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', '#'],
+          ['#', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', '#'],
+          ['#', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', '#'],
+          ['#', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', '#'],
+          ['#', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', '#'],
+          ['#', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', '#'],
+          ['#', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', '#'],
+          ['#', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', '#'],
+          ['#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#'],
+        ],
+      };
+      const board = Board.fromSerialized(boardData);
+      expect(board.width).toBe(20);
+      expect(board.height).toBe(20);
+      expect(board.grid.length).toBe(20);
+      expect(board.grid[0].length).toBe(20);
+    });
+
+    test('should create Cell objects in grid', () => {
+      const boardData = {
+        width: 5,
+        height: 5,
+        grid: [
+          ['#', '#', '#', '#', '#'],
+          ['#', ' ', ' ', ' ', '#'],
+          ['#', ' ', ' ', ' ', '#'],
+          ['#', ' ', ' ', ' ', '#'],
+          ['#', '#', '#', '#', '#'],
+        ],
+      };
+      const board = Board.fromSerialized(boardData);
+      const cell = board.getCell(1, 1);
+      expect(cell).toBeInstanceOf(Cell);
+      expect(cell.getBaseChar()).toBe(' ');
+    });
+
+    test('should handle wall characters correctly', () => {
+      const boardData = {
+        width: 3,
+        height: 3,
+        grid: [
+          ['#', '#', '#'],
+          ['#', ' ', '#'],
+          ['#', '#', '#'],
+        ],
+      };
+      const board = Board.fromSerialized(boardData);
+      expect(board.isWall(0, 0)).toBe(true);
+      expect(board.isWall(1, 1)).toBe(false);
+    });
+
+    test('should return correct display information', () => {
+      const boardData = {
+        width: 3,
+        height: 3,
+        grid: [
+          ['#', '#', '#'],
+          ['#', ' ', '#'],
+          ['#', '#', '#'],
+        ],
+      };
+      const board = Board.fromSerialized(boardData);
+      const wallDisplay = board.getDisplay(0, 0);
+      expect(wallDisplay.char).toBe(WALL_CHAR.char);
+      expect(wallDisplay.color).toBe(WALL_CHAR.color);
+
+      const emptyDisplay = board.getDisplay(1, 1);
+      expect(emptyDisplay.char).toBe(EMPTY_SPACE_CHAR.char);
+      expect(emptyDisplay.color).toBe(EMPTY_SPACE_CHAR.color);
     });
   });
 });
