@@ -108,26 +108,40 @@ const inputHandler = new InputHandler({
 ```javascript
 {
   title: "Game Over",
-  message: "You have been defeated!\n\nWhat would you like to do?",
-  options: [
+  content: [
     {
+      type: 'message',
+      text: "You have been defeated!"
+    },
+    {
+      type: 'message',
+      text: "\nWhat would you like to do?"
+    },
+    {
+      type: 'option',
       label: "Restart Game",
       action: () => { /* restart game */ },
-      selected: false
+      autoClose: true
     },
     {
+      type: 'option',
       label: "Return to Menu",
       action: () => { /* return to menu */ },
-      selected: false
+      autoClose: true
     },
     {
+      type: 'option',
       label: "Quit",
       action: () => { /* quit game */ },
-      selected: false
+      autoClose: true
     }
   ],
-  selectedIndex: 0, // Currently selected option
-  onClose: () => { /* close modal */ }
+  selectedIndex: 0, // Currently selected option (index of option blocks only)
+  scrollPosition: 0, // Scroll position for all content
+  config: {
+    closeKey: ['x'],  // Optional additional close keys
+    useActionReturnValue: false
+  }
 }
 ```
 
@@ -138,12 +152,17 @@ const inputHandler = new InputHandler({
 ┌─────────────────────────────────┐
 │  Title                          │
 │                                 │
-│  Message line 1                 │
-│  Message line 2                 │
+│  Message block 1                │
+│  (can be anywhere)              │
 │                                 │
-│  > Option 1                     │
+│  > Option 1 (selected)           │
 │    Option 2                     │
+│                                 │
+│  Message block 2                │
+│  (intermixed with options)      │
+│                                 │
 │    Option 3                     │
+│  (all content scrolls together) │
 │                                 │
 └─────────────────────────────────┘
 ```
@@ -152,8 +171,8 @@ const inputHandler = new InputHandler({
 - Border around modal using ASCII box-drawing characters (┌─┐│└─┘)
 - Background with dimmed/obscured game board behind modal
 - Title at top
-- Message content in middle (supports scrolling if content is longer than viewport)
-- Options list at bottom
+- Content area: flexible composition of message and option blocks
+- All content scrolls together (entire content area, not just messages)
 - Selected option highlighted with `>` prefix AND background highlight
 - Modal dimensions: fixed percentages relative to terminal size
 
@@ -189,9 +208,10 @@ const inputHandler = new InputHandler({
    - Create `src/ui/ModalManager.js` - ModalManager class (manages modal state and stacking)
 
 2. **Create Modal Class** (`src/ui/Modal.js`)
-   - Define modal structure (title, message, options, actions) - fully configurable, no special types
-   - Implement option selection logic (up/down navigation, vertical only)
-   - Implement vertical scrolling for long content (using movement keys, no horizontal scrolling)
+   - Define modal structure (title, flexible content blocks) - fully configurable, no special types
+   - Content blocks can be messages or options, intermixed in any order
+   - Implement option selection logic (up/down navigation, vertical only, skips message blocks)
+   - Implement vertical scrolling for all content (entire content area scrolls together, no horizontal scrolling)
    - Support action return values (with config flag) and explicit close method
    - Support async actions with loading state
    - Action execution: configurable per action (closes by default)
@@ -212,8 +232,10 @@ const inputHandler = new InputHandler({
    - Render modal border using ASCII box-drawing characters (┌─┐│└─┘)
    - Render background color with dimmed/obscured game board
    - Render shadow effect for visual depth
-   - Render title and message content (with vertical scrolling support, no horizontal scrolling)
-   - Render options list with `>` prefix, background highlight, AND different text color for selected option
+   - Render title and flexible content blocks (messages and options intermixed)
+   - Render all content with vertical scrolling support (entire content area scrolls together, no horizontal scrolling)
+   - Render options with `>` prefix, background highlight, AND different text color for selected option
+   - Render messages as plain text blocks
    - Handle positioning (centered on screen, fixed size with fixed percentages relative to terminal size)
 
 5. **Create ModalManager** (`src/ui/ModalManager.js`)
@@ -290,7 +312,8 @@ const inputHandler = new InputHandler({
 - Error handling: report errors in logs, no fallback error modal
 - Modal dimensions: fixed size (fixed percentages relative to terminal size) with scrolling support
 - Modal positioning: centered on screen
-- Content scrolling: use movement keys to scroll vertically (up/down) within modal viewport, no horizontal scrolling
+- Content scrolling: use movement keys to scroll vertically (up/down) within modal viewport - ALL content scrolls together (messages and options), no horizontal scrolling
+- Content composition: options and messages can be intermixed in any order, completely customizable
 - Visual effects: background color, shadow effect
 - Selection indicator: `>` prefix + background highlight + different text color
 - Modal dismissal: ESC and 'q' always close modal, optional additional close keys (via `config.closeKey` - string or array), optional auto-close after action (via config flag)

@@ -107,34 +107,41 @@ This specification details the implementation of a modal system that can display
 
 ### FR1: Modal Structure
 
-**Requirement**: Modal must support title, message, and selectable options with associated actions.
+**Requirement**: Modal must support flexible content composition with title and customizable content blocks.
 
 **Details**:
 
 - Modal is fully configurable (no special modal types)
 - Title: string displayed at top of modal
-- Message: multi-line text content (supports vertical scrolling)
-- Options: array of selectable options, each with:
-  - `label`: string displayed to user
-  - `action`: callback function to execute when selected
-  - Optional: `autoClose`: boolean (default: true, closes modal after action)
-- Selected option: tracked by index (0-based)
-- Modal can have no options (message-only modal)
+- Content: array of content blocks that can be mixed (messages and options)
+- Content blocks can be:
+  - **Message blocks**: text content (multi-line supported)
+  - **Option blocks**: selectable options with actions
+- Options and messages can be intermixed in any order
+- Selected option: tracked by index (0-based, counts only option blocks)
+- Modal can have any combination of message and option blocks
+- Scrolling affects ALL content (entire content area scrolls as one unit)
 
 **Modal Structure**:
 
 ```javascript
 {
   title: string,
-  message: string,  // Multi-line supported with \n
-  options: [
+  content: [
     {
+      type: 'message',
+      text: string  // Multi-line supported with \n
+    },
+    {
+      type: 'option',
       label: string,
       action: () => void | Promise<void>,
       autoClose?: boolean  // Default: true
-    }
+    },
+    // ... more blocks in any order
   ],
-  selectedIndex: number,  // Managed by ModalManager
+  selectedIndex: number,  // Managed by ModalManager (index of selected option block)
+  scrollPosition: number,  // Managed by ModalManager (scroll position for all content)
   config?: {
     closeKey?: string | string[]  // Optional additional close key(s) (ESC and 'q' always work)
     useActionReturnValue?: boolean  // Enable action return value support
@@ -144,11 +151,12 @@ This specification details the implementation of a modal system that can display
 
 **Acceptance Criteria**:
 
-- [ ] Modal can be created with title, message, and options
-- [ ] Modal can be created with title and message only (no options)
-- [ ] Options can have associated action callbacks
-- [ ] Selected option index is tracked (default: 0)
+- [ ] Modal can be created with title and flexible content blocks
+- [ ] Content blocks can be messages or options
+- [ ] Options and messages can be intermixed in any order
+- [ ] Selected option index is tracked (default: 0, counts only option blocks)
 - [ ] Modal structure is fully configurable
+- [ ] Modal can have any combination of message and option blocks
 
 ### FR2: Modal Display
 
@@ -203,34 +211,40 @@ This specification details the implementation of a modal system that can display
   - Background highlight
   - Different text color
 - Selected option wraps (up from first goes to last, down from last goes to first)
+- Navigation skips over message blocks (only navigates between option blocks)
+- Selected option may scroll into view if off-screen
 - Option count can be 0 (message-only modal)
 
 **Acceptance Criteria**:
 
-- [ ] Up/down keys navigate options
+- [ ] Up/down keys navigate options (skips message blocks)
 - [ ] Enter key selects current option
 - [ ] Selected option has `>` prefix, background highlight, and different text color
 - [ ] Navigation wraps at boundaries
+- [ ] Selected option scrolls into view if off-screen
 - [ ] Works with 0 options (message-only modal)
+- [ ] Works with intermixed messages and options
 
-### FR4: Message Scrolling
+### FR4: Content Scrolling
 
-**Requirement**: Long messages must be scrollable within modal viewport.
+**Requirement**: Long content must be scrollable within modal viewport.
 
 **Details**:
 
-- Vertical scrolling: up/down keys scroll message content
+- Vertical scrolling: up/down keys scroll ALL content (messages and options together)
 - Horizontal scrolling: NOT supported (content wraps or truncates)
-- Scrolling only affects message area (not options)
+- Scrolling affects entire content area (all blocks scroll together as one unit)
 - Scroll position is tracked and maintained
-- Scrolling works when message is longer than viewport
+- Scrolling works when total content height exceeds viewport
+- Options remain selectable while scrolled (selected option can be off-screen)
 
 **Acceptance Criteria**:
 
-- [ ] Up/down keys scroll message content when message is longer than viewport
+- [ ] Up/down keys scroll all content when total height exceeds viewport
 - [ ] Horizontal scrolling is NOT supported
-- [ ] Scrolling only affects message area
-- [ ] Scroll position is maintained during navigation
+- [ ] Scrolling affects entire content area (all blocks together)
+- [ ] Scroll position is maintained during option navigation
+- [ ] Options remain selectable even when scrolled off-screen
 
 ### FR5: Action Execution
 
