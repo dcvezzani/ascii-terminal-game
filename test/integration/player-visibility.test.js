@@ -353,20 +353,20 @@ describe('Player Visibility Integration Tests', () => {
                 playerBPosition.y === playerBPositionBeforeMove.y;
 
               if (positionUnchanged) {
-                collisionDetected = true;
+              collisionDetected = true;
 
-                // After collision, verify Player A is still visible
-                const playerAInState = gameState.players.find(p => p.playerId === playerAId);
-                if (playerAInState) {
-                  playerAVisibleAfterCollision = true;
-                  expect(playerAInState.x).toBeDefined();
-                  expect(playerAInState.y).toBeDefined();
+              // After collision, verify Player A is still visible
+              const playerAInState = gameState.players.find(p => p.playerId === playerAId);
+              if (playerAInState) {
+                playerAVisibleAfterCollision = true;
+                expect(playerAInState.x).toBeDefined();
+                expect(playerAInState.y).toBeDefined();
 
-                  clearTimeout(timeoutId);
-                  playerA.close();
-                  playerB.close();
-                  resolve();
-                }
+                clearTimeout(timeoutId);
+                playerA.close();
+                playerB.close();
+                resolve();
+              }
               }
             }
           } else if (message.type === 'ERROR' && message.payload.action === 'MOVE') {
@@ -392,12 +392,12 @@ describe('Player Visibility Integration Tests', () => {
             if (dx !== 0 || dy !== 0) {
               moveAttempted = true;
               // Player B tries to move towards Player A's position (should cause collision)
-              playerB.send(
-                JSON.stringify({
-                  type: 'MOVE',
+            playerB.send(
+              JSON.stringify({
+                type: 'MOVE',
                   payload: { dx, dy },
-                })
-              );
+              })
+            );
             }
           }
         }, 2000);
@@ -491,11 +491,11 @@ describe('Player Visibility Integration Tests', () => {
             playerBStates.push(gameState);
 
             // Update positions
-            const playersInState = gameState.players || [];
-            const playerAInState = playersInState.find(p => p.playerId === playerAId);
-            const playerBInState = playersInState.find(p => p.playerId === playerBId);
+              const playersInState = gameState.players || [];
+              const playerAInState = playersInState.find(p => p.playerId === playerAId);
+              const playerBInState = playersInState.find(p => p.playerId === playerBId);
 
-            if (playerAInState && playerBInState) {
+              if (playerAInState && playerBInState) {
               // Check if positions are unchanged after move attempt (indicates collision)
               if (playerAPosition && playerBPosition) {
                 const positionsUnchanged =
@@ -506,16 +506,16 @@ describe('Player Visibility Integration Tests', () => {
 
                 // If we've attempted a move and positions are unchanged, collision occurred
                 if (positionsUnchanged && playerBStates.length > 1) {
-                  bothPlayersVisible = true;
+                bothPlayersVisible = true;
                   expect(playerAInState.x).toBe(playerAPosition.x);
                   expect(playerAInState.y).toBe(playerAPosition.y);
                   expect(playerBInState.x).toBe(playerBPosition.x);
                   expect(playerBInState.y).toBe(playerBPosition.y);
 
-                  clearTimeout(timeoutId);
-                  playerA.close();
-                  playerB.close();
-                  resolve();
+                clearTimeout(timeoutId);
+                playerA.close();
+                playerB.close();
+                resolve();
                 }
               }
             }
@@ -615,11 +615,11 @@ describe('Player Visibility Integration Tests', () => {
             playerBStates.push(gameState);
 
             // Track player positions to detect collisions
-            const playersInState = gameState.players || [];
-            const playerAInState = playersInState.find(p => p.playerId === playerAId);
-            const playerBInState = playersInState.find(p => p.playerId === playerBId);
+                const playersInState = gameState.players || [];
+                const playerAInState = playersInState.find(p => p.playerId === playerAId);
+                const playerBInState = playersInState.find(p => p.playerId === playerBId);
 
-            if (playerAInState && playerBInState) {
+                if (playerAInState && playerBInState) {
               // Store previous positions to detect when movement is blocked (collision)
               if (playerBStates.length > 1) {
                 const previousState = playerBStates[playerBStates.length - 2];
@@ -636,18 +636,18 @@ describe('Player Visibility Integration Tests', () => {
 
               // After detecting 3 collisions, verify both players are still visible
               if (collisionCount >= 3) {
-                allPlayersVisibleAfterCollisions = true;
-                expect(playerAInState.x).toBeDefined();
-                expect(playerAInState.y).toBeDefined();
-                expect(playerBInState.x).toBeDefined();
-                expect(playerBInState.y).toBeDefined();
+                  allPlayersVisibleAfterCollisions = true;
+                  expect(playerAInState.x).toBeDefined();
+                  expect(playerAInState.y).toBeDefined();
+                  expect(playerBInState.x).toBeDefined();
+                  expect(playerBInState.y).toBeDefined();
 
-                clearTimeout(timeoutId);
-                playerA.close();
-                playerB.close();
-                resolve();
+                  clearTimeout(timeoutId);
+                  playerA.close();
+                  playerB.close();
+                  resolve();
+                }
               }
-            }
           } else if (message.type === 'ERROR' && message.payload.action === 'MOVE') {
             // Move failed - count as collision
             collisionCount++;

@@ -4,6 +4,7 @@ import cliCursor from 'cli-cursor';
 import { getHorizontalCenter, getTerminalSize } from '../utils/terminal.js';
 import { gameConfig } from '../config/gameConfig.js';
 import { Board } from '../game/Board.js';
+import { ModalRenderer } from './ModalRenderer.js';
 import {
   EMPTY_SPACE_CHAR,
   WALL_CHAR,
@@ -15,12 +16,14 @@ import {
  * Renderer class handles all terminal rendering for the game
  */
 export class Renderer {
-  constructor() {
+  constructor(modalManager = null) {
     this.titleOffset = gameConfig.renderer.titleOffset;
     this.boardOffset = gameConfig.renderer.boardOffset;
     this.statusBarOffset = gameConfig.renderer.statusBarOffset;
     this.boardWidth = gameConfig.board.width;
     this.boardHeight = gameConfig.board.height;
+    this.modalManager = modalManager;
+    this.modalRenderer = new ModalRenderer();
   }
 
   /**
@@ -119,6 +122,9 @@ export class Renderer {
    * @param {string} [localPlayerId] - Optional local player ID for multiplayer mode
    */
   renderFull(game, networkState = null, localPlayerId = null) {
+    // Hide cursor to prevent visual artifacts
+    cliCursor.hide();
+    
     this.clearScreen();
     this.renderTitle();
 
@@ -144,8 +150,62 @@ export class Renderer {
       this.renderStatusBar(game.getScore(), position.x, position.y);
     }
 
+    // Render modal if one is open
+    if (this.modalManager && this.modalManager.hasOpenModal()) {
+      const modal = this.modalManager.getCurrentModal();
+      this.renderModal(modal);
+    }
+
     // Move cursor out of the way
     process.stdout.write(ansiEscapes.cursorTo(0, this.statusBarOffset + 2));
+  }
+
+  /**
+   * Render a modal over the game board
+   * @param {Modal} modal - Modal instance to render
+   */
+  renderModal(modal) {
+    // Simple background dimming (not full shadow effect yet)
+    this.dimBackground();
+    // Render modal using ModalRenderer helper
+    this.modalRenderer.renderModal(modal);
+  }
+
+  /**
+   * Dim the background behind the modal (simple dimming, not full shadow effect yet)
+   */
+  dimBackground() {
+    const terminalSize = getTerminalSize();
+    // Render a dimmed overlay over the entire screen to hide game board
+    // Use a dark gray character to create dimming effect
+    const dimChar = '░'; // Light shade character for dimming
+    
+    for (let y = 0; y < terminalSize.rows; y++) {
+      for (let x = 0; x < terminalSize.columns; x++) {
+        process.stdout.write(ansiEscapes.cursorTo(x, y));
+        process.stdout.write(chalk.dim(dimChar));
+      }
+    }
+  }
+
+  /**
+   * Re-render just the modal (for when selection changes)
+   * Uses incremental rendering to only update changed option lines
+   * @param {Modal} modal - Modal instance to render
+   */
+  renderModalOnly(modal) {
+    if (!modal) {
+      return;
+    }
+    // Try incremental update first (only updates changed option lines)
+    const updated = this.modalRenderer.updateSelectionOnly(modal);
+    if (!updated) {
+      // Fallback to full render if incremental update not possible
+      // Re-render background dimming
+      this.dimBackground();
+      // Re-render modal (cursor will be hidden during rendering)
+      this.modalRenderer.renderModal(modal);
+    }
   }
 
   /**
@@ -215,6 +275,9 @@ export class Renderer {
    * Render help screen
    */
   renderHelp() {
+    // Hide cursor to prevent visual artifacts
+    cliCursor.hide();
+    
     this.clearScreen();
 
     const helpLines = [

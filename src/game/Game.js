@@ -18,16 +18,16 @@ export class Game {
     // Default behavior (no options) adds player for local mode compatibility
     // GameServer passes { addLocalPlayer: false } to avoid adding unused entity
     if (options.addLocalPlayer !== false) {
-      try {
-        this.board.addEntity(this.playerX, this.playerY, {
-          char: PLAYER_CHAR.char,
-          color: PLAYER_CHAR.color,
-          id: this.playerId,
-          solid: true, // Players are solid entities
-        });
-      } catch (error) {
-        // If initial position is invalid, board will throw - this shouldn't happen
-        console.error(`Failed to add player to board: ${error.message}`);
+    try {
+      this.board.addEntity(this.playerX, this.playerY, {
+        char: PLAYER_CHAR.char,
+        color: PLAYER_CHAR.color,
+        id: this.playerId,
+        solid: true, // Players are solid entities
+      });
+    } catch (error) {
+      // If initial position is invalid, board will throw - this shouldn't happen
+      console.error(`Failed to add player to board: ${error.message}`);
       }
     }
   }

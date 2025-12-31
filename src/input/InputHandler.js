@@ -1,4 +1,5 @@
 import readline from 'readline';
+import { ModalInputHandler } from '../ui/ModalInputHandler.js';
 
 /**
  * InputHandler class manages keyboard input for the game
@@ -13,9 +14,14 @@ export class InputHandler {
    * @param {Function} callbacks.onQuit - Called when Q or ESC pressed
    * @param {Function} callbacks.onRestart - Called when R pressed
    * @param {Function} callbacks.onHelp - Called when H or ? pressed
+   * @param {ModalManager} [modalManager] - Optional ModalManager instance
+   * @param {Function} [onModalStateChange] - Optional callback when modal state changes (for re-rendering)
    */
-  constructor(callbacks = {}) {
+  constructor(callbacks = {}, modalManager = null, onModalStateChange = null) {
     this.callbacks = callbacks;
+    this.modalManager = modalManager;
+    this.modalInputHandler = modalManager ? new ModalInputHandler(modalManager) : null;
+    this.onModalStateChange = onModalStateChange; // Callback to trigger re-render
     this.rl = null;
     this.listening = false;
     this.buffer = '';
@@ -115,6 +121,28 @@ export class InputHandler {
         this.callbacks.onQuit();
       }
       return;
+    }
+
+    // If a modal is open, delegate input to the modal's input handler
+    // When a modal is open, NO game inputs should be processed
+    if (this.modalManager && this.modalManager.hasOpenModal()) {
+      const modal = this.modalManager.getCurrentModal();
+      const wasOpen = this.modalManager.hasOpenModal();
+      
+      // The modal input handler will return true if it handled the key
+      // Even if it returns false, we still don't process game input when modal is open
+      this.modalInputHandler.handleKeypress(str, key, modal);
+      
+      // Check if modal state changed (opened, closed, or selection changed)
+      const isNowOpen = this.modalManager.hasOpenModal();
+      if (this.onModalStateChange) {
+        // Always trigger callback if modal state changed (opened/closed) or if still open (selection might have changed)
+        if (wasOpen !== isNowOpen || isNowOpen) {
+          this.onModalStateChange();
+        }
+      }
+      
+      return; // Always return - modal is open, so no game input processing
     }
 
     // Clear input buffer after every keypress to prevent accumulation

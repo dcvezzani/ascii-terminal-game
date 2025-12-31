@@ -5,6 +5,8 @@
 import { Game } from '../game/Game.js';
 import { Renderer } from '../render/Renderer.js';
 import { InputHandler } from '../input/InputHandler.js';
+import { ModalManager } from '../ui/ModalManager.js';
+import { Modal } from '../ui/Modal.js';
 import { validateTerminalSize } from '../utils/terminal.js';
 import { gameConfig } from '../config/gameConfig.js';
 import { clientLogger } from '../utils/clientLogger.js';
@@ -17,6 +19,7 @@ export async function runLocalMode() {
   let game = null;
   let renderer = null;
   let inputHandler = null;
+  let modalManager = null;
   let showingHelp = false;
 
   try {
@@ -33,8 +36,10 @@ export async function runLocalMode() {
 
     // Initialize game components
     game = new Game();
-    renderer = new Renderer();
-    inputHandler = new InputHandler({
+    modalManager = new ModalManager();
+    renderer = new Renderer(modalManager);
+    inputHandler = new InputHandler(
+      {
       onMoveUp: () => {
         if (showingHelp) {
           showingHelp = false;
@@ -111,6 +116,9 @@ export async function runLocalMode() {
         if (showingHelp) {
           showingHelp = false;
         }
+        if (modalManager) {
+          modalManager.reset();
+        }
         if (game && renderer) {
           game.reset();
           renderer.renderFull(game);
@@ -137,7 +145,29 @@ export async function runLocalMode() {
           renderer.renderFull(game);
         }
       },
-    });
+      },
+      modalManager,
+      () => {
+        // Callback when modal state changes (for re-rendering)
+        clientLogger.debug('Modal state change callback triggered');
+        if (renderer && modalManager) {
+          if (modalManager.hasOpenModal()) {
+            // Modal is open - re-render just the modal
+            clientLogger.debug('Modal is open - re-rendering modal');
+            const modal = modalManager.getCurrentModal();
+            if (modal) {
+              renderer.renderModalOnly(modal);
+            }
+          } else {
+            // Modal was closed - re-render the full game to show game board
+            clientLogger.debug('Modal is closed - re-rendering full game');
+            if (game) {
+              renderer.renderFull(game);
+            }
+          }
+        }
+      }
+    );
 
     // Initialize renderer
     renderer.initialize();
@@ -147,6 +177,44 @@ export async function runLocalMode() {
 
     // Initial render
     renderer.renderFull(game);
+
+    // Example: Create a "Game Over" modal (can be triggered later)
+    // This demonstrates how to create and open modals
+    const gameOverModal = new Modal({
+      title: 'Game Over',
+      content: [
+        { type: 'message', text: 'Game Over!' },
+        {
+          type: 'option',
+          label: 'Restart',
+          action: () => {
+            clientLogger.debug('Restart action executed');
+            if (game) {
+              game.reset();
+              clientLogger.debug('Game reset complete');
+            }
+            // Don't call renderFull here - let the modal close callback handle it
+            // This ensures the modal is closed before re-rendering
+          },
+        },
+        {
+          type: 'option',
+          label: 'Quit',
+          action: () => {
+            if (inputHandler) {
+              inputHandler.stop();
+            }
+            if (game) {
+              game.stop();
+            }
+          },
+        },
+      ],
+    });
+
+    // Example: Open modal (uncomment to test)
+    // modalManager.openModal(gameOverModal);
+    // renderer.renderFull(game);
 
     // Start input handling
     inputHandler.start();
