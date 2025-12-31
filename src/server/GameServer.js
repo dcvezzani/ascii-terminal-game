@@ -19,7 +19,9 @@ import { EMPTY_SPACE_CHAR, WALL_CHAR, PLAYER_CHAR } from '../constants/gameConst
 export class GameServer extends EventEmitter {
   constructor() {
     super(); // Call EventEmitter constructor
-    this.game = new Game();
+    // Don't add local player entity - we'll add networked players via addPlayer()
+    // Local mode creates its own Game instance and doesn't use GameServer
+    this.game = new Game({ addLocalPlayer: false });
     // Map of playerId -> player info (active players)
     this.players = new Map();
     // Map of playerId -> { player, disconnectedAt } (disconnected players awaiting reconnection)

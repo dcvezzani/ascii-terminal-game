@@ -6,7 +6,7 @@ import { PLAYER_CHAR } from '../constants/gameConstants.js';
  * Game class manages game state and logic
  */
 export class Game {
-  constructor() {
+  constructor(options = {}) {
     this.board = new Board();
     this.playerX = gameConfig.player.initialX;
     this.playerY = gameConfig.player.initialY;
@@ -14,17 +14,21 @@ export class Game {
     this.running = false;
     this.playerId = 'local-player'; // Unique ID for local player
 
-    // Add player to board at initial position
-    try {
-      this.board.addEntity(this.playerX, this.playerY, {
-        char: PLAYER_CHAR.char,
-        color: PLAYER_CHAR.color,
-        id: this.playerId,
-        solid: true, // Players are solid entities
-      });
-    } catch (error) {
-      // If initial position is invalid, board will throw - this shouldn't happen
-      console.error(`Failed to add player to board: ${error.message}`);
+    // Only add local player if not explicitly disabled
+    // Default behavior (no options) adds player for local mode compatibility
+    // GameServer passes { addLocalPlayer: false } to avoid adding unused entity
+    if (options.addLocalPlayer !== false) {
+      try {
+        this.board.addEntity(this.playerX, this.playerY, {
+          char: PLAYER_CHAR.char,
+          color: PLAYER_CHAR.color,
+          id: this.playerId,
+          solid: true, // Players are solid entities
+        });
+      } catch (error) {
+        // If initial position is invalid, board will throw - this shouldn't happen
+        console.error(`Failed to add player to board: ${error.message}`);
+      }
     }
   }
 
@@ -106,6 +110,7 @@ export class Game {
 
   /**
    * Reset the game to initial state
+   * Note: This always adds the local player entity, as reset is only used in local mode
    */
   reset() {
     this.board = new Board();
@@ -115,6 +120,7 @@ export class Game {
     this.running = true;
 
     // Add player to board at initial position
+    // Reset is only used in local mode, so we always add the player
     try {
       this.board.addEntity(this.playerX, this.playerY, {
         char: PLAYER_CHAR.char,
