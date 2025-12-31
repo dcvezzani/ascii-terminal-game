@@ -159,15 +159,19 @@ const inputHandler = new InputHandler({
 ### Input Handling
 
 **Modal Input Mode**:
+- Modal intercepts input before InputHandler (modal has priority)
 - Separate modal input handler (complete separation from InputHandler)
 - When modal is open, input is captured by modal input handler
 - Directional keys (up/down) navigate options (vertical only, no horizontal navigation)
 - Enter key selects current option (executes action)
-- ESC key closes modal (if allowed)
+- ESC key always closes modal
+- Configurable close key (e.g., 'q') - optional
+- Auto-close after action is optional (via configuration flag, closes by default)
 - Key presses are ignored while modal is opening/closing
 - Other keys are ignored by modal
 
 **Input Routing**:
+- Modal intercepts input before InputHandler (modal has priority)
 - Separate modal input handler handles all modal input
 - InputHandler remains separate and handles game input
 - ModalManager coordinates between modal and game input handlers
@@ -180,26 +184,31 @@ const inputHandler = new InputHandler({
    - Create `src/ui/ModalManager.js` - ModalManager class (manages modal state and stacking)
 
 2. **Create Modal Class** (`src/ui/Modal.js`)
-   - Define modal structure (title, message, options, actions)
+   - Define modal structure (title, message, options, actions) - fully configurable, no special types
    - Implement option selection logic (up/down navigation, vertical only)
-   - Implement scrolling for long content (using movement keys)
+   - Implement vertical scrolling for long content (using movement keys, no horizontal scrolling)
    - Support action return values (with config flag) and explicit close method
    - Support async actions with loading state
+   - Action execution: configurable per action (closes by default)
+   - Modal dismissal: ESC always, optional configurable close key (e.g., 'q'), optional auto-close after action (via config flag)
 
 3. **Create Modal Input Handler**
+   - Modal intercepts input before InputHandler (modal has priority)
    - Separate input handler for modal mode (complete separation from InputHandler)
    - Handle directional keys (up/down) for option navigation
    - Handle Enter key for option selection
-   - Handle ESC key for modal closing
+   - Handle ESC key for modal closing (always closes)
+   - Handle optional configurable close key (e.g., 'q')
    - Ignore key presses during opening/closing animations
 
 4. **Create Modal Renderer Helper**
    - Separate helper renderer used by `Renderer.js` (Renderer is master control)
    - Render modal border using ASCII box-drawing characters (┌─┐│└─┘)
-   - Render dimmed/obscured game board background
-   - Render title and message content (with scrolling support)
-   - Render options list with `>` prefix and background highlight for selected option
-   - Handle positioning (centered, fixed percentages relative to terminal size)
+   - Render background color with dimmed/obscured game board
+   - Render shadow effect for visual depth
+   - Render title and message content (with vertical scrolling support, no horizontal scrolling)
+   - Render options list with `>` prefix, background highlight, AND different text color for selected option
+   - Handle positioning (centered on screen, fixed size with fixed percentages relative to terminal size)
 
 5. **Create ModalManager** (`src/ui/ModalManager.js`)
    - Manage modal state (open/closed, selected index) externally
@@ -243,70 +252,48 @@ const inputHandler = new InputHandler({
 
 ## Open Questions
 
-1. **Modal Positioning**: Where should modals be positioned?
-   - Centered on screen?
-   - Centered on game board?
-   - Top, bottom, or configurable?
+1. **Modal Positioning**: Centered on screen.
 
-2. **Modal Size**: How should modal size be determined?
-   - Fixed size?
-   - Dynamic based on content?
-   - Maximum size with scrolling?
+2. **Modal Size**: Fixed size with scrolling. Dimensions are fixed percentages relative to terminal size.
 
-3. **Modal Stacking**: Should multiple modals be supported?
-   - Single active modal only?
-   - Stack-based (modals can open other modals)?
-   - Queue-based (modals wait for previous to close)?
+3. **Modal Stacking**: Stack-based (modals can open other modals). Opening modal B from modal A hides A and shows B. Closing B restores A.
 
-4. **Input Routing**: How should input be routed to modals?
-   - Modal intercepts before InputHandler?
-   - InputHandler checks modal state?
-   - Separate modal input handler?
+4. **Input Routing**: Both approaches:
+   - Modal intercepts input before InputHandler (modal has priority)
+   - Separate modal input handler (complete separation)
 
-5. **Visual Style**: What visual style should modals have?
-   - Simple border (ASCII box-drawing)?
-   - Background color?
-   - Shadow effect?
-   - Configurable theme?
+5. **Visual Style**: 
+   - Simple border using ASCII box-drawing characters
+   - Background color (dimmed/obscured game board)
+   - Shadow effect
+   - Configurable theme is a future enhancement
 
-6. **Option Selection Indicator**: How should selected option be indicated?
-   - `>` prefix?
-   - Background highlight?
-   - Different text color?
-   - Underline or bold?
+6. **Option Selection Indicator**: Combination of:
+   - `>` prefix
+   - Background highlight
+   - Different text color
 
-7. **Modal Dismissal**: How should modals be closed?
-   - ESC key always?
-   - Configurable close key?
-   - Close button/option?
-   - Auto-close after action?
+7. **Modal Dismissal**: 
+   - ESC key always closes modal
+   - Configurable close key (e.g., 'q') - optional
+   - Auto-close after action is optional (via configuration flag, closes by default)
 
-8. **Message Formatting**: What formatting should messages support?
-   - Plain text only?
-   - Colors?
-   - Bold/italic?
-   - Multi-line with line breaks?
+8. **Message Formatting**: 
+   - Plain text only (for now)
+   - Multi-line with line breaks
+   - Vertical scrolling supported (up/down keys)
+   - Horizontal scrolling NOT supported (content wraps or truncates)
 
 9. **Action Execution**: What should happen after action is executed?
    - Modal closes automatically?
    - Modal stays open?
    - Configurable per action?
 
-10. **Modal Types**: Should there be different modal types?
-    - Informational (message only, no options)?
-    - Confirmation (yes/no options)?
-    - Selection (list of options)?
-    - Custom (fully configurable)?
+10. **Modal Types**: Custom (fully configurable). All modals use the same structure - no special types needed.
 
-11. **Accessibility**: How to make modals accessible?
-    - Keyboard navigation only (already required)?
-    - Screen reader support (if applicable)?
-    - High contrast mode?
+11. **Accessibility**: Consider in future efforts. Keyboard navigation only for now (already required).
 
-12. **Performance**: How to ensure modals don't impact performance?
-    - Efficient rendering (only render when open)?
-    - Minimal re-renders?
-    - Caching rendered content?
+12. **Performance**: Efficient rendering (only render when open/active). Minimal re-renders and caching can be considered for optimization if needed.
 
 ## Status
 
@@ -333,6 +320,12 @@ const inputHandler = new InputHandler({
 - Future enhancements: input fields, modal themes/styles
 - Help screen should eventually be refactored to use modal component
 - Error handling: report errors in logs, no fallback error modal
-- Modal dimensions: fixed percentages relative to terminal size
-- Content scrolling: use movement keys to scroll long content within modal viewport
+- Modal dimensions: fixed size (fixed percentages relative to terminal size) with scrolling support
+- Modal positioning: centered on screen
+- Content scrolling: use movement keys to scroll vertically (up/down) within modal viewport, no horizontal scrolling
+- Visual effects: background color, shadow effect
+- Selection indicator: `>` prefix + background highlight + different text color
+- Modal dismissal: ESC always, optional configurable close key (e.g., 'q'), optional auto-close after action (via config flag)
+- Action execution: configurable per action (closes by default)
+- Accessibility: consider in future efforts (keyboard navigation only for now)
 
