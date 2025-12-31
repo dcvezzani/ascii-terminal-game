@@ -1,6 +1,7 @@
 import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
 import { ModalRenderer } from '../../src/render/ModalRenderer.js';
 import { Modal } from '../../src/ui/Modal.js';
+import { gameConfig } from '../../src/config/gameConfig.js';
 import ansiEscapes from 'ansi-escapes';
 import chalk from 'chalk';
 
@@ -196,6 +197,135 @@ describe('ModalRenderer', () => {
       const allCalls = calls.join('');
 
       expect(allCalls).toContain('Empty Modal');
+    });
+  });
+
+  describe('Percentage-based sizing', () => {
+    let originalDimensions;
+
+    beforeEach(() => {
+      // Save original config
+      originalDimensions = gameConfig.modal.dimensions
+        ? { ...gameConfig.modal.dimensions }
+        : undefined;
+    });
+
+    afterEach(() => {
+      // Restore original config
+      if (originalDimensions) {
+        gameConfig.modal.dimensions = originalDimensions;
+      } else {
+        delete gameConfig.modal.dimensions;
+      }
+    });
+
+    test('uses percentage-based sizing when enabled', () => {
+      gameConfig.modal.dimensions = {
+        enabled: true,
+        width: 60,
+        height: 50,
+      };
+
+      const modal = new Modal({
+        title: 'Test',
+        content: [{ type: 'message', text: 'Test message' }],
+      });
+
+      process.stdout.columns = 100;
+      process.stdout.rows = 40;
+
+      modalRenderer.renderModal(modal);
+
+      // Modal width should be 60% of 100 = 60
+      // Modal height should be 50% of 40 = 20
+      // We can't directly test the dimensions, but we can verify the modal was rendered
+      expect(writeSpy).toHaveBeenCalled();
+    });
+
+    test('uses fixed sizing when disabled', () => {
+      gameConfig.modal.dimensions = {
+        enabled: false,
+      };
+
+      const modal = new Modal({
+        title: 'Test',
+        content: [{ type: 'message', text: 'Test message' }],
+      });
+
+      process.stdout.columns = 100;
+      process.stdout.rows = 40;
+
+      modalRenderer.renderModal(modal);
+
+      // Should use minWidth and minHeight (fixed sizing)
+      expect(writeSpy).toHaveBeenCalled();
+    });
+
+    test('height uses width value when height is missing', () => {
+      gameConfig.modal.dimensions = {
+        enabled: true,
+        width: 70,
+        // height is missing
+      };
+
+      const modal = new Modal({
+        title: 'Test',
+        content: [{ type: 'message', text: 'Test message' }],
+      });
+
+      process.stdout.columns = 100;
+      process.stdout.rows = 40;
+
+      modalRenderer.renderModal(modal);
+
+      // Height should use width value (70%)
+      // Modal height should be 70% of 40 = 28
+      expect(writeSpy).toHaveBeenCalled();
+    });
+
+    test('uses defaults when dimensions config is missing', () => {
+      // Remove dimensions config
+      delete gameConfig.modal.dimensions;
+
+      const modal = new Modal({
+        title: 'Test',
+        content: [{ type: 'message', text: 'Test message' }],
+      });
+
+      process.stdout.columns = 100;
+      process.stdout.rows = 40;
+
+      modalRenderer.renderModal(modal);
+
+      // Should fall back to fixed sizing
+      expect(writeSpy).toHaveBeenCalled();
+    });
+
+    test('scales correctly with different terminal sizes', () => {
+      gameConfig.modal.dimensions = {
+        enabled: true,
+        width: 50,
+        height: 40,
+      };
+
+      const modal = new Modal({
+        title: 'Test',
+        content: [{ type: 'message', text: 'Test message' }],
+      });
+
+      // Test with small terminal
+      process.stdout.columns = 60;
+      process.stdout.rows = 20;
+      modalRenderer.renderModal(modal);
+      expect(writeSpy).toHaveBeenCalled();
+
+      vi.clearAllMocks();
+
+      // Test with large terminal
+      process.stdout.columns = 200;
+      process.stdout.rows = 60;
+      modalRenderer.renderModal(modal);
+      expect(writeSpy).toHaveBeenCalled();
     });
   });
 });

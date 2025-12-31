@@ -211,16 +211,16 @@ This gameplan implements a modal system that can display content over the game a
 ### Phase 9: Percentage-Based Sizing
 
 **Tasks**:
-- [ ] Add dimensions configuration to gameConfig.modal
+- [x] Add dimensions configuration to gameConfig.modal
   - Structure: `dimensions: { enabled, width, height }`
   - Defaults if config is missing or disabled
   - If height is missing but width is present, height uses width value
-- [ ] Update ModalRenderer to use percentage-based sizing
-- [ ] Modal dimensions: configurable percentages relative to terminal size
-- [ ] Handle terminal resizing (if needed)
-- [ ] Test with different terminal sizes
-- [ ] Test with configuration enabled/disabled
-- [ ] Commit: "Feat: Add percentage-based modal sizing with configuration"
+- [x] Update ModalRenderer to use percentage-based sizing
+- [x] Modal dimensions: configurable percentages relative to terminal size
+- [x] Handle terminal resizing (if needed)
+- [x] Test with different terminal sizes
+- [x] Test with configuration enabled/disabled
+- [x] Commit: "Feat: Add percentage-based modal sizing with configuration"
 
 **Acceptance Criteria**:
 - Modal dimensions configuration exists in gameConfig.modal

@@ -56,6 +56,13 @@ export const gameConfig = {
       enabled: true, // Enable background dimming
       character: '░', // Dimming character
     },
+    // Dimensions configuration
+    dimensions: {
+      enabled: true, // Enable percentage-based sizing (false = use fixed minWidth/minHeight)
+      width: 60, // Modal width as percentage of terminal width (0-100)
+      height: 50, // Modal height as percentage of terminal height (0-100)
+      // Note: If height is missing but width is present, height will use width value
+    },
   },
 };
 

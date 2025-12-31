@@ -73,9 +73,9 @@ export class ModalRenderer {
     // Hide cursor to prevent visual artifacts
     cliCursor.hide();
 
-    // Calculate modal dimensions based on content
+    // Calculate modal dimensions based on content and config
     const modalWidth = this.calculateModalWidth(title, content, terminalSize.columns);
-    const modalHeight = this.calculateModalHeight(content);
+    const modalHeight = this.calculateModalHeight(content, terminalSize.rows);
 
     // Center modal on screen
     const startX = getHorizontalCenter(modalWidth, terminalSize.columns);
@@ -242,6 +242,17 @@ export class ModalRenderer {
    * @returns {number} Modal width
    */
   calculateModalWidth(title, content, terminalWidth) {
+    // Check if percentage-based sizing is enabled
+    const dimensionsConfig = gameConfig.modal.dimensions;
+    if (dimensionsConfig && dimensionsConfig.enabled && dimensionsConfig.width !== undefined) {
+      // Use percentage-based sizing
+      const widthPercent = dimensionsConfig.width;
+      const calculatedWidth = Math.floor((terminalWidth * widthPercent) / 100);
+      // Ensure minimum width for usability
+      return Math.max(calculatedWidth, this.minWidth);
+    }
+
+    // Fall back to fixed sizing (content-based)
     let maxWidth = Math.max(this.minWidth, title.length + this.padding * 2);
 
     // Check content width
@@ -263,9 +274,41 @@ export class ModalRenderer {
   /**
    * Calculate modal height based on content
    * @param {Array} content - Content blocks
+   * @param {number} terminalHeight - Terminal height
    * @returns {number} Modal height
    */
-  calculateModalHeight(content) {
+  calculateModalHeight(content, terminalHeight) {
+    // Check if percentage-based sizing is enabled
+    const dimensionsConfig = gameConfig.modal.dimensions;
+    if (dimensionsConfig && dimensionsConfig.enabled) {
+      // Determine height percentage
+      let heightPercent;
+      if (dimensionsConfig.height !== undefined) {
+        heightPercent = dimensionsConfig.height;
+      } else if (dimensionsConfig.width !== undefined) {
+        // If height is missing but width is present, height uses width value
+        heightPercent = dimensionsConfig.width;
+      } else {
+        // Both missing, fall back to fixed sizing
+        return this.calculateFixedHeight(content);
+      }
+
+      // Use percentage-based sizing
+      const calculatedHeight = Math.floor((terminalHeight * heightPercent) / 100);
+      // Ensure minimum height for usability
+      return Math.max(calculatedHeight, this.minHeight);
+    }
+
+    // Fall back to fixed sizing (content-based)
+    return this.calculateFixedHeight(content);
+  }
+
+  /**
+   * Calculate modal height based on content (fixed sizing)
+   * @param {Array} content - Content blocks
+   * @returns {number} Modal height
+   */
+  calculateFixedHeight(content) {
     let height = this.minHeight; // Minimum: border + title + padding
 
     content.forEach(block => {
