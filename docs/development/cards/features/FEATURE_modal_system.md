@@ -259,7 +259,8 @@ const inputHandler = new InputHandler({
 
 8. **Add Modal Animation**
    - Animation starts as horizontal line in middle of viewport
-   - Top and bottom grow until modal achieves proper size
+   - Top and bottom grow simultaneously (top grows upward, bottom grows downward at the same time)
+   - Modal reaches full size
    - Ignore input during animation
 
 9. **Integrate with Game Modes**
@@ -306,7 +307,7 @@ const inputHandler = new InputHandler({
 - Action system supports both return values and explicit close methods (configurable)
 - Modal system supports stacking with hide/show behavior
 - All modals use same structure - no special modal types needed
-- Modal animations: horizontal line grows top/bottom to full size
+- Modal animations: horizontal line grows top/bottom simultaneously to full size
 - Future enhancements: input fields, modal themes/styles
 - Help screen should eventually be refactored to use modal component
 - Error handling: report errors in logs, no fallback error modal
