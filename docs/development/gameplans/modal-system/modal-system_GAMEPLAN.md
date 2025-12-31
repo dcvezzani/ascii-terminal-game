@@ -235,20 +235,29 @@ This gameplan implements a modal system that can display content over the game a
 **Goal**: Implement text wrapping for modal content to prevent overflow.
 
 **Tasks**:
-- [ ] Evaluate text wrapping implementation approach (see alternatives below)
+- [ ] Implement text wrapping using Lazy Wrapping with Memoization approach
+  - Wrap on-demand when rendering, but cache the result
+  - Invalidate cache when modal dimensions change
+  - Implement split-then-wrap algorithm to honor existing newlines
 - [ ] Implement text wrapping for message blocks (`text` property)
 - [ ] Implement text wrapping for option blocks (`label` property)
 - [ ] Handle wrapping with respect to modal width (accounting for padding)
-- [ ] Preserve existing newlines (don't re-wrap already wrapped content)
+- [ ] Preserve existing newlines using split-then-wrap approach
+  - Split text by existing `\n` characters first
+  - Wrap each resulting segment independently
+  - Original newlines create hard breaks
 - [ ] Create tests for text wrapping functionality
 - [ ] Test with various content lengths and modal widths
-- [ ] Commit: "Feat: Add text wrapping for modal content"
+- [ ] Test cache invalidation when modal dimensions change
+- [ ] Commit: "Feat: Add text wrapping for modal content using lazy wrapping with memoization"
 
 **Acceptance Criteria**:
 - Long text in message blocks wraps to fit modal width
-- Long labels in option blocks wrap to fit modal width
+- Long labels in option blocks wraps to fit modal width
 - Wrapping respects modal padding
-- Existing newlines are preserved
+- Existing newlines are preserved (split-then-wrap approach)
+- Wrapped content is cached for efficiency
+- Cache is invalidated when modal dimensions change
 - Wrapped content renders correctly
 - Tests pass
 
