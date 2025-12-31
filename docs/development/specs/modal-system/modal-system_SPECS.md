@@ -195,7 +195,7 @@ This specification details the implementation of a modal system that can display
 - [ ] Modal has ASCII box-drawing border
 - [ ] Modal has dimmed/obscured background
 - [ ] Modal has shadow effect
-- [ ] Modal dimensions are fixed percentages of terminal size
+- [ ] Modal dimensions are configurable percentages of terminal size (via gameConfig.modal.dimensions)
 - [ ] Modal renders over game board
 
 ### FR3: Option Selection
@@ -565,7 +565,7 @@ Key Press → InputHandler
   ```
 - Rendering: uses ANSI escapes and chalk for colors
 - Positioning: centers modal on screen
-- Sizing: fixed percentages of terminal size
+- Sizing: configurable percentages of terminal size (via gameConfig.modal.dimensions, defaults if missing or disabled)
 - Scrolling: renders visible portion of all content (messages and options together)
 
 **Acceptance Criteria**:
