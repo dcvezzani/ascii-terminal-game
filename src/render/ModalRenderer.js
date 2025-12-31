@@ -98,7 +98,7 @@ export class ModalRenderer {
     this.renderTitle(startX, startY, modalWidth, title);
     
     // Build option lines map for incremental updates
-    const optionLines = this.buildOptionLinesMap(startX, startY, content);
+    const optionLines = this.buildOptionLinesMap(startX, startY, content, modalWidth);
     this.renderContent(startX, startY, modalWidth, content, modal.getSelectedIndex());
     
     // Store rendered state for incremental updates
@@ -127,18 +127,28 @@ export class ModalRenderer {
    * @param {Array} content - Content blocks
    * @returns {Map<number, number>} Map of optionIndex -> y position
    */
-  buildOptionLinesMap(startX, startY, content) {
-    const optionLines = new Map();
+  buildOptionLinesMap(startX, startY, content, width) {
+    const optionLines = new Map(); // Maps optionIndex -> [y1, y2, ...] (array of Y positions for wrapped lines)
     let currentY = startY + 2; // Start after title line
     let optionIndex = 0;
+    const lineWidth = width - (this.padding * 2);
+    const prefix = '> '; // Prefix for options
+    const availableWidth = lineWidth - prefix.length;
 
     content.forEach(block => {
       if (block.type === 'message') {
-        const lines = block.text.split('\n');
-        currentY += lines.length;
+        // Use wrapping to get accurate line count
+        const wrappedLines = this.wrapTextWithNewlines(block.text, lineWidth);
+        currentY += wrappedLines.length;
       } else if (block.type === 'option') {
-        optionLines.set(optionIndex, currentY);
-        currentY++;
+        // Use wrapping to get all wrapped lines for this option
+        const wrappedLabelLines = this.wrapTextWithNewlines(block.label, availableWidth);
+        const optionYPositions = [];
+        wrappedLabelLines.forEach((labelLine, lineIndex) => {
+          optionYPositions.push(currentY);
+          currentY++;
+        });
+        optionLines.set(optionIndex, optionYPositions);
         optionIndex++;
       }
     });
@@ -181,9 +191,14 @@ export class ModalRenderer {
     }
 
     // Re-render only the option lines that changed
+    // Need to get lineWidth for wrapping calculations
+    const lineWidth = width - (this.padding * 2);
+    const prefix = '> ';
+    const availableWidth = lineWidth - prefix.length;
+
     indicesToUpdate.forEach(optionIndex => {
-      const y = optionLines.get(optionIndex);
-      if (y === undefined) {
+      const yPositions = optionLines.get(optionIndex);
+      if (!yPositions || yPositions.length === 0) {
         return; // Invalid option index
       }
 
@@ -193,38 +208,46 @@ export class ModalRenderer {
       }
 
       const isSelected = optionIndex === currentSelectedIndex;
-      const prefix = '> ';
-      const label = option.label;
-      const lineWidth = width - (this.padding * 2);
-      const optionText = prefix + label;
+      // Wrap the label to get all lines (same as in renderContent)
+      const wrappedLabelLines = this.wrapTextWithNewlines(option.label, availableWidth);
 
-      // Clear the entire line first with black background
-      process.stdout.write(ansiEscapes.cursorTo(startX + this.padding, y));
-      process.stdout.write(chalk.bgBlack(' '.repeat(lineWidth)));
-
-      // Render option with selection indicator
-      process.stdout.write(ansiEscapes.cursorTo(startX + this.padding, y));
-      if (isSelected) {
-        // Selected option: prefix + label with background highlight and text color from config
-        const selectionColor = this.getSelectionTextColor();
-        process.stdout.write(selectionColor(optionText));
-        // Fill rest of line with black background
-        const remainingWidth = lineWidth - optionText.length;
-        if (remainingWidth > 0) {
-          process.stdout.write(chalk.bgBlack(' '.repeat(remainingWidth)));
+      // Render each wrapped line of the option
+      wrappedLabelLines.forEach((labelLine, lineIndex) => {
+        const y = yPositions[lineIndex];
+        if (y === undefined) {
+          return; // Invalid line index
         }
-      } else {
-        // Unselected option: prefix + label with normal text on black background
-        process.stdout.write(chalk.bgBlack(optionText));
-        // Fill rest of line
-        const remainingWidth = lineWidth - optionText.length;
-        if (remainingWidth > 0) {
-          process.stdout.write(chalk.bgBlack(' '.repeat(remainingWidth)));
-        }
-      }
 
-      // Reset color state after rendering this line
-      process.stdout.write(chalk.reset());
+        const optionText = lineIndex === 0 ? prefix + labelLine : labelLine; // Only prefix first line
+
+        // Clear the entire line first with black background
+        process.stdout.write(ansiEscapes.cursorTo(startX + this.padding, y));
+        process.stdout.write(chalk.bgBlack(' '.repeat(lineWidth)));
+
+        // Render option with selection indicator (only highlight first line)
+        process.stdout.write(ansiEscapes.cursorTo(startX + this.padding, y));
+        if (isSelected && lineIndex === 0) {
+          // Selected option: prefix + label with background highlight and text color from config
+          const selectionColor = this.getSelectionTextColor();
+          process.stdout.write(selectionColor(optionText));
+          // Fill rest of line with black background to ensure clean rendering
+          const remainingWidth = lineWidth - optionText.length;
+          if (remainingWidth > 0) {
+            process.stdout.write(chalk.bgBlack(' '.repeat(remainingWidth)));
+          }
+        } else {
+          // Unselected option: prefix + label with normal text on black background
+          process.stdout.write(chalk.bgBlack(optionText));
+          // Fill rest of line to ensure clean rendering
+          const remainingWidth = lineWidth - optionText.length;
+          if (remainingWidth > 0) {
+            process.stdout.write(chalk.bgBlack(' '.repeat(remainingWidth)));
+          }
+        }
+
+        // Reset color state after rendering this line
+        process.stdout.write(chalk.reset());
+      });
     });
 
     // Update stored state
