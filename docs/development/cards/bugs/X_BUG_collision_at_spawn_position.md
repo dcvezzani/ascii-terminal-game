@@ -266,6 +266,8 @@ constructor() {
 - Local mode unaffected - creates its own Game instance with default behavior
 - All GameServer and Game tests passing
 - Players now successfully spawn at center position (20, 10)
+- Fixed timing issue in websocket movement synchronization test
+- All websocket integration tests passing
 
 ## Notes
 
