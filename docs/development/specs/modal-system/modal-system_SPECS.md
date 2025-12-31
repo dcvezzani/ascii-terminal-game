@@ -56,18 +56,23 @@ This specification details the implementation of a modal system that can display
 - `src/ui/ModalManager.js` - Modal manager class
   - Manages modal state (open/closed, selected index)
   - Handles modal stacking (hide/show behavior)
-  - Coordinates input routing between modal and game
+  - Provides modal state to InputHandler and Renderer
   - Resets modals on game restart
-- `src/ui/ModalInputHandler.js` - Modal input handler
-  - Separate input handler for modal mode
-  - Intercepts input before InputHandler (modal has priority)
+- `src/ui/ModalInputHandler.js` - Modal input handler helper
+  - Helper class for modal input handling
   - Handles directional keys, Enter, ESC, optional close key
   - Ignores input during animations
+  - Used by `InputHandler.js` (InputHandler is master control)
 - `src/render/ModalRenderer.js` - Modal renderer helper
+  - Helper class for modal rendering
   - Renders modal border, background, shadow
   - Renders title, message, options
   - Handles positioning and sizing
   - Used by `Renderer.js` (Renderer is master control)
+- `src/input/InputHandler.js` - Enhanced with modal support
+  - Uses `ModalInputHandler` helper for modal input
+  - Checks if modal is open and delegates to helper if so
+  - Handles game input when modal is closed
 - `src/render/Renderer.js` - Enhanced with modal support
   - Uses `ModalRenderer` helper for modal rendering
   - Renders modal over game board with dimmed background
@@ -82,7 +87,7 @@ This specification details the implementation of a modal system that can display
 
 1. Game event occurs (e.g., game over, connection lost, player action)
 2. Modal is opened via `ModalManager.openModal(modal)`
-3. Modal intercepts input (before InputHandler)
+3. InputHandler checks if modal is open and delegates to ModalInputHandler helper
 4. Player navigates options with up/down keys
 5. Player selects option with Enter key
 6. Action is executed (in context of game mode)
@@ -313,25 +318,26 @@ Game → Modal A → Modal B
 
 **Details**:
 
-- Modal intercepts input before InputHandler (modal has priority)
-- Separate modal input handler (complete separation from InputHandler)
-- When modal is open: input goes to modal input handler
-- When modal is closed: input goes to game InputHandler
+- InputHandler checks if modal is open (via ModalManager)
+- When modal is open: InputHandler delegates to ModalInputHandler helper
+- When modal is closed: InputHandler handles game input normally
 - Key presses ignored during opening/closing animations
 - Other keys ignored by modal (only directional, Enter, ESC, optional close key)
 
 **Input Flow**:
 
 ```
-Key Press → Modal Input Handler (if modal open) → Modal
-         → Game Input Handler (if modal closed) → Game
+Key Press → InputHandler
+         → Check if modal open (via ModalManager)
+         → If open: delegate to ModalInputHandler helper → Modal
+         → If closed: handle game input → Game
 ```
 
 **Acceptance Criteria**:
 
-- [ ] Modal intercepts input before InputHandler when open
-- [ ] Separate modal input handler handles modal input
-- [ ] Game input handler handles game input when modal closed
+- [ ] InputHandler checks modal state before handling input
+- [ ] InputHandler delegates to ModalInputHandler helper when modal is open
+- [ ] InputHandler handles game input when modal is closed
 - [ ] Input routing switches correctly when modal opens/closes
 - [ ] Key presses ignored during animations
 - [ ] Other keys ignored by modal
@@ -486,7 +492,7 @@ Key Press → Modal Input Handler (if modal open) → Modal
 
 ### TR3: ModalInputHandler Implementation
 
-**Requirement**: Implement `ModalInputHandler` class in `src/ui/ModalInputHandler.js`.
+**Requirement**: Implement `ModalInputHandler` helper class in `src/ui/ModalInputHandler.js`.
 
 **Details**:
 
@@ -494,27 +500,27 @@ Key Press → Modal Input Handler (if modal open) → Modal
   ```javascript
   class ModalInputHandler {
     constructor(modalManager)
-    start()
-    stop()
-    handleKeypress(str, key)
+    handleKeypress(str, key, modal)
   }
   ```
-- Input interception: intercepts input before InputHandler
+- Helper class: used by InputHandler, not a standalone input handler
 - Key handling:
   - Up/down: navigate options or scroll message
   - Enter: select option
   - ESC: close modal
   - Optional close key: close modal (if configured)
 - Animation handling: ignores input during animations
+- Returns boolean: `true` if key was handled, `false` if not
 
 **Acceptance Criteria**:
 
 - [ ] ModalInputHandler class exists in `src/ui/ModalInputHandler.js`
-- [ ] ModalInputHandler intercepts input before InputHandler
+- [ ] ModalInputHandler is a helper class (not standalone input handler)
 - [ ] ModalInputHandler handles required keys
 - [ ] ModalInputHandler ignores input during animations
+- [ ] ModalInputHandler returns boolean indicating if key was handled
 
-### TR4: ModalRenderer Implementation
+### TR4: ModalRenderer Implementation (Helper)
 
 **Requirement**: Implement `ModalRenderer` helper class in `src/render/ModalRenderer.js`.
 
@@ -548,7 +554,7 @@ Key Press → Modal Input Handler (if modal open) → Modal
 - [ ] ModalRenderer handles positioning and sizing
 - [ ] ModalRenderer supports message scrolling
 
-### TR5: Renderer Integration
+### TR4: Renderer Integration
 
 **Requirement**: Integrate modal rendering into `Renderer.js`.
 
@@ -566,6 +572,26 @@ Key Press → Modal Input Handler (if modal open) → Modal
 - [ ] Renderer checks modal state before rendering
 - [ ] Renderer renders modal over game board
 - [ ] Renderer dims game board when modal is open
+
+### TR5: InputHandler Integration
+
+**Requirement**: Integrate modal input handling into `InputHandler.js`.
+
+**Details**:
+
+- InputHandler checks if modal is open (via ModalManager)
+- If modal is open: InputHandler delegates to ModalInputHandler helper
+- If modal is closed: InputHandler handles input normally
+- InputHandler imports ModalInputHandler helper
+- InputHandler imports ModalManager (or receives it as dependency)
+
+**Acceptance Criteria**:
+
+- [ ] InputHandler checks modal state before handling input
+- [ ] InputHandler delegates to ModalInputHandler helper when modal is open
+- [ ] InputHandler handles game input when modal is closed
+- [ ] InputHandler imports ModalInputHandler helper
+- [ ] Input routing works correctly
 
 ### TR6: Game Mode Integration
 
@@ -643,17 +669,32 @@ modalManager.reset();
 ### Input Handler Integration
 
 ```javascript
-// In game mode setup
-const gameInputHandler = new InputHandler({
-  onMoveUp: () => { /* ... */ },
-  // ... other callbacks
-});
+// In InputHandler.js
+import { ModalInputHandler } from '../ui/ModalInputHandler.js';
+import { modalManager } from '../ui/ModalManager.js';  // Singleton or passed in
 
-const modalInputHandler = new ModalInputHandler(modalManager);
+class InputHandler {
+  constructor(callbacks = {}) {
+    this.callbacks = callbacks;
+    this.modalInputHandler = new ModalInputHandler(modalManager);
+    // ... other initialization
+  }
 
-// Start both handlers
-gameInputHandler.start();
-modalInputHandler.start();  // Intercepts input when modal open
+  handleKeypress(str, key) {
+    // Check if modal is open
+    if (modalManager.hasOpenModal()) {
+      const modal = modalManager.getCurrentModal();
+      // Delegate to modal input handler helper
+      const handled = this.modalInputHandler.handleKeypress(str, key, modal);
+      if (handled) {
+        return;  // Modal handled the input, don't process game input
+      }
+    }
+
+    // Handle game input normally
+    // ... existing game input handling
+  }
+}
 ```
 
 ### Renderer Integration
@@ -682,14 +723,16 @@ render() {
 
 - Modal class: option selection, message scrolling, action execution
 - ModalManager: stack management, state tracking, reset
-- ModalInputHandler: key handling, input routing
-- ModalRenderer: rendering, positioning, sizing
+- ModalInputHandler helper: key handling, returns boolean
+- ModalRenderer helper: rendering, positioning, sizing
+- InputHandler: modal state checking, delegation to helper
 
 ### Integration Tests
 
 - Modal opening/closing in local mode
 - Modal opening/closing in networked mode
 - Modal stacking behavior
+- InputHandler delegation to ModalInputHandler helper
 - Input routing between modal and game
 - Action execution in both modes
 - Modal reset on game restart
@@ -749,7 +792,7 @@ render() {
 
 ## Dependencies
 
-- Input handling system (`InputHandler`)
+- Input handling system (`InputHandler` - uses `ModalInputHandler` helper)
 - Rendering system (`Renderer`)
 - Terminal utilities (`ansi-escapes`, `chalk`)
 - Game mode implementations (`localMode`, `networkedMode`)
