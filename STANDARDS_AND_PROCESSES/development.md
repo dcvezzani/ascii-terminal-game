@@ -323,37 +323,59 @@ Once a gameplan is created, implementation follows the gameplan phase by phase, 
 ### Process Flow
 
 1. **Start Implementation**: Begin with Phase 1, Step 1.1
-2. **Complete Step**: Implement the step according to gameplan instructions
-3. **Run Tests**: Execute tests in non-interactive mode
-4. **Verify**: Complete verification checklist for the step
-5. **Git Commit**: Create commit with meaningful message
-6. **Continue**: Move to next step in same phase
-7. **Phase Complete**: After all steps in a phase are complete, pause for review
-8. **Review**: User reviews completed phase
-9. **Continue**: Proceed to next phase after approval
+2. **Create Tests First**: Write tests for the step before implementing code (Test-Driven Development)
+3. **Run Tests**: Execute tests in non-interactive mode (tests should fail initially)
+4. **Implement Code**: Implement the step according to gameplan instructions to make tests pass
+5. **Run Tests Again**: Execute tests in non-interactive mode (tests should now pass)
+6. **Verify**: Complete verification checklist for the step
+7. **Git Commit**: Create commit with meaningful message
+8. **Continue**: Move to next step in same phase
+9. **Phase Complete**: After all steps in a phase are complete, pause for review
+10. **Review**: User reviews completed phase
+11. **Continue**: Proceed to next phase after approval
 
 ### Phase Step Completion
 
 For each step in a gameplan phase:
 
-#### 1. Implementation
+#### 1. Create Tests First (Test-Driven Development)
+
+- Write tests for the functionality before implementing code
+- Tests should initially fail (red phase of TDD)
+- Follow the step instructions in the gameplan to determine what to test
+- Add/update test files as specified
+- Follow test examples provided in gameplan
+
+**Test Command**: `npm test` (runs Vitest in non-interactive mode)
+
+**Requirements**:
+
+- Tests are written before implementation
+- Tests initially fail (expected - code doesn't exist yet)
+- Tests are comprehensive and cover the functionality
+- Tests run in non-interactive mode (no prompts)
+
+#### 2. Run Initial Tests
+
+**After writing tests**, run tests to verify they fail (as expected):
+
+```bash
+npm test
+```
+
+**Expected Result**: Tests fail because implementation doesn't exist yet (this is correct for TDD)
+
+#### 3. Implementation
 
 - Follow the step instructions in the gameplan
-- Implement code changes
+- Implement code changes to make tests pass
 - Add/update files as specified
 - Follow code examples provided
+- Write minimal code needed to pass tests (green phase of TDD)
 
-#### 2. Verification
+#### 4. Run Tests Again
 
-- Complete the verification checklist for the step:
-  - [ ] Code implemented
-  - [ ] Files created/modified
-  - [ ] Functionality works
-  - [ ] No errors
-
-#### 3. Testing
-
-**Before committing**, run tests in non-interactive mode:
+**After implementing code**, run tests to verify they pass:
 
 ```bash
 npm test
@@ -364,11 +386,20 @@ npm test
 - All tests must pass
 - Tests run in non-interactive mode (no prompts)
 - No test failures allowed
-- If tests fail, fix issues before committing
+- If tests fail, fix implementation until all tests pass
 
 **Test Command**: `npm test` (runs Vitest in non-interactive mode)
 
-#### 4. Git Commit
+#### 5. Verification
+
+- Complete the verification checklist for the step:
+  - [ ] Tests written and passing
+  - [ ] Code implemented
+  - [ ] Files created/modified
+  - [ ] Functionality works
+  - [ ] No errors
+
+#### 6. Git Commit
 
 After tests pass, create a git commit with a meaningful message:
 
@@ -420,7 +451,7 @@ git commit -m "Feature: Add reconciliation session management API endpoints
 - All tests passing"
 ```
 
-#### 5. Continue to Next Step
+#### 7. Continue to Next Step
 
 Move to the next step in the same phase and repeat the process.
 
@@ -733,8 +764,10 @@ During review:
    - Include time estimates
 
 5. **Implementation** (Per Phase):
-   - Complete each step in phase
-   - Run tests (non-interactive)
+   - Create tests first (TDD approach)
+   - Run tests (should fail initially)
+   - Implement code to make tests pass
+   - Run tests again (should pass)
    - Verify step completion
    - Create git commit
    - Continue to next step
