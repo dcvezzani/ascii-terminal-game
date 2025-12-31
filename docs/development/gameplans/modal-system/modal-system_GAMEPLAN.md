@@ -131,16 +131,18 @@ This gameplan implements a modal system that can display content over the game a
 - Modal input works correctly
 - Game input is blocked when modal is open
 
-### Phase 6: Integrate ModalManager into Networked Mode
+### Phase 6: Integrate ModalManager into Networked Mode ✅ COMPLETE
 
 **Goal**: Make modals functional in networked mode.
 
 **Tasks**:
-- [ ] Create ModalManager instance in `src/modes/networkedMode.js`
-- [ ] Pass ModalManager to Renderer constructor
-- [ ] Pass ModalManager to InputHandler constructor
-- [ ] Test modal can be opened and interacted with in networked mode
-- [ ] Commit: "Feat: Integrate ModalManager into networked mode"
+- [x] Create ModalManager instance in `src/modes/networkedMode.js`
+- [x] Pass ModalManager to Renderer constructor
+- [x] Pass ModalManager to InputHandler constructor
+- [x] Add modal reset on server restart and game restart
+- [x] Add modal state change callback for re-rendering
+- [x] Test modal can be opened and interacted with in networked mode
+- [x] Commit: "Feat: Integrate ModalManager into networked mode"
 
 **Acceptance Criteria**:
 - ModalManager is instantiated in networked mode

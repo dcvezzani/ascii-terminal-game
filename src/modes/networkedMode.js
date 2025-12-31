@@ -6,6 +6,8 @@ import { Game } from '../game/Game.js';
 import { Board } from '../game/Board.js';
 import { Renderer } from '../render/Renderer.js';
 import { InputHandler } from '../input/InputHandler.js';
+import { ModalManager } from '../ui/ModalManager.js';
+import { Modal } from '../ui/Modal.js';
 import { validateTerminalSize } from '../utils/terminal.js';
 import { gameConfig } from '../config/gameConfig.js';
 import { WebSocketClient } from '../network/WebSocketClient.js';
@@ -26,6 +28,7 @@ export async function runNetworkedMode() {
   let renderer = null;
   let inputHandler = null;
   let wsClient = null;
+  let modalManager = null;
   let showingHelp = false;
   let currentState = null;
   let localPlayerId = null;
@@ -52,7 +55,8 @@ export async function runNetworkedMode() {
 
     // Initialize components
     game = new Game(); // Keep for compatibility, but state comes from server
-    renderer = new Renderer();
+    modalManager = new ModalManager();
+    renderer = new Renderer(modalManager);
     wsClient = new WebSocketClient();
 
     // Set up WebSocket callbacks
@@ -471,6 +475,11 @@ export async function runNetworkedMode() {
       if (showingHelp) {
         showingHelp = false;
       }
+      
+      // Reset modal manager
+      if (modalManager) {
+        modalManager.reset();
+      }
     });
 
     // Set up input handler for networked mode
@@ -888,6 +897,11 @@ export async function runNetworkedMode() {
           showingHelp = false;
         }
         
+        // Reset modal manager
+        if (modalManager) {
+          modalManager.reset();
+        }
+        
         // Send RESTART message to server
         if (wsClient && wsClient.connected) {
           try {
@@ -952,7 +966,28 @@ export async function runNetworkedMode() {
         } else {
           clientLogger.warn(">>> Cannot send test message: WebSocket not connected");
         }
-      },      
+      },
+    },
+    modalManager,
+    () => {
+      // Callback when modal state changes (for re-rendering)
+      clientLogger.debug('Modal state change callback triggered');
+      if (renderer && modalManager) {
+        if (modalManager.hasOpenModal()) {
+          // Modal is open - re-render just the modal
+          clientLogger.debug('Modal is open - re-rendering modal');
+          const modal = modalManager.getCurrentModal();
+          if (modal) {
+            renderer.renderModalOnly(modal);
+          }
+        } else {
+          // Modal was closed - re-render the full game to show game board
+          clientLogger.debug('Modal is closed - re-rendering full game');
+          if (renderer && currentState) {
+            renderer.renderFull(game, currentState, localPlayerId);
+          }
+        }
+      }
     });
 
     // Initialize renderer
