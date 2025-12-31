@@ -329,15 +329,18 @@ Game → Modal A → Modal B
 ```
 Key Press → InputHandler
          → Check if modal open (via ModalManager)
-         → If open: delegate to ModalInputHandler helper → Modal
+         → If open: delegate to ModalInputHandler helper → Modal (game input NOT processed)
          → If closed: handle game input → Game
 ```
+
+**Important**: When a modal is open, NO game inputs are processed. All input is handled exclusively by ModalInputHandler helper.
 
 **Acceptance Criteria**:
 
 - [ ] InputHandler checks modal state before handling input
 - [ ] InputHandler delegates to ModalInputHandler helper when modal is open
-- [ ] InputHandler handles game input when modal is closed
+- [ ] When modal is open, NO game inputs are processed (all input goes to modal)
+- [ ] InputHandler handles game input ONLY when modal is closed
 - [ ] Input routing switches correctly when modal opens/closes
 - [ ] Key presses ignored during animations
 - [ ] Other keys ignored by modal
@@ -580,8 +583,9 @@ Key Press → InputHandler
 **Details**:
 
 - InputHandler checks if modal is open (via ModalManager)
-- If modal is open: InputHandler delegates to ModalInputHandler helper
-- If modal is closed: InputHandler handles input normally
+- If modal is open: InputHandler delegates to ModalInputHandler helper and does NOT process game input
+- If modal is closed: InputHandler handles game input normally
+- When modal is open, all input is handled exclusively by ModalInputHandler helper (no game input processing)
 - InputHandler imports ModalInputHandler helper
 - InputHandler imports ModalManager (or receives it as dependency)
 
@@ -589,9 +593,10 @@ Key Press → InputHandler
 
 - [ ] InputHandler checks modal state before handling input
 - [ ] InputHandler delegates to ModalInputHandler helper when modal is open
-- [ ] InputHandler handles game input when modal is closed
+- [ ] When modal is open, InputHandler does NOT process any game input
+- [ ] InputHandler handles game input ONLY when modal is closed
 - [ ] InputHandler imports ModalInputHandler helper
-- [ ] Input routing works correctly
+- [ ] Input routing works correctly (modal input when open, game input when closed)
 
 ### TR6: Game Mode Integration
 
@@ -685,13 +690,12 @@ class InputHandler {
     if (modalManager.hasOpenModal()) {
       const modal = modalManager.getCurrentModal();
       // Delegate to modal input handler helper
-      const handled = this.modalInputHandler.handleKeypress(str, key, modal);
-      if (handled) {
-        return;  // Modal handled the input, don't process game input
-      }
+      // When modal is open, NO game inputs are processed
+      this.modalInputHandler.handleKeypress(str, key, modal);
+      return;  // Modal handles all input, don't process game input
     }
 
-    // Handle game input normally
+    // Handle game input normally (only when modal is closed)
     // ... existing game input handling
   }
 }

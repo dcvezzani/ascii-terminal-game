@@ -162,6 +162,7 @@ const inputHandler = new InputHandler({
 **Modal Input Mode**:
 - InputHandler checks if modal is open (via ModalManager)
 - When modal is open: InputHandler delegates to ModalInputHandler helper
+- **When modal is open, NO game inputs are processed** - all input handled exclusively by ModalInputHandler helper
 - When modal is closed: InputHandler handles game input normally
 - Directional keys (up/down) navigate options (vertical only, no horizontal navigation)
 - Enter key selects current option (executes action)
@@ -174,7 +175,8 @@ const inputHandler = new InputHandler({
 **Input Routing**:
 - InputHandler checks modal state before handling input
 - InputHandler delegates to ModalInputHandler helper when modal is open
-- InputHandler handles game input when modal is closed
+- **When modal is open, InputHandler does NOT process any game input** - all input goes to modal
+- InputHandler handles game input ONLY when modal is closed
 - ModalInputHandler is a helper class (not a standalone input handler)
 - Bulk of modal input logic in helper, InputHandler is controller
 
@@ -220,8 +222,9 @@ const inputHandler = new InputHandler({
 
 6. **Integrate with Input System**
    - InputHandler.js checks if modal is open (via ModalManager)
-   - If modal is open: InputHandler delegates to ModalInputHandler helper
+   - If modal is open: InputHandler delegates to ModalInputHandler helper and does NOT process game input
    - If modal is closed: InputHandler handles game input normally
+   - When modal is open, all input is handled exclusively by ModalInputHandler helper (no game input processing)
    - InputHandler imports ModalInputHandler helper and ModalManager
 
 7. **Integrate with Rendering System**
