@@ -167,7 +167,13 @@ if (
 
 **Solution**: Remove the 'local-player' entity when GameServer initializes, since it's not needed for networked mode.
 
-**Option 1: Remove Local Player Entity in GameServer Constructor** (Recommended)
+**Important**: This fix will NOT break local mode because:
+- Local mode (`runLocalMode`) creates its own `Game` instance directly (line 35 of `localMode.js`)
+- Local mode does NOT use `GameServer` at all
+- `GameServer` is only used server-side for networked multiplayer mode
+- The `Game` class will still add the 'local-player' entity when used in local mode
+
+**Option 1: Remove Local Player Entity in GameServer Constructor** (Recommended - Simplest)
 ```javascript
 constructor() {
   super();
@@ -175,6 +181,7 @@ constructor() {
   
   // Remove the local-player entity added by Game constructor
   // This entity is only needed for local single-player mode, not networked mode
+  // Local mode creates its own Game instance and doesn't use GameServer
   const centerX = gameConfig.player.initialX;
   const centerY = gameConfig.player.initialY;
   this.game.board.removeEntity(centerX, centerY, 'local-player');
@@ -183,27 +190,37 @@ constructor() {
 }
 ```
 
-**Option 2: Modify Game Constructor to Accept Options**
+**Option 2: Modify Game Constructor to Accept Options** (Cleaner - Makes Intent Explicit)
 ```javascript
 // In Game.js
 constructor(options = {}) {
   this.board = new Board();
-  // ... other initialization ...
-  
-  // Only add local player if not in server mode
+  this.playerX = gameConfig.player.initialX;
+  this.playerY = gameConfig.player.initialY;
+  this.score = gameConfig.game.initialScore;
+  this.running = false;
+  this.playerId = 'local-player';
+
+  // Only add local player if not explicitly disabled
+  // Default behavior (no options) adds player for local mode compatibility
   if (options.addLocalPlayer !== false) {
-    this.board.addEntity(this.playerX, this.playerY, {
-      char: PLAYER_CHAR.char,
-      color: PLAYER_CHAR.color,
-      id: this.playerId,
-      solid: true,
-    });
+    try {
+      this.board.addEntity(this.playerX, this.playerY, {
+        char: PLAYER_CHAR.char,
+        color: PLAYER_CHAR.color,
+        id: this.playerId,
+        solid: true,
+      });
+    } catch (error) {
+      console.error(`Failed to add player to board: ${error.message}`);
+    }
   }
 }
 
 // In GameServer.js
 constructor() {
   super();
+  // Don't add local player entity - we'll add networked players via addPlayer()
   this.game = new Game({ addLocalPlayer: false });
   // ... rest of constructor ...
 }
@@ -214,7 +231,9 @@ constructor() {
 - Use that in GameServer instead of full Game instance
 - More complex but cleaner separation of concerns
 
-**Recommended**: Option 1 is simplest and most direct fix.
+**Recommended**: 
+- **Option 1** is simplest and most direct fix (safest, minimal changes)
+- **Option 2** is cleaner and makes the intent explicit (better long-term maintainability)
 
 ## Related Features
 
