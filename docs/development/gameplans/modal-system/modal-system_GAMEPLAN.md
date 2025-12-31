@@ -35,23 +35,23 @@ This gameplan implements a modal system that can display content over the game a
 - ModalManager tracks current modal state
 - Basic unit tests pass
 
-### Phase 2: Basic Modal Rendering
+### Phase 2: Basic Modal Rendering ✅ COMPLETE
 
 **Goal**: Render modals on screen with basic visual elements.
 
 **Tasks**:
-- [ ] Create `src/render/ModalRenderer.js` - Basic ModalRenderer helper class
+- [x] Create `src/render/ModalRenderer.js` - Basic ModalRenderer helper class
   - Render modal border using ASCII box-drawing characters (┌─┐│└─┘)
   - Render title at top
   - Render content blocks (messages as plain text, options with labels)
   - Basic positioning (centered on screen)
   - Fixed size (simple dimensions, not percentage-based yet)
-- [ ] Integrate ModalRenderer into `src/render/Renderer.js`
+- [x] Integrate ModalRenderer into `src/render/Renderer.js`
   - Check if modal is open (via ModalManager)
   - Render modal over game board
   - Basic background (simple dimming, not full shadow effect yet)
-- [ ] Create basic unit tests for ModalRenderer
-- [ ] Commit: "Feat: Add basic modal rendering"
+- [x] Create basic unit tests for ModalRenderer
+- [x] Commit: "Feat: Add basic modal rendering"
 
 **Acceptance Criteria**:
 - Modal renders with border and title
