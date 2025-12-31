@@ -181,19 +181,19 @@ This gameplan implements a modal system that can display content over the game a
 - No critical bugs
 - MVP is ready for use
 
-## Enhancement Phase 1: Visual Polish
+## Enhancement Phase Group: Visual Polish
 
 **Goal**: Improve visual appearance and user experience.
 
-### Phase 6: Enhanced Visual Design
+### Phase 8: Enhanced Visual Design
 
 **Tasks**:
-- [ ] Add background dimming/obscuring for game board
-- [ ] Add shadow effect for modal
-- [ ] Improve selection indicator (add background highlight and different text color)
-- [ ] Update ModalRenderer to support enhanced visuals
-- [ ] Test visual appearance
-- [ ] Commit: "Feat: Enhance modal visual design"
+- [x] Add background dimming/obscuring for game board
+- [x] Add shadow effect for modal
+- [x] Improve selection indicator (add background highlight and different text color)
+- [x] Update ModalRenderer to support enhanced visuals
+- [x] Test visual appearance
+- [x] Commit: "Feat: Enhance modal visual design"
 
 **Acceptance Criteria**:
 - Modal has dimmed/obscured background
@@ -201,7 +201,7 @@ This gameplan implements a modal system that can display content over the game a
 - Selected option has `>` prefix, background highlight, and different text color
 - Visual appearance is polished
 
-### Phase 7: Percentage-Based Sizing
+### Phase 9: Percentage-Based Sizing
 
 **Tasks**:
 - [ ] Update ModalRenderer to use percentage-based sizing
@@ -215,11 +215,11 @@ This gameplan implements a modal system that can display content over the game a
 - Modal scales appropriately with terminal size
 - Works with different terminal dimensions
 
-## Enhancement Phase 2: Content Scrolling
+## Enhancement Phase Group: Content Scrolling
 
 **Goal**: Support long content with scrolling.
 
-### Phase 8: Content Scrolling
+### Phase 10: Content Scrolling
 
 **Tasks**:
 - [ ] Add scroll position tracking to Modal class
@@ -240,7 +240,7 @@ This gameplan implements a modal system that can display content over the game a
 - Scrolling works correctly with intermixed messages and options
 - Tests pass
 
-### Phase 9: Selected Option Auto-Scroll
+### Phase 11: Selected Option Auto-Scroll
 
 **Tasks**:
 - [ ] Implement auto-scroll to selected option
@@ -254,11 +254,11 @@ This gameplan implements a modal system that can display content over the game a
 - Navigation maintains visibility of selected option
 - Works correctly with long content
 
-## Enhancement Phase 3: Advanced Features
+## Enhancement Phase Group: Advanced Features
 
 **Goal**: Add advanced functionality for complex use cases.
 
-### Phase 10: Modal Stacking
+### Phase 12: Modal Stacking
 
 **Tasks**:
 - [ ] Update ModalManager to support modal stack
@@ -279,7 +279,7 @@ This gameplan implements a modal system that can display content over the game a
 - Only top modal is rendered
 - Tests pass
 
-### Phase 11: Async Actions and Loading State
+### Phase 13: Async Actions and Loading State
 
 **Tasks**:
 - [ ] Add support for async actions (Promise-returning actions)
@@ -296,7 +296,7 @@ This gameplan implements a modal system that can display content over the game a
 - Modal closes after async action completes
 - Tests pass
 
-### Phase 12: Action Return Values and Custom Close Keys
+### Phase 14: Action Return Values and Custom Close Keys
 
 **Tasks**:
 - [ ] Add support for action return values (configurable)
@@ -315,11 +315,11 @@ This gameplan implements a modal system that can display content over the game a
 - Per-action `autoClose` option works
 - Tests pass
 
-## Enhancement Phase 4: Animation and Game Mode Integration
+## Enhancement Phase Group: Animation and Game Mode Integration
 
 **Goal**: Add animations and integrate with game modes.
 
-### Phase 13: Modal Animation
+### Phase 15: Modal Animation
 
 **Tasks**:
 - [ ] Add animation state tracking to Modal class
@@ -340,7 +340,7 @@ This gameplan implements a modal system that can display content over the game a
 - Input is ignored during animation
 - Tests pass
 
-### Phase 14: Game Mode Integration
+### Phase 16: Game Mode Integration
 
 **Tasks**:
 - [ ] Integrate ModalManager into local mode
@@ -360,11 +360,11 @@ This gameplan implements a modal system that can display content over the game a
 - Actions execute in correct game mode context
 - Integration tests pass
 
-## Enhancement Phase 5: Polish and Edge Cases
+## Enhancement Phase Group: Polish and Edge Cases
 
 **Goal**: Handle edge cases and polish the system.
 
-### Phase 15: Edge Cases and Error Handling
+### Phase 17: Edge Cases and Error Handling
 
 **Tasks**:
 - [ ] Handle edge cases:
@@ -385,7 +385,7 @@ This gameplan implements a modal system that can display content over the game a
 - System doesn't crash on edge cases
 - Tests pass
 
-### Phase 16: Performance Optimization
+### Phase 18: Performance Optimization
 
 **Tasks**:
 - [ ] Optimize rendering (only render when modal is open)

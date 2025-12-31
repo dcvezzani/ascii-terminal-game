@@ -102,10 +102,10 @@ const testModal = new Modal({
       }
 
 // Open the modal after connection is established
-// modalManager.openModal(testModal);
-// if (renderer && currentState) {
-//   renderer.renderFull(game, currentState, localPlayerId);
-// }
+modalManager.openModal(testModal);
+if (renderer && currentState) {
+  renderer.renderFull(game, currentState, localPlayerId);
+}
 			
     });
 

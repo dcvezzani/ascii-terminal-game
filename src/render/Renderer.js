@@ -172,7 +172,8 @@ export class Renderer {
   }
 
   /**
-   * Dim the background behind the modal (simple dimming, not full shadow effect yet)
+   * Dim the background behind the modal
+   * Renders a dimmed overlay over the entire screen to obscure the game board
    */
   dimBackground() {
     const terminalSize = getTerminalSize();

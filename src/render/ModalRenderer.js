@@ -43,6 +43,9 @@ export class ModalRenderer {
     const startX = getHorizontalCenter(modalWidth, terminalSize.columns);
     const startY = getVerticalCenter(modalHeight, terminalSize.rows);
 
+    // Render modal shadow first (behind modal)
+    this.renderShadow(startX, startY, modalWidth, modalHeight, terminalSize);
+    
     // Render modal border and content
     this.renderBorder(startX, startY, modalWidth, modalHeight);
     this.renderBackground(startX, startY, modalWidth, modalHeight);
@@ -156,8 +159,9 @@ export class ModalRenderer {
       // Render option with selection indicator
       process.stdout.write(ansiEscapes.cursorTo(startX + this.padding, y));
       if (isSelected) {
-        // Selected option: prefix + label with background highlight
-        process.stdout.write(chalk.bgWhite.black(optionText));
+        // Selected option: prefix + label with background highlight and bright text color
+        // Use bright cyan text on white background for better contrast
+        process.stdout.write(chalk.bgWhite.cyanBright.bold(optionText));
         // Fill rest of line with black background
         const remainingWidth = lineWidth - optionText.length;
         if (remainingWidth > 0) {
@@ -350,8 +354,9 @@ export class ModalRenderer {
         // Render option with selection indicator
         process.stdout.write(ansiEscapes.cursorTo(startX + this.padding, currentY));
         if (isSelected) {
-          // Selected option: prefix + label with background highlight
-          process.stdout.write(chalk.bgWhite.black(optionText));
+          // Selected option: prefix + label with background highlight and bright text color
+          // Use bright cyan text on white background for better contrast
+          process.stdout.write(chalk.bgWhite.cyanBright.bold(optionText));
           // Fill rest of line with black background to ensure clean rendering
           const remainingWidth = lineWidth - optionText.length;
           if (remainingWidth > 0) {
@@ -376,5 +381,47 @@ export class ModalRenderer {
     });
   }
 
+  /**
+   * Render shadow effect around modal
+   * @param {number} startX - Starting X position of modal
+   * @param {number} startY - Starting Y position of modal
+   * @param {number} width - Modal width
+   * @param {number} height - Modal height
+   * @param {Object} terminalSize - Terminal size object with rows and columns
+   */
+  renderShadow(startX, startY, width, height, terminalSize) {
+    // Shadow offset: 1 pixel to the right and 1 pixel down
+    const shadowOffsetX = 1;
+    const shadowOffsetY = 1;
+    const shadowX = startX + shadowOffsetX;
+    const shadowY = startY + shadowOffsetY;
+    
+    // Shadow character (darker than dimmed background)
+    const shadowChar = '▓'; // Medium shade character for shadow
+    
+    // Render shadow for right edge
+    for (let y = 0; y < height; y++) {
+      const shadowPosY = shadowY + y;
+      if (shadowPosY < terminalSize.rows) {
+        const shadowPosX = shadowX + width - 1;
+        if (shadowPosX < terminalSize.columns) {
+          process.stdout.write(ansiEscapes.cursorTo(shadowPosX, shadowPosY));
+          process.stdout.write(chalk.dim(shadowChar));
+        }
+      }
+    }
+    
+    // Render shadow for bottom edge
+    const shadowBottomY = shadowY + height - 1;
+    if (shadowBottomY < terminalSize.rows) {
+      for (let x = shadowOffsetX; x < width; x++) {
+        const shadowPosX = shadowX + x;
+        if (shadowPosX < terminalSize.columns) {
+          process.stdout.write(ansiEscapes.cursorTo(shadowPosX, shadowBottomY));
+          process.stdout.write(chalk.dim(shadowChar));
+        }
+      }
+    }
+  }
 }
 
