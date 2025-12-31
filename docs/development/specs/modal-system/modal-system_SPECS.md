@@ -636,6 +636,28 @@ Key Press → InputHandler
 - [ ] ModalManager is integrated into both modes
 - [ ] Actions execute in correct context
 
+### TR7: Game Configuration
+
+**Requirement**: Modal visual aspects must be configurable via game configuration.
+
+**Details**:
+
+- Configuration in `src/config/gameConfig.js` under `gameConfig.modal`
+- Selection colors: backgroundColor, textColor, bold
+- Shadow: enabled, character, offsetX, offsetY
+- Background dimming: enabled, character
+- ModalRenderer and Renderer read from config to apply styles
+- All visual aspects customizable without code changes
+
+**Acceptance Criteria**:
+
+- [ ] Modal configuration section exists in gameConfig.js
+- [ ] Selection colors configurable (backgroundColor, textColor, bold)
+- [ ] Shadow configurable (enabled, character, offsets)
+- [ ] Background dimming configurable (enabled, character)
+- [ ] ModalRenderer uses config values for rendering
+- [ ] Changing config values affects modal appearance
+
 ## Implementation Details
 
 ### Modal Structure
