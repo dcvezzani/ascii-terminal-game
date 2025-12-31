@@ -94,12 +94,13 @@ const inputHandler = new InputHandler({
 
 ### Proposed Implementation
 
-**Selected Approach**: Modal Manager with Separate Input Handler
+**Selected Approach**: Modal Manager with Helper Classes
 - Create a `ModalManager` class to manage active modals (required for stacking support)
 - Create a `Modal` class in `src/ui/Modal.js` (new UI directory)
-- Create separate modal input handler (complete separation from InputHandler)
+- Create `ModalInputHandler` helper class used by `InputHandler` (similar to `ModalRenderer`/`Renderer` relationship)
+- Create `ModalRenderer` helper class used by `Renderer`
 - Modal state managed externally by ModalManager
-- Renderer is "master control" - may use separate helper renderer for modal rendering
+- InputHandler and Renderer are "controllers" - bulk of logic in helpers
 - Supports modal stacking (hide/show behavior)
 
 ### Modal Structure
@@ -159,9 +160,9 @@ const inputHandler = new InputHandler({
 ### Input Handling
 
 **Modal Input Mode**:
-- Modal intercepts input before InputHandler (modal has priority)
-- Separate modal input handler (complete separation from InputHandler)
-- When modal is open, input is captured by modal input handler
+- InputHandler checks if modal is open (via ModalManager)
+- When modal is open: InputHandler delegates to ModalInputHandler helper
+- When modal is closed: InputHandler handles game input normally
 - Directional keys (up/down) navigate options (vertical only, no horizontal navigation)
 - Enter key selects current option (executes action)
 - ESC key always closes modal
@@ -171,10 +172,11 @@ const inputHandler = new InputHandler({
 - Other keys are ignored by modal
 
 **Input Routing**:
-- Modal intercepts input before InputHandler (modal has priority)
-- Separate modal input handler handles all modal input
-- InputHandler remains separate and handles game input
-- ModalManager coordinates between modal and game input handlers
+- InputHandler checks modal state before handling input
+- InputHandler delegates to ModalInputHandler helper when modal is open
+- InputHandler handles game input when modal is closed
+- ModalInputHandler is a helper class (not a standalone input handler)
+- Bulk of modal input logic in helper, InputHandler is controller
 
 ### Implementation Steps
 
@@ -192,14 +194,14 @@ const inputHandler = new InputHandler({
    - Action execution: configurable per action (closes by default)
    - Modal dismissal: ESC always, optional configurable close key (e.g., 'q'), optional auto-close after action (via config flag)
 
-3. **Create Modal Input Handler**
-   - Modal intercepts input before InputHandler (modal has priority)
-   - Separate input handler for modal mode (complete separation from InputHandler)
+3. **Create Modal Input Handler Helper** (`src/ui/ModalInputHandler.js`)
+   - Helper class used by InputHandler (similar to ModalRenderer/Renderer relationship)
    - Handle directional keys (up/down) for option navigation
    - Handle Enter key for option selection
    - Handle ESC key for modal closing (always closes)
    - Handle optional configurable close key (e.g., 'q')
    - Ignore key presses during opening/closing animations
+   - Return boolean indicating if key was handled
 
 4. **Create Modal Renderer Helper**
    - Separate helper renderer used by `Renderer.js` (Renderer is master control)
@@ -214,25 +216,31 @@ const inputHandler = new InputHandler({
    - Manage modal state (open/closed, selected index) externally
    - Support modal stacking (hide/show behavior)
    - Handle modal lifecycle (open, close, reset on game restart)
-   - Coordinate between modal and game input handlers
+   - Provide modal state to InputHandler and Renderer
 
-6. **Integrate with Rendering System**
+6. **Integrate with Input System**
+   - InputHandler.js checks if modal is open (via ModalManager)
+   - If modal is open: InputHandler delegates to ModalInputHandler helper
+   - If modal is closed: InputHandler handles game input normally
+   - InputHandler imports ModalInputHandler helper and ModalManager
+
+7. **Integrate with Rendering System**
    - Renderer.js uses modal renderer helper to render modals
    - Render modal over game board with dimmed background
    - Ensure modal is visible and not obscured
    - Handle terminal resizing (modal size is percentage-based)
 
-7. **Add Modal Animation**
+8. **Add Modal Animation**
    - Animation starts as horizontal line in middle of viewport
    - Top and bottom grow until modal achieves proper size
    - Ignore input during animation
 
-8. **Integrate with Game Modes**
+9. **Integrate with Game Modes**
    - Local mode: pause game when modal is open
    - Networked mode: game continues, other players see still character
    - Actions execute in context of game mode (networked/local)
 
-9. **Create Example Modals**
+10. **Create Example Modals**
    - All modals use same structure (no special types)
    - Examples: game over modal, quit confirmation, connection status notification
    - Help screen should eventually be refactored to use modal
