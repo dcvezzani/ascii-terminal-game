@@ -454,9 +454,10 @@ Key Press → InputHandler
     setSelectedIndex(index)
     selectNext()
     selectPrevious()
-    scrollMessageUp()
-    scrollMessageDown()
-    getMessageScrollPosition()
+    scrollContentUp()
+    scrollContentDown()
+    getScrollPosition()
+    getContent()
     executeAction(index)
     isAnimating()
     getAnimationProgress()
@@ -464,7 +465,7 @@ Key Press → InputHandler
   ```
 - Modal state: managed externally by ModalManager
 - Option selection: wraps at boundaries
-- Message scrolling: tracks scroll position
+- Content scrolling: tracks scroll position for all content
 - Action execution: supports sync and async
 - Animation: tracks animation state
 
@@ -524,7 +525,7 @@ Key Press → InputHandler
   ```
 - Helper class: used by InputHandler, not a standalone input handler
 - Key handling:
-  - Up/down: navigate options or scroll message
+  - Up/down: navigate options (when not scrolling) or scroll all content
   - Enter: select option
   - ESC: close modal (always available)
   - 'q': close modal (always available)
@@ -557,8 +558,8 @@ Key Press → InputHandler
     renderBackground(x, y, width, height)
     renderShadow(x, y, width, height)
     renderTitle(title, x, y, width)
-    renderMessage(message, x, y, width, height, scrollPosition)
-    renderOptions(options, selectedIndex, x, y, width)
+    renderContent(content, selectedIndex, scrollPosition, x, y, width, height)
+    renderContentBlock(block, isSelected, x, y, width)
     calculateModalSize(terminalSize)
     calculateModalPosition(width, height, terminalSize)
   }
@@ -566,7 +567,7 @@ Key Press → InputHandler
 - Rendering: uses ANSI escapes and chalk for colors
 - Positioning: centers modal on screen
 - Sizing: fixed percentages of terminal size
-- Scrolling: renders visible portion of message
+- Scrolling: renders visible portion of all content (messages and options together)
 
 **Acceptance Criteria**:
 
@@ -574,7 +575,8 @@ Key Press → InputHandler
 - [ ] ModalRenderer renders modal border, background, shadow
 - [ ] ModalRenderer renders title, message, options
 - [ ] ModalRenderer handles positioning and sizing
-- [ ] ModalRenderer supports message scrolling
+- [ ] ModalRenderer supports content scrolling (all content together)
+- [ ] ModalRenderer renders flexible content blocks (messages and options intermixed)
 
 ### TR4: Renderer Integration
 
@@ -746,7 +748,7 @@ render() {
 
 ### Unit Tests
 
-- Modal class: option selection, message scrolling, action execution
+- Modal class: option selection, content scrolling, action execution, flexible content blocks
 - ModalManager: stack management, state tracking, reset
 - ModalInputHandler helper: key handling, returns boolean
 - ModalRenderer helper: rendering, positioning, sizing
@@ -766,7 +768,7 @@ render() {
 
 - Visual appearance: border, background, shadow, selection indicator
 - Animation: smooth opening animation
-- Scrolling: message scrolling with long content
+- Scrolling: content scrolling with long content (all content scrolls together)
 - Stacking: multiple modals opening/closing
 - Game mode behavior: pause in local, continue in networked
 
@@ -803,7 +805,8 @@ render() {
 - [ ] Modal closes with ESC key
 - [ ] Modal closes with 'q' key
 - [ ] Modal closes with custom close keys (if configured)
-- [ ] Message scrolling works for long content
+- [ ] Content scrolling works for long content (all content scrolls together)
+- [ ] Options and messages can be intermixed in any order
 - [ ] Modal stacking works (hide/show behavior)
 - [ ] Local mode pauses/resumes with modal
 - [ ] Networked mode continues with modal
