@@ -11,23 +11,23 @@ This gameplan implements a modal system that can display content over the game a
 
 **Goal**: Create a working modal system with basic display, selection, and closing capabilities.
 
-### Phase 1: Basic Modal Infrastructure
+### Phase 1: Basic Modal Infrastructure ✅ COMPLETE
 
 **Goal**: Set up the basic structure and infrastructure for modals.
 
 **Tasks**:
-- [ ] Create `src/ui/` directory
-- [ ] Create `src/ui/Modal.js` - Basic Modal class
+- [x] Create `src/ui/` directory
+- [x] Create `src/ui/Modal.js` - Basic Modal class
   - Constructor accepts title and content array
   - Basic structure: `{ title: string, content: Array<{type: 'message'|'option', ...}> }`
   - Track selected option index (default: 0)
   - Basic methods: `getTitle()`, `getContent()`, `getSelectedIndex()`, `setSelectedIndex()`
-- [ ] Create `src/ui/ModalManager.js` - Basic ModalManager class
+- [x] Create `src/ui/ModalManager.js` - Basic ModalManager class
   - Track current modal (single modal, no stacking yet)
   - Methods: `openModal(modal)`, `closeModal()`, `getCurrentModal()`, `hasOpenModal()`
   - Reset method for game restart
-- [ ] Create basic unit tests for Modal and ModalManager
-- [ ] Commit: "Feat: Add basic Modal and ModalManager classes"
+- [x] Create basic unit tests for Modal and ModalManager
+- [x] Commit: "Feat: Add basic Modal and ModalManager classes"
 
 **Acceptance Criteria**:
 - Modal class can be instantiated with title and content
