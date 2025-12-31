@@ -192,13 +192,20 @@ This gameplan implements a modal system that can display content over the game a
 - [x] Add shadow effect for modal
 - [x] Improve selection indicator (add background highlight and different text color)
 - [x] Update ModalRenderer to support enhanced visuals
+- [x] Add modal configuration to gameConfig.js for customization
+  - Selection colors: backgroundColor, textColor, bold
+  - Shadow: enabled, character, offsetX, offsetY
+  - Background dimming: enabled, character
+- [x] Update ModalRenderer to use config values
 - [x] Test visual appearance
 - [x] Commit: "Feat: Enhance modal visual design"
+- [x] Commit: "Feat: Add modal configuration for customization"
 
 **Acceptance Criteria**:
 - Modal has dimmed/obscured background
 - Modal has shadow effect
 - Selected option has `>` prefix, background highlight, and different text color
+- Modal visual aspects are configurable via gameConfig.modal
 - Visual appearance is polished
 
 ### Phase 9: Percentage-Based Sizing

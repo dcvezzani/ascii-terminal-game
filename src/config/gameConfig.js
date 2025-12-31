@@ -41,7 +41,7 @@ export const gameConfig = {
     // Selection highlight colors
     selection: {
       backgroundColor: 'white', // Background color for selected option
-      textColor: 'cyanBright', // Text color for selected option
+      textColor: 'black', // Text color for selected option
       bold: true, // Whether to use bold text for selected option
     },
     // Shadow configuration

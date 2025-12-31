@@ -752,6 +752,58 @@ render() {
 }
 ```
 
+### Game Configuration
+
+Modal visual aspects are configurable via `gameConfig.modal` in `src/config/gameConfig.js`:
+
+```javascript
+export const gameConfig = {
+  // ... other config ...
+  
+  modal: {
+    // Selection highlight colors
+    selection: {
+      backgroundColor: 'white',    // Background color for selected option (chalk method name)
+      textColor: 'cyanBright',   // Text color for selected option (chalk method name, camelCase)
+      bold: true,                 // Whether to use bold text for selected option
+    },
+    // Shadow configuration
+    shadow: {
+      enabled: true,              // Enable shadow effect
+      character: '▓',            // Shadow character (medium shade)
+      offsetX: 1,                // Horizontal shadow offset in characters
+      offsetY: 1,                // Vertical shadow offset in characters
+    },
+    // Background dimming
+    backgroundDimming: {
+      enabled: true,              // Enable background dimming
+      character: '░',            // Dimming character (light shade)
+    },
+  },
+};
+```
+
+**Configuration Details**:
+
+- **Selection Colors**: 
+  - `backgroundColor`: Chalk background color method name (e.g., 'white', 'black', 'red')
+  - `textColor`: Chalk text color method name in camelCase (e.g., 'cyanBright', 'red', 'green', 'yellowBright')
+  - `bold`: Boolean to enable/disable bold text for selected options
+  - The `getSelectionTextColor()` method in `ModalRenderer` builds the chalk chain: `chalk.bgWhite.cyanBright.bold`
+
+- **Shadow**:
+  - `enabled`: Toggle shadow rendering
+  - `character`: Character used for shadow effect (default: '▓')
+  - `offsetX`/`offsetY`: Pixel offset for shadow position (default: 1, 1)
+
+- **Background Dimming**:
+  - `enabled`: Toggle background dimming
+  - `character`: Character used for dimming effect (default: '░')
+
+**Usage**:
+
+All modal visual aspects are controlled by this configuration. The `ModalRenderer` and `Renderer` classes read from `gameConfig.modal` to apply the configured styles. This allows easy customization of modal appearance without modifying code.
+
 ## Testing Requirements
 
 ### Unit Tests
