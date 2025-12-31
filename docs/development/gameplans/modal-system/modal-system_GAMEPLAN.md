@@ -111,17 +111,17 @@ This gameplan implements a modal system that can display content over the game a
 - Example modal works in local mode
 - Integration tests pass
 
-### Phase 5: Integrate ModalManager into Local Mode
+### Phase 5: Integrate ModalManager into Local Mode ✅ COMPLETE
 
 **Goal**: Make modals functional in local mode.
 
 **Tasks**:
-- [ ] Create ModalManager instance in `src/modes/localMode.js`
-- [ ] Pass ModalManager to Renderer constructor
-- [ ] Pass ModalManager to InputHandler constructor
-- [ ] Create example "Game Over" modal with "Restart" and "Quit" options
-- [ ] Test modal can be opened and interacted with
-- [ ] Commit: "Feat: Integrate ModalManager into local mode"
+- [x] Create ModalManager instance in `src/modes/localMode.js`
+- [x] Pass ModalManager to Renderer constructor
+- [x] Pass ModalManager to InputHandler constructor
+- [x] Create example "Game Over" modal with "Restart" and "Quit" options
+- [x] Test modal can be opened and interacted with
+- [x] Commit: "Feat: Integrate ModalManager into local mode"
 
 **Acceptance Criteria**:
 - ModalManager is instantiated in local mode
