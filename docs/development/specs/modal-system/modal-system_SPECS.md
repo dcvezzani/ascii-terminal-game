@@ -271,6 +271,7 @@ This specification details the implementation of a modal system that can display
 
 - ESC key: always closes modal
 - 'q' key: always closes modal
+- Additional close keys: optional (via `config.closeKey` - string or array of strings)
 - Auto-close after action: optional (via configuration flag, closes by default)
 - Closing modal: restores previous modal in stack (if any) or returns to game
 
@@ -278,6 +279,7 @@ This specification details the implementation of a modal system that can display
 
 - [ ] ESC key always closes modal
 - [ ] 'q' key always closes modal
+- [ ] Optional additional close keys work (if configured via `config.closeKey`)
 - [ ] Auto-close after action works (default: true)
 - [ ] Closing modal restores previous modal in stack
 - [ ] Closing last modal returns to game
@@ -322,7 +324,7 @@ Game → Modal A → Modal B
 - When modal is open: InputHandler delegates to ModalInputHandler helper
 - When modal is closed: InputHandler handles game input normally
 - Key presses ignored during opening/closing animations
-- Other keys ignored by modal (only directional, Enter, ESC, 'q')
+- Other keys ignored by modal (only directional, Enter, ESC, 'q', and configured close keys)
 
 **Input Flow**:
 
@@ -510,16 +512,19 @@ Key Press → InputHandler
 - Key handling:
   - Up/down: navigate options or scroll message
   - Enter: select option
-  - ESC: close modal
-  - 'q': close modal
+  - ESC: close modal (always available)
+  - 'q': close modal (always available)
+  - Custom close keys: close modal (if configured via `config.closeKey`)
 - Animation handling: ignores input during animations
 - Returns boolean: `true` if key was handled, `false` if not
+- Handles custom close keys: checks `config.closeKey` (string or array of strings)
 
 **Acceptance Criteria**:
 
 - [ ] ModalInputHandler class exists in `src/ui/ModalInputHandler.js`
 - [ ] ModalInputHandler is a helper class (not standalone input handler)
-- [ ] ModalInputHandler handles required keys
+- [ ] ModalInputHandler handles required keys (ESC, 'q', Enter, up/down)
+- [ ] ModalInputHandler handles custom close keys (if configured)
 - [ ] ModalInputHandler ignores input during animations
 - [ ] ModalInputHandler returns boolean indicating if key was handled
 
@@ -780,6 +785,7 @@ render() {
 - [ ] Actions execute correctly (sync and async)
 - [ ] Modal closes with ESC key
 - [ ] Modal closes with 'q' key
+- [ ] Modal closes with custom close keys (if configured)
 - [ ] Message scrolling works for long content
 - [ ] Modal stacking works (hide/show behavior)
 - [ ] Local mode pauses/resumes with modal

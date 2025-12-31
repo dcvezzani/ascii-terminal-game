@@ -168,9 +168,10 @@ const inputHandler = new InputHandler({
 - Enter key selects current option (executes action)
 - ESC key always closes modal
 - 'q' key always closes modal
+- Additional close keys: optional (via `config.closeKey` - string or array of strings)
 - Auto-close after action is optional (via configuration flag, closes by default)
 - Key presses are ignored while modal is opening/closing
-- Other keys are ignored by modal (only directional, Enter, ESC, 'q' are handled)
+- Other keys are ignored by modal (only directional, Enter, ESC, 'q', and configured close keys are handled)
 
 **Input Routing**:
 - InputHandler checks modal state before handling input
@@ -194,7 +195,7 @@ const inputHandler = new InputHandler({
    - Support action return values (with config flag) and explicit close method
    - Support async actions with loading state
    - Action execution: configurable per action (closes by default)
-   - Modal dismissal: ESC and 'q' always close modal, optional auto-close after action (via config flag)
+   - Modal dismissal: ESC and 'q' always close modal, optional additional close keys (via `config.closeKey`), optional auto-close after action (via config flag)
 
 3. **Create Modal Input Handler Helper** (`src/ui/ModalInputHandler.js`)
    - Helper class used by InputHandler (similar to ModalRenderer/Renderer relationship)
@@ -202,6 +203,7 @@ const inputHandler = new InputHandler({
    - Handle Enter key for option selection
    - Handle ESC key for modal closing (always closes)
    - Handle 'q' key for modal closing (always closes)
+   - Handle custom close keys (if configured via `config.closeKey` - string or array of strings)
    - Ignore key presses during opening/closing animations
    - Return boolean indicating if key was handled
 
@@ -291,7 +293,7 @@ const inputHandler = new InputHandler({
 - Content scrolling: use movement keys to scroll vertically (up/down) within modal viewport, no horizontal scrolling
 - Visual effects: background color, shadow effect
 - Selection indicator: `>` prefix + background highlight + different text color
-- Modal dismissal: ESC and 'q' always close modal, optional auto-close after action (via config flag)
+- Modal dismissal: ESC and 'q' always close modal, optional additional close keys (via `config.closeKey` - string or array), optional auto-close after action (via config flag)
 - Action execution: configurable per action (closes by default)
 - Accessibility: consider in future efforts (keyboard navigation only for now)
 
