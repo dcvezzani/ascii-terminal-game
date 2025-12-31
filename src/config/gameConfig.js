@@ -35,6 +35,28 @@ export const gameConfig = {
   game: {
     initialScore: 0,
   },
+
+  // Modal configuration
+  modal: {
+    // Selection highlight colors
+    selection: {
+      backgroundColor: 'white', // Background color for selected option
+      textColor: 'cyanBright', // Text color for selected option
+      bold: true, // Whether to use bold text for selected option
+    },
+    // Shadow configuration
+    shadow: {
+      enabled: true, // Enable shadow effect
+      character: '▓', // Shadow character
+      offsetX: 1, // Horizontal shadow offset
+      offsetY: 1, // Vertical shadow offset
+    },
+    // Background dimming
+    backgroundDimming: {
+      enabled: true, // Enable background dimming
+      character: '░', // Dimming character
+    },
+  },
 };
 
 // Calculate derived values

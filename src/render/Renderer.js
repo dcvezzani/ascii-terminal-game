@@ -176,10 +176,17 @@ export class Renderer {
    * Renders a dimmed overlay over the entire screen to obscure the game board
    */
   dimBackground() {
+    const config = gameConfig.modal.backgroundDimming;
+    
+    // Skip rendering if background dimming is disabled
+    if (!config.enabled) {
+      return;
+    }
+    
     const terminalSize = getTerminalSize();
     // Render a dimmed overlay over the entire screen to hide game board
-    // Use a dark gray character to create dimming effect
-    const dimChar = '░'; // Light shade character for dimming
+    // Use character from config to create dimming effect
+    const dimChar = config.character || '░';
     
     for (let y = 0; y < terminalSize.rows; y++) {
       for (let x = 0; x < terminalSize.columns; x++) {

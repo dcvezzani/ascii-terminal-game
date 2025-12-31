@@ -2,6 +2,7 @@ import ansiEscapes from 'ansi-escapes';
 import chalk from 'chalk';
 import cliCursor from 'cli-cursor';
 import { getHorizontalCenter, getVerticalCenter, getTerminalSize } from '../utils/terminal.js';
+import { gameConfig } from '../config/gameConfig.js';
 
 /**
  * ModalRenderer helper class for rendering modals
@@ -24,6 +25,43 @@ export class ModalRenderer {
   }
 
   /**
+   * Get the chalk color function for selected option text based on config
+   * @returns {Function} Chalk color function for selected option text
+   */
+  getSelectionTextColor() {
+    const config = gameConfig.modal.selection;
+    let colorFn = chalk;
+
+    // Apply background color
+    if (config.backgroundColor) {
+      const bgColor = config.backgroundColor.toLowerCase();
+      // Handle camelCase to lowercase conversion (e.g., 'white' -> 'bgWhite')
+      const bgMethod = `bg${bgColor.charAt(0).toUpperCase()}${bgColor.slice(1)}`;
+      if (chalk[bgMethod]) {
+        colorFn = chalk[bgMethod];
+      }
+    }
+
+    // Apply text color
+    if (config.textColor) {
+      const textColor = config.textColor.toLowerCase();
+      // Handle camelCase conversion for chalk methods
+      // Examples: 'cyanBright' -> 'cyanBright', 'red' -> 'red', 'blueBright' -> 'blueBright'
+      const textMethod = textColor.charAt(0).toUpperCase() + textColor.slice(1);
+      if (colorFn && typeof colorFn[textMethod] === 'function') {
+        colorFn = colorFn[textMethod];
+      }
+    }
+
+    // Apply bold if configured
+    if (config.bold && colorFn && typeof colorFn.bold === 'function') {
+      colorFn = colorFn.bold;
+    }
+
+    return colorFn;
+  }
+
+  /**
    * Render a modal on the screen
    * @param {Modal} modal - Modal instance to render
    */
@@ -43,8 +81,10 @@ export class ModalRenderer {
     const startX = getHorizontalCenter(modalWidth, terminalSize.columns);
     const startY = getVerticalCenter(modalHeight, terminalSize.rows);
 
-    // Render modal shadow first (behind modal)
-    this.renderShadow(startX, startY, modalWidth, modalHeight, terminalSize);
+    // Render modal shadow first (behind modal) if enabled
+    if (gameConfig.modal.shadow.enabled) {
+      this.renderShadow(startX, startY, modalWidth, modalHeight, terminalSize);
+    }
     
     // Render modal border and content
     this.renderBorder(startX, startY, modalWidth, modalHeight);
@@ -159,9 +199,9 @@ export class ModalRenderer {
       // Render option with selection indicator
       process.stdout.write(ansiEscapes.cursorTo(startX + this.padding, y));
       if (isSelected) {
-        // Selected option: prefix + label with background highlight and bright text color
-        // Use bright cyan text on white background for better contrast
-        process.stdout.write(chalk.bgWhite.cyanBright.bold(optionText));
+        // Selected option: prefix + label with background highlight and text color from config
+        const selectionColor = this.getSelectionTextColor();
+        process.stdout.write(selectionColor(optionText));
         // Fill rest of line with black background
         const remainingWidth = lineWidth - optionText.length;
         if (remainingWidth > 0) {
@@ -354,9 +394,9 @@ export class ModalRenderer {
         // Render option with selection indicator
         process.stdout.write(ansiEscapes.cursorTo(startX + this.padding, currentY));
         if (isSelected) {
-          // Selected option: prefix + label with background highlight and bright text color
-          // Use bright cyan text on white background for better contrast
-          process.stdout.write(chalk.bgWhite.cyanBright.bold(optionText));
+          // Selected option: prefix + label with background highlight and text color from config
+          const selectionColor = this.getSelectionTextColor();
+          process.stdout.write(selectionColor(optionText));
           // Fill rest of line with black background to ensure clean rendering
           const remainingWidth = lineWidth - optionText.length;
           if (remainingWidth > 0) {
@@ -390,14 +430,21 @@ export class ModalRenderer {
    * @param {Object} terminalSize - Terminal size object with rows and columns
    */
   renderShadow(startX, startY, width, height, terminalSize) {
-    // Shadow offset: 1 pixel to the right and 1 pixel down
-    const shadowOffsetX = 1;
-    const shadowOffsetY = 1;
+    const config = gameConfig.modal.shadow;
+    
+    // Skip rendering if shadow is disabled
+    if (!config.enabled) {
+      return;
+    }
+    
+    // Shadow offset from config
+    const shadowOffsetX = config.offsetX || 1;
+    const shadowOffsetY = config.offsetY || 1;
     const shadowX = startX + shadowOffsetX;
     const shadowY = startY + shadowOffsetY;
     
-    // Shadow character (darker than dimmed background)
-    const shadowChar = '▓'; // Medium shade character for shadow
+    // Shadow character from config
+    const shadowChar = config.character || '▓';
     
     // Render shadow for right edge
     for (let y = 0; y < height; y++) {
