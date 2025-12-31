@@ -40,27 +40,42 @@ When the WebSocket server is already running and 3 clients start up, something a
 
 ## Root Cause
 
-**Potential Issues**:
+**IDENTIFIED**: The issue is caused by the `Game` class automatically adding a 'local-player' entity when instantiated.
 
-1. **Player Entity Not Removed on Disconnect**
-   - When a player disconnects, their entity may not be properly removed from the board
-   - The board's `hasSolidEntity()` check may still detect the entity even though the player is gone
-   - Entity remains in board's entity queue but player is removed from game state
+**Root Cause Details**:
 
-2. **Entity Queue Not Synchronized**
-   - Board's entity queue may contain stale entries
-   - Player removal may not clear the board entity properly
-   - Multiple players spawning at same position may leave ghost entities
+1. **GameServer Creates Game Instance**
+   - When `GameServer` is constructed, it creates `this.game = new Game()` (line 22 of `GameServer.js`)
+   - The `Game` class is designed for local single-player mode
 
-3. **Spawn Position Collision Detection**
-   - The spiral search may not be working correctly
-   - `hasSolidEntity()` may be checking for entities that don't exist in game state
-   - Board entity tracking may be out of sync with player state
+2. **Game Constructor Adds Local Player Entity**
+   - The `Game` constructor automatically adds a player entity at the initial position (20, 10)
+   - Entity ID: `'local-player'`
+   - Entity is solid: `solid: true`
+   - This happens in `Game.js` lines 19-24:
+     ```javascript
+     this.board.addEntity(this.playerX, this.playerY, {
+       char: PLAYER_CHAR.char,
+       color: PLAYER_CHAR.color,
+       id: this.playerId, // 'local-player'
+       solid: true,
+     });
+     ```
 
-4. **Player Removal Logic**
-   - `removePlayer()` may not be calling `board.removeEntity()` correctly
-   - Entity ID mismatch between player and board entity
-   - Entity may be added to board but not properly tracked
+3. **Local Player Entity Remains on Board**
+   - The 'local-player' entity is never removed from the board
+   - It's not tracked in `GameServer.players` map (only networked players are tracked there)
+   - The entity remains at (20, 10) permanently
+
+4. **Collision Detection Finds Local Player**
+   - When networked players try to spawn at (20, 10), `hasSolidEntity()` returns `true`
+   - The check finds the 'local-player' entity that was added during GameServer initialization
+   - Spiral search is triggered, but the center position (20, 10) is always blocked
+
+**Why It Happens Even With Single Client**:
+- Even with just one networked client, the 'local-player' entity is already on the board
+- The first networked player can't spawn at (20, 10) because 'local-player' is there
+- This explains why it happens even with a single client
 
 ## Impact
 
@@ -150,30 +165,56 @@ if (
 
 ### Proposed Fix
 
-1. **Ensure Proper Entity Removal**
-   ```javascript
-   removePlayer(playerId) {
-     // ... existing code ...
-     
-     // Remove player entity from board
-     const player = this.players.get(playerId);
-     if (player) {
-       this.game.board.removeEntity(player.x, player.y, playerId);
-     }
-     
-     // ... rest of removal logic ...
-   }
-   ```
+**Solution**: Remove the 'local-player' entity when GameServer initializes, since it's not needed for networked mode.
 
-2. **Add Entity Queue Cleanup**
-   - Periodically clean up stale entities
-   - Verify entity queue matches game state
-   - Remove orphaned entities
+**Option 1: Remove Local Player Entity in GameServer Constructor** (Recommended)
+```javascript
+constructor() {
+  super();
+  this.game = new Game();
+  
+  // Remove the local-player entity added by Game constructor
+  // This entity is only needed for local single-player mode, not networked mode
+  const centerX = gameConfig.player.initialX;
+  const centerY = gameConfig.player.initialY;
+  this.game.board.removeEntity(centerX, centerY, 'local-player');
+  
+  // ... rest of constructor ...
+}
+```
 
-3. **Improve Spawn Position Validation**
-   - Check both board entities and game state players
-   - Ensure spiral search finds available positions
-   - Add logging to track spawn position conflicts
+**Option 2: Modify Game Constructor to Accept Options**
+```javascript
+// In Game.js
+constructor(options = {}) {
+  this.board = new Board();
+  // ... other initialization ...
+  
+  // Only add local player if not in server mode
+  if (options.addLocalPlayer !== false) {
+    this.board.addEntity(this.playerX, this.playerY, {
+      char: PLAYER_CHAR.char,
+      color: PLAYER_CHAR.color,
+      id: this.playerId,
+      solid: true,
+    });
+  }
+}
+
+// In GameServer.js
+constructor() {
+  super();
+  this.game = new Game({ addLocalPlayer: false });
+  // ... rest of constructor ...
+}
+```
+
+**Option 3: Create Separate Board-Only Initialization**
+- Create a method to initialize just the board without the player
+- Use that in GameServer instead of full Game instance
+- More complex but cleaner separation of concerns
+
+**Recommended**: Option 1 is simplest and most direct fix.
 
 ## Related Features
 
