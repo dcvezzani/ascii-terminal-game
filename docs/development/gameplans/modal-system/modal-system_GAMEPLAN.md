@@ -283,6 +283,12 @@ This gameplan implements a modal system that can display content over the game a
      - Original newlines create hard breaks (new wrapping context starts)
      - Result is a flat array of lines where original newlines are honored
      - Example: `"Line 1\nLong line that wraps"` → Split: `["Line 1", "Long line that wraps"]` → Wrap each → `["Line 1", "Long line", "that wraps"]`
+   - **Newline Handling**: 
+     - Split text by existing `\n` characters first (preserves intentional line breaks)
+     - Wrap each resulting segment independently
+     - Original newlines create hard breaks (new wrapping context starts)
+     - Result is a flat array of lines where original newlines are honored
+     - Example: `"Line 1\nLong line that wraps"` → Split: `["Line 1", "Long line that wraps"]` → Wrap each → `["Line 1", "Long line", "that wraps"]`
 
 5. **Wrapper Method in Modal**
    - Add method like `getWrappedContent(width)` that returns wrapped content blocks
