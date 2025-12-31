@@ -37,24 +37,24 @@ export class ModalRenderer {
       const bgColor = config.backgroundColor.toLowerCase();
       // Handle camelCase to lowercase conversion (e.g., 'white' -> 'bgWhite')
       const bgMethod = `bg${bgColor.charAt(0).toUpperCase()}${bgColor.slice(1)}`;
-      if (chalk[bgMethod]) {
+      if (chalk[bgMethod] && typeof chalk[bgMethod] === 'function') {
         colorFn = chalk[bgMethod];
       }
     }
 
     // Apply text color
     if (config.textColor) {
-      const textColor = config.textColor.toLowerCase();
-      // Handle camelCase conversion for chalk methods
-      // Examples: 'cyanBright' -> 'cyanBright', 'red' -> 'red', 'blueBright' -> 'blueBright'
-      const textMethod = textColor.charAt(0).toUpperCase() + textColor.slice(1);
-      if (colorFn && typeof colorFn[textMethod] === 'function') {
+      // Chalk methods are camelCase (e.g., 'cyanBright', 'red', 'blueBright')
+      // Use the textColor as-is since it should already be in camelCase
+      const textMethod = config.textColor;
+      // Check if the method exists on the current colorFn (which is a chalk function)
+      if (colorFn && typeof colorFn === 'function' && colorFn[textMethod] && typeof colorFn[textMethod] === 'function') {
         colorFn = colorFn[textMethod];
       }
     }
 
     // Apply bold if configured
-    if (config.bold && colorFn && typeof colorFn.bold === 'function') {
+    if (config.bold && colorFn && typeof colorFn === 'function' && colorFn.bold && typeof colorFn.bold === 'function') {
       colorFn = colorFn.bold;
     }
 
