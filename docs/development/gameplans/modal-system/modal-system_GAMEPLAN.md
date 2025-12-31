@@ -60,23 +60,23 @@ This gameplan implements a modal system that can display content over the game a
 - Modal renders over game board
 - Basic unit tests pass
 
-### Phase 3: Basic Input Handling
+### Phase 3: Basic Input Handling ✅ COMPLETE
 
 **Goal**: Handle modal input and integrate with InputHandler.
 
 **Tasks**:
-- [ ] Create `src/ui/ModalInputHandler.js` - Basic ModalInputHandler helper class
+- [x] Create `src/ui/ModalInputHandler.js` - Basic ModalInputHandler helper class
   - Handle up/down keys for option navigation (skip message blocks)
   - Handle Enter key for option selection
   - Handle ESC and 'q' keys for closing modal
   - Return boolean indicating if key was handled
-- [ ] Integrate ModalInputHandler into `src/input/InputHandler.js`
+- [x] Integrate ModalInputHandler into `src/input/InputHandler.js`
   - Check if modal is open (via ModalManager)
   - If open: delegate to ModalInputHandler helper and return (no game input processing)
   - If closed: handle game input normally
-- [ ] Create basic unit tests for ModalInputHandler
-- [ ] Create integration tests for InputHandler with modal
-- [ ] Commit: "Feat: Add modal input handling and InputHandler integration"
+- [x] Create basic unit tests for ModalInputHandler
+- [x] Create integration tests for InputHandler with modal
+- [x] Commit: "Feat: Add modal input handling and InputHandler integration"
 
 **Acceptance Criteria**:
 - Up/down keys navigate options (skip message blocks)
