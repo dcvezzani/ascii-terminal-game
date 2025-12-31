@@ -235,33 +235,74 @@ This gameplan implements a modal system that can display content over the game a
 **Goal**: Implement text wrapping for modal content to prevent overflow.
 
 **Tasks**:
-- [ ] Implement text wrapping using Lazy Wrapping with Memoization approach
-  - Wrap on-demand when rendering, but cache the result
-  - Invalidate cache when modal dimensions change
-  - Implement split-then-wrap algorithm to honor existing newlines
+- [ ] Evaluate text wrapping implementation approach (see alternatives below)
 - [ ] Implement text wrapping for message blocks (`text` property)
 - [ ] Implement text wrapping for option blocks (`label` property)
 - [ ] Handle wrapping with respect to modal width (accounting for padding)
-- [ ] Preserve existing newlines using split-then-wrap approach
-  - Split text by existing `\n` characters first
-  - Wrap each resulting segment independently
-  - Original newlines create hard breaks
+- [ ] Preserve existing newlines (don't re-wrap already wrapped content)
 - [ ] Create tests for text wrapping functionality
 - [ ] Test with various content lengths and modal widths
-- [ ] Test cache invalidation when modal dimensions change
-- [ ] Commit: "Feat: Add text wrapping for modal content using lazy wrapping with memoization"
+- [ ] Commit: "Feat: Add text wrapping for modal content"
 
 **Acceptance Criteria**:
 - Long text in message blocks wraps to fit modal width
-- Long labels in option blocks wraps to fit modal width
+- Long labels in option blocks wrap to fit modal width
 - Wrapping respects modal padding
-- Existing newlines are preserved (split-then-wrap approach)
-- Wrapped content is cached for efficiency
-- Cache is invalidated when modal dimensions change
+- Existing newlines are preserved
 - Wrapped content renders correctly
 - Tests pass
 
-**Implementation Approach**: Lazy Wrapping with Memoization (see specs for implementation alternatives and details)
+**Implementation Alternatives**:
+
+1. **Pre-processor Approach** (User's suggestion)
+   - Transform `text` and `label` values in Modal constructor or a preprocessing step
+   - Add `\n` characters to achieve wrapping
+   - **Pros**: Simple, content is pre-processed once
+   - **Cons**: Modifies original content, needs re-processing if modal width changes
+
+2. **Render-time Wrapping**
+   - Wrap text during rendering in ModalRenderer
+   - Compute wrapped lines on-the-fly
+   - **Pros**: Doesn't modify original content, always uses current modal width
+   - **Cons**: Recomputes on every render, more complex render logic
+
+3. **Cached Wrapped Content**
+   - Pre-compute wrapped lines when modal is created or dimensions change
+   - Store wrapped content separately from original
+   - **Pros**: Efficient rendering, preserves original content
+   - **Cons**: Requires tracking wrapped state, needs invalidation on dimension changes
+
+4. **Lazy Wrapping with Memoization**
+   - Wrap on-demand when rendering, but cache the result
+   - Invalidate cache when modal dimensions change
+   - **Pros**: Best of both worlds (efficient + current)
+   - **Cons**: More complex state management
+   - **Newline Handling**: 
+     - Split text by existing `\n` characters first (preserves intentional line breaks)
+     - Wrap each resulting segment independently
+     - Original newlines create hard breaks (new wrapping context starts)
+     - Result is a flat array of lines where original newlines are honored
+     - Example: `"Line 1\nLong line that wraps"` → Split: `["Line 1", "Long line that wraps"]` → Wrap each → `["Line 1", "Long line", "that wraps"]`
+   - **Newline Handling**: 
+     - Split text by existing `\n` characters first (preserves intentional line breaks)
+     - Wrap each resulting segment independently
+     - Original newlines create hard breaks (new wrapping context starts)
+     - Result is a flat array of lines where original newlines are honored
+     - Example: `"Line 1\nLong line that wraps"` → Split: `["Line 1", "Long line that wraps"]` → Wrap each → `["Line 1", "Long line", "that wraps"]`
+
+5. **Wrapper Method in Modal**
+   - Add method like `getWrappedContent(width)` that returns wrapped content blocks
+   - Original content remains unchanged
+   - **Pros**: Clean API, preserves original content
+   - **Cons**: Requires width parameter, may need caching for efficiency
+
+6. **Separate Wrapped Content Storage**
+   - Store both original and wrapped versions in Modal
+   - Update wrapped version when dimensions change
+   - **Pros**: Efficient, preserves original
+   - **Cons**: More memory, needs update mechanism
+
+**Recommendation**: Consider **Option 3 (Cached Wrapped Content)** or **Option 4 (Lazy Wrapping with Memoization)** for best balance of efficiency and correctness, especially when combined with percentage-based sizing (Phase 9) where modal width can change.
 
 ## Enhancement Phase Group: Content Scrolling
 

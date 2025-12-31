@@ -844,7 +844,7 @@ All modal visual aspects are controlled by this configuration. The `ModalRendere
 
 ### Text Wrapping Implementation Alternatives
 
-**Overview**: Text wrapping prevents content overflow by breaking long lines to fit within modal width. Multiple implementation approaches were considered:
+**Overview**: Text wrapping prevents content overflow by breaking long lines to fit within modal width. Multiple implementation approaches are possible:
 
 1. **Pre-processor Approach**
    - Transform `text` and `label` values in Modal constructor or a preprocessing step
@@ -864,7 +864,7 @@ All modal visual aspects are controlled by this configuration. The `ModalRendere
    - **Pros**: Efficient rendering, preserves original content
    - **Cons**: Requires tracking wrapped state, needs invalidation on dimension changes
 
-4. **Lazy Wrapping with Memoization** ⭐ **Selected Approach**
+4. **Lazy Wrapping with Memoization** (Selected for Phase 9.5)
    - Wrap on-demand when rendering, but cache the result
    - Invalidate cache when modal dimensions change
    - **Pros**: Best of both worlds (efficient + current)
@@ -888,7 +888,7 @@ All modal visual aspects are controlled by this configuration. The `ModalRendere
    - **Pros**: Efficient, preserves original
    - **Cons**: More memory, needs update mechanism
 
-**Selected Approach: Lazy Wrapping with Memoization**
+**Selected Approach**: **Lazy Wrapping with Memoization (Option 4)** provides the best balance of efficiency and correctness, especially when combined with percentage-based sizing where modal width can change.
 
 **Newline Handling Details**:
 
@@ -935,7 +935,6 @@ This approach ensures:
 - Each segment wraps independently
 - Intentional line breaks are preserved
 - Long lines within segments are wrapped appropriately
-- Caching provides efficiency while maintaining correctness
 
 ## Testing Requirements
 
