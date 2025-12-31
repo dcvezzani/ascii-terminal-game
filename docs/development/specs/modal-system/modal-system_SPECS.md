@@ -368,7 +368,7 @@ Key Press → InputHandler
 **Details**:
 
 - Animation: starts as horizontal line in middle of viewport
-- Growth: top and bottom grow until modal achieves proper size
+- Growth: top and bottom grow simultaneously (top grows upward, bottom grows downward at the same time)
 - Duration: configurable (default: ~300ms)
 - Input: ignored during animation
 - Animation is smooth and visually appealing
@@ -376,10 +376,9 @@ Key Press → InputHandler
 **Animation Sequence**:
 
 1. Modal starts as horizontal line (1 row height)
-2. Top grows upward
-3. Bottom grows downward
-4. Modal reaches full size
-5. Input enabled
+2. Top and bottom grow simultaneously (top grows upward, bottom grows downward at the same time)
+3. Modal reaches full size
+4. Input enabled
 
 **Acceptance Criteria**:
 
