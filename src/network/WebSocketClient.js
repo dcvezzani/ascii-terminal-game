@@ -39,6 +39,7 @@ export class WebSocketClient {
       onPlayerLeft: null,
       onReconnecting: null,
       onReconnected: null,
+      onServerRestart: null,
     };
   }
 
@@ -190,8 +191,21 @@ export class WebSocketClient {
     switch (type) {
       case MessageTypes.CONNECT:
         this.clientId = payload.clientId;
-        // If we have a playerId, this is a reconnection
-        if (this.playerId && payload.playerId === this.playerId) {
+        // Detect server restart: if we had a playerId but server says isReconnection=false,
+        // that means server restarted and we need to reset client state
+        if (this.playerId && payload.isReconnection === false) {
+          // Server restarted - notify client to reset state
+          if (this.callbacks.onServerRestart) {
+            this.callbacks.onServerRestart({
+              oldPlayerId: this.playerId,
+              newPlayerId: payload.playerId,
+            });
+          }
+          // Clear old playerId - we'll get a new one from PLAYER_JOINED
+          this.playerId = null;
+          this.reconnecting = false;
+          this.reconnectAttempts = 0;
+        } else if (this.playerId && payload.playerId === this.playerId) {
           // Reconnection successful - player state restored
           this.reconnecting = false;
           this.reconnectAttempts = 0;
@@ -318,6 +332,14 @@ export class WebSocketClient {
   }
 
   /**
+   * Send a RESTART message to restart the game
+   */
+  sendRestart() {
+    const message = createMessage(MessageTypes.RESTART, {}, this.clientId);
+    this.sendMessage(message);
+  }
+
+  /**
    * Set callback for connection event
    * @param {Function} callback - Callback function
    */
@@ -379,6 +401,14 @@ export class WebSocketClient {
    */
   onReconnected(callback) {
     this.callbacks.onReconnected = callback;
+  }
+
+  /**
+   * Set callback for server restart event
+   * @param {Function} callback - Callback function (receives {oldPlayerId, newPlayerId})
+   */
+  onServerRestart(callback) {
+    this.callbacks.onServerRestart = callback;
   }
 
   /**

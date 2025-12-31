@@ -1,16 +1,35 @@
 import { Board } from './Board.js';
 import { gameConfig } from '../config/gameConfig.js';
+import { PLAYER_CHAR } from '../constants/gameConstants.js';
 
 /**
  * Game class manages game state and logic
  */
 export class Game {
-  constructor() {
+  constructor(options = {}) {
     this.board = new Board();
     this.playerX = gameConfig.player.initialX;
     this.playerY = gameConfig.player.initialY;
     this.score = gameConfig.game.initialScore;
     this.running = false;
+    this.playerId = 'local-player'; // Unique ID for local player
+
+    // Only add local player if not explicitly disabled
+    // Default behavior (no options) adds player for local mode compatibility
+    // GameServer passes { addLocalPlayer: false } to avoid adding unused entity
+    if (options.addLocalPlayer !== false) {
+      try {
+        this.board.addEntity(this.playerX, this.playerY, {
+          char: PLAYER_CHAR.char,
+          color: PLAYER_CHAR.color,
+          id: this.playerId,
+          solid: true, // Players are solid entities
+        });
+      } catch (error) {
+        // If initial position is invalid, board will throw - this shouldn't happen
+        console.error(`Failed to add player to board: ${error.message}`);
+      }
+    }
   }
 
   /**
@@ -48,14 +67,50 @@ export class Game {
       return false;
     }
 
+    // Check for solid entity at new position (blocks movement)
+    if (this.board.hasSolidEntity(newX, newY)) {
+      return false;
+    }
+
+    // Remove player from old position on board
+    this.board.removeEntity(this.playerX, this.playerY, this.playerId);
+
     // Move player
     this.playerX = newX;
     this.playerY = newY;
+
+    // Add player to new position on board
+    try {
+      this.board.addEntity(newX, newY, {
+        char: PLAYER_CHAR.char,
+        color: PLAYER_CHAR.color,
+        id: this.playerId,
+        solid: false,
+      });
+    } catch (error) {
+      // Rollback position if board add fails
+      this.playerX = this.playerX - dx;
+      this.playerY = this.playerY - dy;
+      // Try to restore to old position
+      try {
+        this.board.addEntity(this.playerX, this.playerY, {
+          char: PLAYER_CHAR.char,
+          color: PLAYER_CHAR.color,
+          id: this.playerId,
+          solid: false,
+        });
+      } catch (restoreError) {
+        console.error(`Failed to restore player to old position: ${restoreError.message}`);
+      }
+      return false;
+    }
+
     return true;
   }
 
   /**
    * Reset the game to initial state
+   * Note: This always adds the local player entity, as reset is only used in local mode
    */
   reset() {
     this.board = new Board();
@@ -63,6 +118,19 @@ export class Game {
     this.playerY = gameConfig.player.initialY;
     this.score = gameConfig.game.initialScore;
     this.running = true;
+
+    // Add player to board at initial position
+    // Reset is only used in local mode, so we always add the player
+    try {
+      this.board.addEntity(this.playerX, this.playerY, {
+        char: PLAYER_CHAR.char,
+        color: PLAYER_CHAR.color,
+        id: this.playerId,
+        solid: false,
+      });
+    } catch (error) {
+      console.error(`Failed to add player to board on reset: ${error.message}`);
+    }
   }
 
   /**

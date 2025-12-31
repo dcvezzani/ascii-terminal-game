@@ -127,3 +127,9 @@ export const WALL_CHAR = toGlyph(fontSet.NUMBER_SIGN, toColorHexValue('gray'));
  * Unicode: U+263A (WHITE SMILING FACE)
  */
 export const PLAYER_CHAR = toZZTCharacterGlyph('player', toColorHexValue('white'));
+
+/**
+ * Movement broadcast modes for server state updates
+ */
+export const MOVEMENT_BROADCAST_IMMEDIATE = 'immediate';
+export const MOVEMENT_BROADCAST_PERIODIC = 'periodic';

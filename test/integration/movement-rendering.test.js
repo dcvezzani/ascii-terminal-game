@@ -239,17 +239,17 @@ describe('Movement and Rendering Integration', () => {
 
     test('Board state is consistent across components', () => {
       const center = getCenterPosition();
-      const cellBefore = game.board.getCell(center.x, center.y);
+      const cellBefore = game.board.getCellChar(center.x, center.y);
       expect(cellBefore).toBe(EMPTY_SPACE_CHAR.char);
 
       game.movePlayer(1, 0);
 
-      // Old position should still be empty
-      const oldCell = game.board.getCell(center.x, center.y);
+      // Old position should still be empty (base char, player entity is separate)
+      const oldCell = game.board.getCellChar(center.x, center.y);
       expect(oldCell).toBe(EMPTY_SPACE_CHAR.char);
 
-      // New position should be empty (player is tracked separately)
-      const newCell = game.board.getCell(center.x + 1, center.y);
+      // New position should be empty (base char, player entity is separate)
+      const newCell = game.board.getCellChar(center.x + 1, center.y);
       expect(newCell).toBe(EMPTY_SPACE_CHAR.char);
     });
 

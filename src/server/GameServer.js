@@ -3,22 +3,31 @@
  * Manages server-side game state for multiplayer support
  */
 
+import { EventEmitter } from 'events';
 import { Game } from '../game/Game.js';
 import { gameConfig } from '../config/gameConfig.js';
 import { randomUUID } from 'crypto';
 import { logger } from '../utils/logger.js';
+import { EventTypes } from './EventTypes.js';
+import { EMPTY_SPACE_CHAR, WALL_CHAR, PLAYER_CHAR } from '../constants/gameConstants.js';
 
 /**
  * Game Server class
  * Maintains authoritative game state and manages multiple players
+ * Extends EventEmitter to support event-driven architecture
  */
-export class GameServer {
+export class GameServer extends EventEmitter {
   constructor() {
-    this.game = new Game();
+    super(); // Call EventEmitter constructor
+    // Don't add local player entity - we'll add networked players via addPlayer()
+    // Local mode creates its own Game instance and doesn't use GameServer
+    this.game = new Game({ addLocalPlayer: false });
     // Map of playerId -> player info (active players)
     this.players = new Map();
     // Map of playerId -> { player, disconnectedAt } (disconnected players awaiting reconnection)
     this.disconnectedPlayers = new Map();
+    // Map of entityId -> entity info
+    this.entities = new Map();
     this.updateInterval = null;
     this.purgeInterval = null;
     // Grace period: 1 minute (60000ms) before permanently removing disconnected players
@@ -30,13 +39,25 @@ export class GameServer {
    * @returns {object} Game state object
    */
   getGameState() {
+    // Serialize board grid - convert Cell objects to base characters for network transmission
+    const grid = [];
+    for (let y = 0; y < this.game.board.height; y++) {
+      const row = [];
+      for (let x = 0; x < this.game.board.width; x++) {
+        const cell = this.game.board.getCell(x, y);
+        row.push(cell ? cell.getBaseChar() : EMPTY_SPACE_CHAR.char);
+      }
+      grid.push(row);
+    }
+
     return {
       board: {
         width: this.game.board.width,
         height: this.game.board.height,
-        grid: this.game.board.grid,
+        grid: grid, // Serialized grid with base characters
       },
       players: Array.from(this.players.values()), // Only active players
+      entities: Array.from(this.entities.values()), // All entities
       score: this.game.getScore(),
       running: this.game.isRunning(),
     };
@@ -61,27 +82,58 @@ export class GameServer {
     let startX = x !== null ? x : gameConfig.player.initialX;
     let startY = y !== null ? y : gameConfig.player.initialY;
 
-    // Validate position
+    // Validate position and check for conflicts
     if (
       !this.game.board.isValidPosition(startX, startY) ||
-      this.game.board.isWall(startX, startY)
+      this.game.board.isWall(startX, startY) ||
+      this.game.board.hasSolidEntity(startX, startY)
     ) {
-      // If invalid, try center position
+      // If invalid or occupied, try to find an available position near center
       const centerX = gameConfig.player.initialX;
       const centerY = gameConfig.player.initialY;
+      let foundPosition = false;
+
+      // Try center first
       if (
-        !this.game.board.isValidPosition(centerX, centerY) ||
-        this.game.board.isWall(centerX, centerY)
+        this.game.board.isValidPosition(centerX, centerY) &&
+        !this.game.board.isWall(centerX, centerY) &&
+        !this.game.board.hasSolidEntity(centerX, centerY)
       ) {
+        startX = centerX;
+        startY = centerY;
+        foundPosition = true;
+      } else {
+        // Search in a spiral pattern around center for an available position
+        const maxRadius = Math.min(this.game.board.width, this.game.board.height);
+        for (let radius = 1; radius < maxRadius && !foundPosition; radius++) {
+          for (let dx = -radius; dx <= radius && !foundPosition; dx++) {
+            for (let dy = -radius; dy <= radius && !foundPosition; dy++) {
+              // Only check positions on the edge of the current radius
+              if (Math.abs(dx) === radius || Math.abs(dy) === radius) {
+                const testX = centerX + dx;
+                const testY = centerY + dy;
+                if (
+                  this.game.board.isValidPosition(testX, testY) &&
+                  !this.game.board.isWall(testX, testY) &&
+                  !this.game.board.hasSolidEntity(testX, testY)
+                ) {
+                  startX = testX;
+                  startY = testY;
+                  foundPosition = true;
+                  logger.debug(`Found available position for player ${playerId} at (${testX}, ${testY})`);
+                }
+              }
+            }
+          }
+        }
+      }
+
+      if (!foundPosition) {
         logger.warn(
-          `Invalid position for player ${playerId}: (${startX}, ${startY}), center also invalid`
+          `No available position found for player ${playerId} near center (${centerX}, ${centerY})`
         );
         return false;
       }
-      // Use center position as fallback
-      logger.debug(`Using fallback center position for player ${playerId}`);
-      startX = centerX;
-      startY = centerY;
     }
 
     const player = {
@@ -91,6 +143,19 @@ export class GameServer {
       x: startX,
       y: startY,
     };
+
+    // Add player to board cell queue (players are solid, block movement)
+    try {
+      this.game.board.addEntity(startX, startY, {
+        char: PLAYER_CHAR.char,
+        color: PLAYER_CHAR.color,
+        id: `player-${playerId}`,
+        solid: true, // Players are solid entities, block movement
+      });
+    } catch (error) {
+      logger.warn(`Failed to add player to board at (${startX}, ${startY}): ${error.message}`);
+      return false;
+    }
 
     this.players.set(playerId, player);
     logger.info(`Player added: ${playerName} (${playerId}) at (${startX}, ${startY})`);
@@ -109,6 +174,9 @@ export class GameServer {
       logger.warn(`Attempted to mark non-existent player as disconnected: ${playerId}`);
       return false;
     }
+
+    // Remove player from board (but keep in disconnectedPlayers for potential reconnection)
+    this.game.board.removeEntity(player.x, player.y, `player-${playerId}`);
 
     // Move player to disconnectedPlayers map with timestamp
     this.disconnectedPlayers.set(playerId, {
@@ -135,7 +203,9 @@ export class GameServer {
     // Also remove from disconnected players if present
     this.disconnectedPlayers.delete(playerId);
 
-    if (removed && player) {
+    // Remove player from board
+    if (player) {
+      this.game.board.removeEntity(player.x, player.y, `player-${playerId}`);
       logger.info(`Player permanently removed: ${player.playerName} (${playerId})`);
     } else if (!removed) {
       logger.warn(`Attempted to remove non-existent player: ${playerId}`);
@@ -161,6 +231,19 @@ export class GameServer {
       clientId: newClientId,
     };
     this.players.set(playerId, player);
+
+    // Add player back to board at their position
+    try {
+      this.game.board.addEntity(player.x, player.y, {
+        char: PLAYER_CHAR.char,
+        color: PLAYER_CHAR.color,
+        id: `player-${playerId}`,
+        solid: true, // Players are solid entities
+      });
+    } catch (error) {
+      logger.warn(`Failed to restore player to board at (${player.x}, ${player.y}): ${error.message}`);
+      // Still restore player even if board add fails
+    }
 
     // Remove from disconnected players
     this.disconnectedPlayers.delete(playerId);
@@ -255,24 +338,96 @@ export class GameServer {
     }
 
     if (this.game.board.isWall(newX, newY)) {
+      // Emit targeted collision event
+      this.emit(EventTypes.BUMP, {
+        scope: 'targeted',
+        type: EventTypes.WALL_COLLISION,
+        targetId: playerId,
+        playerId: playerId,
+        attemptedPosition: { x: newX, y: newY },
+        currentPosition: { x: player.x, y: player.y },
+        collisionType: 'wall',
+        timestamp: Date.now(),
+      });
+
       logger.debug(`Wall collision for player ${playerId} at (${newX}, ${newY})`);
       return false;
     }
 
-    // Check for collision with other players
-    const hasCollision = Array.from(this.players.values()).some(
-      otherPlayer =>
-        otherPlayer.playerId !== playerId && otherPlayer.x === newX && otherPlayer.y === newY
-    );
+    // Check for solid entity at new position (blocks movement)
+    // This includes other players (who are solid entities) and other solid entities
+    if (this.game.board.hasSolidEntity(newX, newY)) {
+      // Check if the solid entity is another player for event purposes
+      const otherPlayer = Array.from(this.players.values()).find(
+        p => p.playerId !== playerId && p.x === newX && p.y === newY
+      );
 
-    if (hasCollision) {
-      logger.debug(`Player collision for player ${playerId} at (${newX}, ${newY})`);
+      if (otherPlayer) {
+        // Emit targeted collision event for player collision
+        this.emit(EventTypes.BUMP, {
+          scope: 'targeted',
+          type: EventTypes.PLAYER_COLLISION,
+          targetId: playerId,
+          playerId: playerId,
+          attemptedPosition: { x: newX, y: newY },
+          currentPosition: { x: player.x, y: player.y },
+          collisionType: 'player',
+          otherPlayerId: otherPlayer.playerId,
+          timestamp: Date.now(),
+        });
+        logger.debug(`Player collision for player ${playerId} at (${newX}, ${newY})`);
+      } else {
+        // Emit targeted collision event for solid entity collision
+        this.emit(EventTypes.BUMP, {
+          scope: 'targeted',
+          type: EventTypes.ENTITY_COLLISION,
+          targetId: playerId,
+          playerId: playerId,
+          attemptedPosition: { x: newX, y: newY },
+          currentPosition: { x: player.x, y: player.y },
+          collisionType: 'solid-entity',
+          timestamp: Date.now(),
+        });
+        logger.debug(`Solid entity collision for player ${playerId} at (${newX}, ${newY})`);
+      }
+
       return false;
     }
+
+    // Remove player from old position on board
+    this.game.board.removeEntity(player.x, player.y, `player-${playerId}`);
 
     // Move player
     player.x = newX;
     player.y = newY;
+
+    // Add player to new position on board
+    try {
+      this.game.board.addEntity(newX, newY, {
+        char: PLAYER_CHAR.char,
+        color: PLAYER_CHAR.color,
+        id: `player-${playerId}`,
+        solid: true, // Players are solid entities
+      });
+    } catch (error) {
+      logger.error(`Failed to add player to board at (${newX}, ${newY}): ${error.message}`);
+      // Rollback position
+      player.x = player.x - dx;
+      player.y = player.y - dy;
+      // Try to restore to old position
+      try {
+        this.game.board.addEntity(player.x, player.y, {
+          char: PLAYER_CHAR.char,
+          color: PLAYER_CHAR.color,
+          id: `player-${playerId}`,
+          solid: true, // Players are solid entities
+        });
+      } catch (restoreError) {
+        logger.error(`Failed to restore player to old position: ${restoreError.message}`);
+      }
+      return false;
+    }
+
     logger.debug(`Player ${playerId} moved to (${newX}, ${newY})`);
     return true;
   }
@@ -289,8 +444,11 @@ export class GameServer {
    * Reset the game to initial state
    */
   resetGame() {
-    this.game.reset();
+    this.game.reset(); // This creates a new Board, clearing all cell queues
     this.players.clear();
+    this.disconnectedPlayers.clear();
+    this.entities.clear();
+    logger.info('Game reset: cleared all players, disconnected players, and entities');
   }
 
   /**
@@ -313,5 +471,57 @@ export class GameServer {
    */
   getPlayerCount() {
     return this.players.size;
+  }
+
+  /**
+   * Spawn an entity on the board
+   * @param {string} entityType - Type of entity (e.g., 'ruffian', 'enemy')
+   * @param {number} x - X position
+   * @param {number} y - Y position
+   * @param {object} [options] - Optional entity properties (glyph, color, solid, etc.)
+   * @returns {string|null} Entity ID if spawned successfully, null if failed
+   */
+  spawnEntity(entityType, x, y, options = {}) {
+    // Generate unique entity ID
+    const entityId = randomUUID();
+
+    // Determine if entity is solid (default: true for ruffian, false for collectibles)
+    const isSolid = options.solid !== undefined ? options.solid : true;
+
+    // Get glyph and color
+    const glyph = options.glyph || null;
+    const color = options.color || 'white';
+
+    // Create entity object for tracking
+    const entity = {
+      entityId,
+      entityType,
+      x,
+      y,
+      solid: isSolid,
+      glyph,
+      color,
+      ...options, // Include any additional options
+    };
+
+    // Add to entities map first (for tracking)
+    this.entities.set(entityId, entity);
+
+    // Add entity to board cell queue (Board will validate)
+    try {
+      this.game.board.addEntity(x, y, {
+        char: glyph || '?',
+        color: color,
+        id: entityId,
+        solid: isSolid,
+      });
+      logger.info(`Entity spawned: ${entityType} (${entityId}) at (${x}, ${y}), solid: ${isSolid}`);
+      return entityId;
+    } catch (error) {
+      // Validation failed - remove from entities map
+      this.entities.delete(entityId);
+      logger.warn(`Failed to spawn entity ${entityType} at (${x}, ${y}): ${error.message}`);
+      return null;
+    }
   }
 }

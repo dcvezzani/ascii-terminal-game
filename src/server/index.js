@@ -16,6 +16,12 @@ import {
 import { MessageTypes } from '../network/MessageTypes.js';
 import { randomUUID } from 'crypto';
 import { logger } from '../utils/logger.js';
+import { setupCollisionListener } from './listeners/index.js';
+import {
+  toZZTCharacterGlyph,
+  toColorHexValue,
+  MOVEMENT_BROADCAST_IMMEDIATE,
+} from '../constants/gameConstants.js';
 
 let wss = null;
 let connectionManager = null;
@@ -39,6 +45,11 @@ export async function startServer() {
       connectionManager = new ConnectionManager();
       gameServer = new GameServer();
       gameServer.startGame();
+
+      // Set up event listeners
+      setupCollisionListener(gameServer);
+      // Future: setupCombatListener(gameServer);
+      // Future: setupAlignmentListener(gameServer);
 
       wss = new WebSocketServer({
         port: serverConfig.websocket.port,
@@ -78,7 +89,7 @@ export async function startServer() {
           ws.isAlive = false;
           ws.ping();
         });
-      }, 30000); // Ping every 30 seconds
+      }, serverConfig.websocket.broadcastIntervals.ping);
 
       // Broadcast state updates periodically
       stateUpdateInterval = setInterval(() => {
@@ -89,9 +100,9 @@ export async function startServer() {
             `Broadcasting state update to ${wss.clients.size} client(s), ${gameServer.getPlayerCount()} player(s)`
           );
         }
-      }, serverConfig.websocket.updateInterval);
+      }, serverConfig.websocket.broadcastIntervals.state);
 
-      // Purge disconnected players and connections periodically (every 30 seconds)
+      // Purge disconnected players and connections periodically
       purgeInterval = setInterval(() => {
         const purgedPlayers = gameServer.purgeDisconnectedPlayers();
         const purgedConnections = connectionManager.purgeDisconnectedConnections();
@@ -101,7 +112,7 @@ export async function startServer() {
         if (purgedConnections > 0) {
           logger.debug(`Purged ${purgedConnections} disconnected connection(s) after grace period`);
         }
-      }, 30000); // Check every 30 seconds
+      }, serverConfig.websocket.broadcastIntervals.purge);
 
       // Clean up purge interval on server close
       wss.on('close', () => {
@@ -358,6 +369,14 @@ function routeMessage(ws, clientId, message) {
       handlePingMessage(ws, clientId);
       break;
 
+    case MessageTypes.TEST:
+      handleTestMessage(ws, clientId, payload);
+      break;
+
+    case MessageTypes.RESTART:
+      handleRestartMessage(ws, clientId);
+      break;
+
     default:
       const errorMessage = createErrorMessage(
         'UNKNOWN_MESSAGE_TYPE',
@@ -380,6 +399,28 @@ function handleConnectMessage(ws, clientId, payload) {
     // console.log("handleConnectMessage payload", JSON.stringify(payload));
     const existingPlayerId = payload.playerId;
     const isReconnection = existingPlayerId && gameServer.hasRecentPlayer(existingPlayerId);
+    
+    // Check if this clientId already has a player assigned (prevent duplicate CONNECT messages)
+    const existingClientPlayerId = connectionManager.getPlayerId(clientId);
+    if (existingClientPlayerId && !isReconnection) {
+      // Client already has a player - this is a duplicate CONNECT, just return existing player info
+      logger.info(
+        `Duplicate CONNECT from client ${clientId}, returning existing player ${existingClientPlayerId}`
+      );
+      const existingPlayer = gameServer.getPlayer(existingClientPlayerId);
+      if (existingPlayer) {
+        const connectResponse = createMessage(MessageTypes.CONNECT, {
+          clientId,
+          playerId: existingClientPlayerId,
+          playerName: existingPlayer.playerName,
+          gameState: gameServer.getGameState(),
+          isReconnection: true, // Treat as reconnection since player already exists
+        });
+        sendMessage(ws, connectResponse);
+        return;
+      }
+    }
+    
     logger.info(
       `CONNECT message from client ${clientId}: existingPlayerId=${existingPlayerId}, isReconnection=${isReconnection}`
     );
@@ -555,7 +596,13 @@ function handleMoveMessage(ws, clientId, payload) {
       return;
     }
 
-    // Movement successful - state will be broadcast via periodic updates
+    // Movement successful - broadcast state update based on configuration
+    // Immediate: prevents other clients from seeing brief overlaps
+    // Periodic: state will be broadcast via periodic updates (default)
+    if (serverConfig.websocket.broadcastIntervals.movement === MOVEMENT_BROADCAST_IMMEDIATE) {
+      const stateMessage = createStateUpdateMessage(gameServer.getGameState());
+      broadcastMessage(stateMessage);
+    }
   } catch (error) {
     logger.error(`Error handling MOVE message from client ${clientId}:`, error);
     const errorMessage = createErrorMessage(
@@ -633,6 +680,58 @@ function handleSetPlayerNameMessage(ws, clientId, payload) {
 function handlePingMessage(ws, clientId) {
   const pongMessage = createMessage(MessageTypes.PONG, {}, clientId);
   sendMessage(ws, pongMessage);
+}
+
+/**
+ * Handle RESTART message
+ * @param {WebSocket} ws - WebSocket connection
+ * @param {string} clientId - Client ID
+ */
+function handleRestartMessage(ws, clientId) {
+  logger.info(`Received RESTART message from client ${clientId}`);
+
+  // Reset the game server state
+  gameServer.resetGame();
+  gameServer.startGame();
+
+  // Broadcast the reset state to all clients
+  const stateMessage = createStateUpdateMessage(gameServer.getGameState());
+  broadcastMessage(stateMessage);
+
+  logger.info(`Game restarted by client ${clientId}, state broadcast to all clients`);
+}
+
+/**
+ * Handle TEST message
+ * @param {WebSocket} ws - WebSocket connection
+ * @param {string} clientId - Client ID
+ * @param {object} payload - Message payload
+ */
+function handleTestMessage(ws, clientId, payload) {
+  logger.info(`Received TEST message from client ${clientId}:`, payload);
+
+  // Spawn a ruffian entity at position 15, 15
+  // Ruffian is solid (blocks movement) by default
+  const ruffianGlyph = toZZTCharacterGlyph('ruffian', toColorHexValue('purple'));
+  const entityId = gameServer.spawnEntity('ruffian', 15, 15, {
+    glyph: ruffianGlyph ? ruffianGlyph.char : null,
+    color: 'purple', // Store color name, client will convert to hex
+    solid: true, // Ruffian is solid - blocks player movement
+  });
+
+  if (entityId) {
+    logger.info(`Ruffian spawned successfully at (15, 15) with entityId: ${entityId}`);
+  } else {
+    logger.warn(`Failed to spawn ruffian at (15, 15)`);
+  }
+
+  // Echo back the test message with acknowledgment
+  const response = createMessage(
+    MessageTypes.TEST,
+    { received: true, originalPayload: payload, entitySpawned: entityId !== null, entityId },
+    clientId
+  );
+  sendMessage(ws, response);
 }
 
 /**

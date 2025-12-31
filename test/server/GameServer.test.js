@@ -32,12 +32,15 @@ describe('GameServer', () => {
       expect(gameServer.hasPlayer('player-1')).toBe(true);
     });
 
-    test('should add player at center position by default', () => {
+    test('should add player with position within board bounds', () => {
       gameServer.addPlayer('player-1', 'TestPlayer', 'client-1');
       const player = gameServer.getPlayer('player-1');
 
-      expect(player.x).toBe(gameConfig.player.initialX);
-      expect(player.y).toBe(gameConfig.player.initialY);
+      // Verify position is within board bounds
+      expect(player.x).toBeGreaterThanOrEqual(0);
+      expect(player.x).toBeLessThan(gameConfig.board.width);
+      expect(player.y).toBeGreaterThanOrEqual(0);
+      expect(player.y).toBeLessThan(gameConfig.board.height);
     });
 
     test('should add player at specified position', () => {
@@ -59,11 +62,14 @@ describe('GameServer', () => {
       // Try to add player at wall position (0, 0 is a wall)
       const added = gameServer.addPlayer('player-1', 'TestPlayer', 'client-1', 0, 0);
 
-      // Should fall back to center position
+      // Should fall back to center position or nearby available position
       const player = gameServer.getPlayer('player-1');
       expect(player).toBeDefined();
-      expect(player.x).toBe(gameConfig.player.initialX);
-      expect(player.y).toBe(gameConfig.player.initialY);
+      const centerX = gameConfig.player.initialX;
+      const centerY = gameConfig.player.initialY;
+      // Allow for small offset due to spawn logic finding nearby available position
+      expect(Math.abs(player.x - centerX)).toBeLessThanOrEqual(1);
+      expect(Math.abs(player.y - centerY)).toBeLessThanOrEqual(1);
     });
 
     test('should include player info in state', () => {
@@ -74,6 +80,28 @@ describe('GameServer', () => {
       expect(state.players[0].playerId).toBe('player-1');
       expect(state.players[0].playerName).toBe('TestPlayer');
       expect(state.players[0].clientId).toBe('client-1');
+    });
+
+    test('should place multiple players at different positions', () => {
+      gameServer.addPlayer('player-1', 'Player1', 'client-1');
+      gameServer.addPlayer('player-2', 'Player2', 'client-2');
+
+      const player1 = gameServer.getPlayer('player-1');
+      const player2 = gameServer.getPlayer('player-2');
+
+      // Both players should have valid positions within board bounds
+      expect(player1.x).toBeGreaterThanOrEqual(0);
+      expect(player1.x).toBeLessThan(gameConfig.board.width);
+      expect(player1.y).toBeGreaterThanOrEqual(0);
+      expect(player1.y).toBeLessThan(gameConfig.board.height);
+
+      expect(player2.x).toBeGreaterThanOrEqual(0);
+      expect(player2.x).toBeLessThan(gameConfig.board.width);
+      expect(player2.y).toBeGreaterThanOrEqual(0);
+      expect(player2.y).toBeLessThan(gameConfig.board.height);
+
+      // Players should be at different positions
+      expect(player1.x !== player2.x || player1.y !== player2.y).toBe(true);
     });
   });
 
@@ -98,12 +126,17 @@ describe('GameServer', () => {
     });
 
     test('should move player successfully', () => {
+      // Get player's starting position (may vary due to spawn logic)
+      const startPlayer = gameServer.getPlayer('player-1');
+      const startX = startPlayer.x;
+      const startY = startPlayer.y;
+
       const moved = gameServer.movePlayer('player-1', 1, 0);
       expect(moved).toBe(true);
 
       const player = gameServer.getPlayer('player-1');
-      expect(player.x).toBe(gameConfig.player.initialX + 1);
-      expect(player.y).toBe(gameConfig.player.initialY);
+      expect(player.x).toBe(startX + 1);
+      expect(player.y).toBe(startY);
     });
 
     test('should return false if player not found', () => {

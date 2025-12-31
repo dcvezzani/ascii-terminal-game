@@ -1,15 +1,8 @@
-import { describe, test, expect, beforeAll, afterAll } from 'vitest';
-import { ensureServerRunning, ensureServerStopped } from '../helpers/server.js';
+import { describe, test, expect } from 'vitest';
 import WebSocket from 'ws';
 
 describe('Action Validation', () => {
-  beforeAll(async () => {
-    await ensureServerRunning();
-  });
 
-  afterAll(async () => {
-    await ensureServerStopped();
-  });
   test('should reject MOVE with invalid dx/dy values (out of range)', async () => {
     return new Promise((resolve, reject) => {
       const ws = new WebSocket('ws://localhost:3000');

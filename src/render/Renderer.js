@@ -1,9 +1,16 @@
 import ansiEscapes from 'ansi-escapes';
 import chalk from 'chalk';
 import cliCursor from 'cli-cursor';
-import { getHorizontalCenter } from '../utils/terminal.js';
+import { getHorizontalCenter, getTerminalSize } from '../utils/terminal.js';
 import { gameConfig } from '../config/gameConfig.js';
-import { EMPTY_SPACE_CHAR, WALL_CHAR, PLAYER_CHAR } from '../constants/gameConstants.js';
+import { Board } from '../game/Board.js';
+import {
+  EMPTY_SPACE_CHAR,
+  WALL_CHAR,
+  PLAYER_CHAR,
+  toZZTCharacterGlyph,
+  toColorHexValue,
+} from '../constants/gameConstants.js';
 /**
  * Renderer class handles all terminal rendering for the game
  */
@@ -63,41 +70,19 @@ export class Renderer {
    * @param {number} playerY - Player Y position
    * @param {Array} [players] - Optional array of all players for multiplayer mode
    * @param {string} [localPlayerId] - Optional local player ID to highlight
+   * @param {Array} [entities] - Optional array of all entities
    */
-  renderBoard(board, playerX, playerY, players = null, localPlayerId = null) {
+  renderBoard(board, playerX, playerY, players = null, localPlayerId = null, entities = []) {
     const boardStartX = getHorizontalCenter(this.boardWidth);
 
     for (let y = 0; y < this.boardHeight; y++) {
       process.stdout.write(ansiEscapes.cursorTo(boardStartX, this.boardOffset + y));
 
       for (let x = 0; x < this.boardWidth; x++) {
-        let glyph;
-
-        // Check if any player is at this position
-        let playerAtPosition = null;
-        if (players && Array.isArray(players)) {
-          playerAtPosition = players.find(p => p.x === x && p.y === y);
-        }
-
-        if (playerAtPosition) {
-          // Player position (use local player position if no players array provided)
-          glyph = PLAYER_CHAR;
-        } else if (x === playerX && y === playerY && !players) {
-          // Single player mode - use provided position
-          glyph = PLAYER_CHAR;
-        } else {
-          const cell = board.getCell(x, y);
-          if (cell === WALL_CHAR.char) {
-            // Wall
-            glyph = WALL_CHAR;
-          } else {
-            // Empty space
-            glyph = EMPTY_SPACE_CHAR;
-          }
-        }
-
-        const colorFn = this.getColorFunction(glyph.color);
-        process.stdout.write(colorFn(glyph.char));
+        // Use getCellContent to determine what to render (player > entity > board cell)
+        const content = this.getCellContent(x, y, board, entities, players || [], playerX, playerY);
+        const colorFn = this.getColorFunction(content.color);
+        process.stdout.write(colorFn(content.glyph.char));
       }
     }
   }
@@ -112,9 +97,18 @@ export class Renderer {
     const statusText = `Score: ${score} | Position: (${x}, ${y}) | Controls: Arrow/WASD to move, Q/ESC to quit, R to restart, H/? for help`;
     const centerOffset = getHorizontalCenter(statusText.length);
 
+    // Pre-allocate space for the status bar to ensure all trailing characters are cleared
+    // Calculate maximum possible status text width (with largest position values)
+    const maxStatusText = `Score: 999 | Position: (99, 99) | Controls: Arrow/WASD to move, Q/ESC to quit, R to restart, H/? for help`;
+    const terminalWidth = getTerminalSize().columns;
+    const preAllocWidth = Math.max(maxStatusText.length, terminalWidth);
+    const preAllocSpaces = ' '.repeat(preAllocWidth);
+
+    // Move to the status bar line and write spaces to clear/overwrite entire line
+    process.stdout.write(ansiEscapes.cursorTo(0, this.statusBarOffset));
+    process.stdout.write(preAllocSpaces);
+    // Now move to center position and write the new text
     process.stdout.write(ansiEscapes.cursorTo(centerOffset, this.statusBarOffset));
-    // Clear the line first to remove any trailing characters
-    process.stdout.write(ansiEscapes.eraseEndLine);
     process.stdout.write(chalk.dim(statusText));
   }
 
@@ -130,26 +124,18 @@ export class Renderer {
 
     if (networkState) {
       // Networked mode - render from server state
-      const board = {
-        width: networkState.board.width,
-        height: networkState.board.height,
-        grid: networkState.board.grid,
-        getCell: (x, y) => {
-          if (
-            y >= 0 &&
-            y < networkState.board.grid.length &&
-            x >= 0 &&
-            x < networkState.board.grid[y].length
-          ) {
-            return networkState.board.grid[y][x];
-          }
-          return null;
-        },
-      };
+      const board = Board.fromSerialized(networkState.board);
       const localPlayer = networkState.players.find(p => p.playerId === localPlayerId);
       const playerX = localPlayer ? localPlayer.x : 0;
       const playerY = localPlayer ? localPlayer.y : 0;
-      this.renderBoard(board, playerX, playerY, networkState.players, localPlayerId);
+      this.renderBoard(
+        board,
+        playerX,
+        playerY,
+        networkState.players,
+        localPlayerId,
+        networkState.entities || []
+      );
       this.renderStatusBar(networkState.score || 0, playerX, playerY);
     } else {
       // Local mode - render from game instance
@@ -184,21 +170,34 @@ export class Renderer {
    * @param {number} oldY - Old player Y position
    * @param {number} newX - New player X position
    * @param {number} newY - New player Y position
-   * @param {Board} board - Board instance
+   * @param {Board|Object} board - Board instance (with getDisplay) or adapter
+   * @param {Array} [entities] - Optional array of all entities (for board adapters)
+   * @param {Array} [players] - Optional array of all players (for board adapters)
    */
-  updatePlayerPosition(oldX, oldY, newX, newY, board) {
-    // Clear old position (restore cell content)
-    const oldCell = board.getCell(oldX, oldY);
-    const oldGlyph = oldCell === WALL_CHAR.char ? WALL_CHAR : EMPTY_SPACE_CHAR;
-    const oldColorFn = this.getColorFunction(oldGlyph.color);
+  updatePlayerPosition(oldX, oldY, newX, newY, board, entities = [], players = []) {
+    // Clear old position - use board.getDisplay if available (Board handles prioritization)
+    let oldContent;
+    if (board && typeof board.getDisplay === 'function') {
+      const display = board.getDisplay(oldX, oldY);
+      if (display) {
+        oldContent = { glyph: { char: display.char }, color: display.color };
+      } else {
+        oldContent = { glyph: EMPTY_SPACE_CHAR, color: EMPTY_SPACE_CHAR.color };
+      }
+    } else {
+      // Fallback for board adapters (networked mode)
+      oldContent = this.getCellContent(oldX, oldY, board, entities, players);
+    }
+
+    const oldColorFn = this.getColorFunction(oldContent.color);
     const boardStartX = getHorizontalCenter(this.boardWidth);
     const oldScreenX = boardStartX + oldX;
     const oldScreenY = this.boardOffset + oldY;
 
     process.stdout.write(ansiEscapes.cursorTo(oldScreenX, oldScreenY));
-    process.stdout.write(oldColorFn(oldGlyph.char));
+    process.stdout.write(oldColorFn(oldContent.glyph.char));
 
-    // Draw new position
+    // Draw new position (player)
     const newScreenX = boardStartX + newX;
     const newScreenY = this.boardOffset + newY;
     const playerColorFn = this.getColorFunction(PLAYER_CHAR.color);
@@ -255,6 +254,257 @@ export class Renderer {
 
     // Move cursor out of the way
     process.stdout.write(ansiEscapes.cursorTo(0, startRow + helpLines.length + 1));
+  }
+
+  /**
+   * Update players incrementally based on change detection
+   * @param {Array} previousPlayers - Previous player array
+   * @param {Array} currentPlayers - Current player array
+   * @param {Board|Object} board - Board instance (with getDisplay) or adapter with getCell method
+   * @param {Object} changes - Change detection result from comparePlayers()
+   * @param {Array} [entities] - Optional array of all entities (for board adapters)
+   */
+  updatePlayersIncremental(previousPlayers, currentPlayers, board, changes, entities = []) {
+    // Handle moved players
+    for (const moved of changes.moved) {
+      // Clear old position - use board.getDisplay if available (Board handles prioritization)
+      let oldContent;
+      if (board && typeof board.getDisplay === 'function') {
+        const display = board.getDisplay(moved.oldX, moved.oldY);
+        if (display) {
+          oldContent = { glyph: { char: display.char }, color: display.color };
+        } else {
+          oldContent = { glyph: EMPTY_SPACE_CHAR, color: EMPTY_SPACE_CHAR.color };
+        }
+      } else {
+        // Fallback for board adapters (networked mode)
+        const otherPlayers = currentPlayers.filter(p => p.playerId !== moved.playerId);
+        oldContent = this.getCellContent(moved.oldX, moved.oldY, board, entities, otherPlayers);
+      }
+      const oldColorFn = this.getColorFunction(oldContent.color);
+      this.updateCell(moved.oldX, moved.oldY, oldContent.glyph.char, oldColorFn);
+
+      // Draw player at new position
+      const playerColorFn = this.getColorFunction(PLAYER_CHAR.color);
+      this.updateCell(moved.newX, moved.newY, PLAYER_CHAR.char, playerColorFn);
+    }
+
+    // Handle joined players
+    for (const joined of changes.joined) {
+      const playerColorFn = this.getColorFunction(PLAYER_CHAR.color);
+      this.updateCell(joined.x, joined.y, PLAYER_CHAR.char, playerColorFn);
+    }
+
+    // Handle left players
+    for (const left of changes.left) {
+      // Clear player position - use board.getDisplay if available (Board handles prioritization)
+      let oldContent;
+      if (board && typeof board.getDisplay === 'function') {
+        const display = board.getDisplay(left.x, left.y);
+        if (display) {
+          oldContent = { glyph: { char: display.char }, color: display.color };
+        } else {
+          oldContent = { glyph: EMPTY_SPACE_CHAR, color: EMPTY_SPACE_CHAR.color };
+        }
+      } else {
+        // Fallback for board adapters (networked mode)
+        const otherPlayers = currentPlayers.filter(p => p.playerId !== left.playerId);
+        oldContent = this.getCellContent(left.x, left.y, board, entities, otherPlayers);
+      }
+      const oldColorFn = this.getColorFunction(oldContent.color);
+      this.updateCell(left.x, left.y, oldContent.glyph.char, oldColorFn);
+    }
+
+    // Move cursor out of the way to prevent it from being visible on screen
+    process.stdout.write(ansiEscapes.cursorTo(0, this.statusBarOffset + 1));
+  }
+
+  /**
+   * Get entity glyph - uses entity.glyph if provided, otherwise maps entityType
+   * @param {Object} entity - Entity object
+   * @returns {string} Character to render
+   */
+  getEntityGlyph(entity) {
+    // If glyph is provided, use it directly
+    if (entity.glyph) {
+      return entity.glyph;
+    }
+
+    // Otherwise, try to map entityType using toZZTCharacterGlyph
+    if (entity.entityType) {
+      const glyph = toZZTCharacterGlyph(entity.entityType);
+      if (glyph) {
+        return glyph.char;
+      }
+    }
+
+    // Fallback to empty space if no glyph found
+    return EMPTY_SPACE_CHAR.char;
+  }
+
+  /**
+   * Get entity color - uses entity.color if provided, otherwise defaults to white
+   * @param {Object} entity - Entity object
+   * @returns {string|null} Color hex value or null
+   */
+  getEntityColor(entity) {
+    if (entity.color) {
+      return toColorHexValue(entity.color);
+    }
+    return toColorHexValue('white');
+  }
+
+  /**
+   * Get the top-most visible entity at a position (not hidden by player)
+   * @param {number} x - X coordinate
+   * @param {number} y - Y coordinate
+   * @param {Array} entities - Array of all entities
+   * @param {Array} players - Array of all players (to check if position is occupied)
+   * @returns {Object|null} Top-most visible entity or null
+   */
+  getTopVisibleEntityAt(x, y, entities = [], players = []) {
+    // Check if a player is at this position - if so, no entity is visible
+    const playerAtPosition = players.some(p => p.x === x && p.y === y);
+    if (playerAtPosition) {
+      return null; // Player is on top, entity not visible
+    }
+
+    // Find all entities at this position
+    const entitiesAtPosition = entities.filter(e => e.x === x && e.y === y);
+    if (entitiesAtPosition.length === 0) {
+      return null;
+    }
+
+    // Sort by zOrder (higher = on top), default to 0 if not specified
+    // If zOrder is same, use entityId for consistent ordering
+    entitiesAtPosition.sort((a, b) => {
+      const aZ = a.zOrder ?? a.priority ?? 0;
+      const bZ = b.zOrder ?? b.priority ?? 0;
+      if (aZ !== bZ) {
+        return bZ - aZ; // Higher zOrder first
+      }
+      // If same zOrder, use entityId for stable sort
+      return (a.entityId || '').localeCompare(b.entityId || '');
+    });
+
+    // Return the top-most entity
+    return entitiesAtPosition[0];
+  }
+
+  /**
+   * Get what should be rendered at a position (player > entity > board cell)
+   * @param {number} x - X coordinate
+   * @param {number} y - Y coordinate
+   * @param {Object} board - Board instance with getCell method
+   * @param {Array} entities - Array of all entities
+   * @param {Array} players - Array of all players
+   * @param {number} playerX - Single player X (for local mode)
+   * @param {number} playerY - Single player Y (for local mode)
+   * @returns {Object} { glyph: Glyph, color: string }
+   */
+  getCellContent(x, y, board, entities = [], players = [], playerX = null, playerY = null) {
+    // Check for player at position (highest priority)
+    const playerAtPosition = players.find(p => p.x === x && p.y === y);
+    if (playerAtPosition || (playerX === x && playerY === y && !players.length)) {
+      return { glyph: PLAYER_CHAR, color: PLAYER_CHAR.color };
+    }
+
+    // Check for entity at position
+    const entity = this.getTopVisibleEntityAt(x, y, entities, players);
+    if (entity) {
+      const entityChar = this.getEntityGlyph(entity);
+      const entityColor = this.getEntityColor(entity);
+      return { glyph: { char: entityChar, color: entityColor }, color: entityColor };
+    }
+
+    // Fall back to board cell - use getDisplay to get what should be displayed
+    const display = board.getDisplay(x, y);
+    if (display) {
+      // Convert color hex to the format expected (or use directly if already correct)
+      return { glyph: { char: display.char, color: display.color }, color: display.color };
+    }
+    // Fallback if getDisplay returns null
+    return { glyph: EMPTY_SPACE_CHAR, color: EMPTY_SPACE_CHAR.color };
+  }
+
+  /**
+   * Update entities incrementally based on change detection
+   * @param {Array} previousEntities - Previous entity array
+   * @param {Array} currentEntities - Current entity array
+   * @param {Object} board - Board instance or adapter with getCell method
+   * @param {Object} changes - Change detection result from compareEntities()
+   */
+  updateEntitiesIncremental(previousEntities, currentEntities, board, changes) {
+    // Handle moved entities
+    for (const moved of changes.moved) {
+      // Find entity in currentEntities to get glyph/color
+      const entity = currentEntities.find(e => e.entityId === moved.entityId);
+      if (!entity) continue;
+
+      // Clear old position (restore cell content from board)
+      const oldCell = board.getCell(moved.oldX, moved.oldY);
+      const oldGlyph = oldCell === WALL_CHAR.char ? WALL_CHAR : EMPTY_SPACE_CHAR;
+      const oldColorFn = this.getColorFunction(oldGlyph.color);
+      this.updateCell(moved.oldX, moved.oldY, oldGlyph.char, oldColorFn);
+
+      // Draw entity at new position
+      const entityChar = this.getEntityGlyph(entity);
+      const entityColor = this.getEntityColor(entity);
+      const entityColorFn = this.getColorFunction(entityColor);
+      this.updateCell(moved.newX, moved.newY, entityChar, entityColorFn);
+    }
+
+    // Handle spawned entities
+    for (const spawned of changes.spawned) {
+      // Find entity in currentEntities to get glyph/color
+      const entity = currentEntities.find(e => e.entityId === spawned.entityId);
+      if (!entity) continue;
+
+      const entityChar = this.getEntityGlyph(entity);
+      const entityColor = this.getEntityColor(entity);
+      const entityColorFn = this.getColorFunction(entityColor);
+      this.updateCell(spawned.x, spawned.y, entityChar, entityColorFn);
+    }
+
+    // Handle despawned entities
+    for (const despawned of changes.despawned) {
+      // Clear entity position (restore cell content from board)
+      const oldCell = board.getCell(despawned.x, despawned.y);
+      const oldGlyph = oldCell === WALL_CHAR.char ? WALL_CHAR : EMPTY_SPACE_CHAR;
+      const oldColorFn = this.getColorFunction(oldGlyph.color);
+      this.updateCell(despawned.x, despawned.y, oldGlyph.char, oldColorFn);
+    }
+
+    // Handle animated entities (glyph change at same position)
+    for (const animated of changes.animated) {
+      // Find entity in currentEntities to get new glyph/color
+      const entity = currentEntities.find(e => e.entityId === animated.entityId);
+      if (!entity) continue;
+
+      const entityChar = this.getEntityGlyph(entity);
+      const entityColor = this.getEntityColor(entity);
+      const entityColorFn = this.getColorFunction(entityColor);
+      this.updateCell(animated.x, animated.y, entityChar, entityColorFn);
+    }
+
+    // Move cursor out of the way to prevent it from being visible on screen
+    process.stdout.write(ansiEscapes.cursorTo(0, this.statusBarOffset + 1));
+  }
+
+  /**
+   * Update status bar only if score or position changed
+   * @param {number} score - Current score
+   * @param {number} x - Current player X position
+   * @param {number} y - Current player Y position
+   * @param {number} previousScore - Previous score
+   * @param {number} previousX - Previous player X position
+   * @param {number} previousY - Previous player Y position
+   */
+  updateStatusBarIfChanged(score, x, y, previousScore, previousX, previousY) {
+    // Only update if score or position changed (per Q6: Option B)
+    if (score !== previousScore || x !== previousX || y !== previousY) {
+      this.renderStatusBar(score, x, y);
+    }
   }
 
   /**

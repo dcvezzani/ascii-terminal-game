@@ -1,16 +1,8 @@
-import { describe, test, expect, beforeAll, afterAll } from 'vitest';
-import { ensureServerRunning, ensureServerStopped } from '../helpers/server.js';
+import { describe, test, expect } from 'vitest';
 import { serverConfig } from '../../src/config/serverConfig.js';
 import WebSocket from 'ws';
 
 describe('Server Entry Point', () => {
-  beforeAll(async () => {
-    await ensureServerRunning();
-  });
-
-  afterAll(async () => {
-    await ensureServerStopped();
-  });
 
   test('should have server running and accepting connections', async () => {
     return new Promise((resolve, reject) => {

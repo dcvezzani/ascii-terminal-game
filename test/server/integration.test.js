@@ -1,15 +1,8 @@
-import { describe, test, expect, beforeAll, afterAll } from 'vitest';
-import { ensureServerRunning, ensureServerStopped } from '../helpers/server.js';
+import { describe, test, expect } from 'vitest';
 import WebSocket from 'ws';
 
 describe('Server Integration', () => {
-  beforeAll(async () => {
-    await ensureServerRunning();
-  });
 
-  afterAll(async () => {
-    await ensureServerStopped();
-  });
   test('should accept new connections', async () => {
     return new Promise((resolve, reject) => {
       const ws = new WebSocket('ws://localhost:3000');
@@ -18,7 +11,7 @@ describe('Server Integration', () => {
       ws.on('open', () => {
         clearTimeout(timeoutId);
         ws.close();
-        console.log('Connection accepted');
+        // console.log('Connection accepted');
         resolve();
       });
 

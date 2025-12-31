@@ -396,11 +396,11 @@ describe('Game', () => {
       // Modify board
       const center = getCenterPosition();
       game.board.setCell(center.x, center.y, 'X');
-      expect(game.board.getCell(center.x, center.y)).toBe('X');
+      expect(game.board.getCellChar(center.x, center.y)).toBe('X');
 
       game.reset();
       // Board should be reinitialized
-      expect(game.board.getCell(center.x, center.y)).toBe(EMPTY_SPACE_CHAR.char);
+      expect(game.board.getCellChar(center.x, center.y)).toBe(EMPTY_SPACE_CHAR.char);
       expect(game.board).not.toBe(boardBefore);
     });
 
@@ -422,10 +422,10 @@ describe('Game', () => {
       game.reset();
 
       // Board should be back to original state
-      expect(game.board.getCell(5, 5)).toBe(EMPTY_SPACE_CHAR.char);
-      expect(game.board.getCell(15, 15)).toBe(EMPTY_SPACE_CHAR.char);
-      expect(game.board.getCell(0, 0)).toBe(WALL_CHAR.char);
-      expect(game.board.getCell(gameConfig.board.width - 1, gameConfig.board.height - 1)).toBe(
+      expect(game.board.getCellChar(5, 5)).toBe(EMPTY_SPACE_CHAR.char);
+      expect(game.board.getCellChar(15, 15)).toBe(EMPTY_SPACE_CHAR.char);
+      expect(game.board.getCellChar(0, 0)).toBe(WALL_CHAR.char);
+      expect(game.board.getCellChar(gameConfig.board.width - 1, gameConfig.board.height - 1)).toBe(
         WALL_CHAR.char
       );
     });
@@ -492,7 +492,8 @@ describe('Game', () => {
       expect(game.getPlayerPosition()).toEqual({ x: center.x, y: center.y });
       expect(game.getScore()).toBe(0);
       expect(game.isRunning()).toBe(true);
-      expect(game.board.getCell(center.x, center.y)).toBe(EMPTY_SPACE_CHAR.char);
+      // After reset, the cell should have empty space as base char (player entity is separate)
+      expect(game.board.getCellChar(center.x, center.y)).toBe(EMPTY_SPACE_CHAR.char);
     });
   });
 });
