@@ -146,7 +146,27 @@ export async function runLocalMode() {
         }
       },
       },
-      modalManager
+      modalManager,
+      () => {
+        // Callback when modal state changes (for re-rendering)
+        clientLogger.debug('Modal state change callback triggered');
+        if (renderer && modalManager) {
+          if (modalManager.hasOpenModal()) {
+            // Modal is open - re-render just the modal
+            clientLogger.debug('Modal is open - re-rendering modal');
+            const modal = modalManager.getCurrentModal();
+            if (modal) {
+              renderer.renderModalOnly(modal);
+            }
+          } else {
+            // Modal was closed - re-render the full game to show game board
+            clientLogger.debug('Modal is closed - re-rendering full game');
+            if (game) {
+              renderer.renderFull(game);
+            }
+          }
+        }
+      }
     );
 
     // Initialize renderer
@@ -168,10 +188,13 @@ export async function runLocalMode() {
           type: 'option',
           label: 'Restart',
           action: () => {
-            if (game && renderer) {
+            clientLogger.debug('Restart action executed');
+            if (game) {
               game.reset();
-              renderer.renderFull(game);
+              clientLogger.debug('Game reset complete');
             }
+            // Don't call renderFull here - let the modal close callback handle it
+            // This ensures the modal is closed before re-rendering
           },
         },
         {
@@ -190,8 +213,8 @@ export async function runLocalMode() {
     });
 
     // Example: Open modal (uncomment to test)
-    // modalManager.openModal(gameOverModal);
-    // renderer.renderFull(game);
+    modalManager.openModal(gameOverModal);
+    renderer.renderFull(game);
 
     // Start input handling
     inputHandler.start();

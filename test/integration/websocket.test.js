@@ -316,14 +316,14 @@ describe('WebSocket Integration', () => {
                     // But only if we've received enough updates to ensure synchronization
                     if (minUpdateCount >= 2) {
                       // After multiple updates, positions should be synchronized
-                      firstTestPlayers.forEach(firstPlayer => {
-                        const secondPlayer = secondTestPlayers.find(
-                          p => p.playerId === firstPlayer.playerId
-                        );
-                        expect(secondPlayer).toBeDefined();
-                        expect(secondPlayer.x).toBe(firstPlayer.x);
-                        expect(secondPlayer.y).toBe(firstPlayer.y);
-                      });
+                    firstTestPlayers.forEach(firstPlayer => {
+                      const secondPlayer = secondTestPlayers.find(
+                        p => p.playerId === firstPlayer.playerId
+                      );
+                      expect(secondPlayer).toBeDefined();
+                      expect(secondPlayer.x).toBe(firstPlayer.x);
+                      expect(secondPlayer.y).toBe(firstPlayer.y);
+                    });
                     } else {
                       // Not enough updates yet, wait for more
                       return; // Don't resolve yet
@@ -362,9 +362,9 @@ describe('WebSocket Integration', () => {
                       return secondPlayer && secondPlayer.x === firstPlayer.x && secondPlayer.y === firstPlayer.y;
                     });
                     if (allMatch) {
-                      clearTimeout(timeoutId);
-                      clients.forEach(client => client.close());
-                      resolve();
+                clearTimeout(timeoutId);
+                clients.forEach(client => client.close());
+                resolve();
                     }
                   }
                 }

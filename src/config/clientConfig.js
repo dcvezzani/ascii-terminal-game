@@ -6,7 +6,7 @@
 export const clientConfig = {
   logging: {
     level: 'debug', // Logging level: 'debug', 'info', 'warn', 'error'
-    transports: ['file'], // Transport options: 'console', 'file', or ['console', 'file']
+    transports: ['console', 'file'], // Transport options: 'console', 'file', or ['console', 'file']
     file: {
       enabled: true, // Enable file logging
       path: './logs/client.log', // Log file path (relative to project root)

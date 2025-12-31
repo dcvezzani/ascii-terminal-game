@@ -149,14 +149,34 @@ export class ModalRenderer {
         const lines = block.text.split('\n');
         lines.forEach(line => {
           process.stdout.write(ansiEscapes.cursorTo(startX + this.padding, currentY));
+          // Clear the line first
+          const lineWidth = width - (this.padding * 2);
+          process.stdout.write(' '.repeat(lineWidth));
+          // Render message
+          process.stdout.write(ansiEscapes.cursorTo(startX + this.padding, currentY));
           process.stdout.write(line);
           currentY++;
         });
       } else if (block.type === 'option') {
-        // Render option label
-        process.stdout.write(ansiEscapes.cursorTo(startX + this.padding, currentY));
+        // Render option label with selection indicator
+        const isSelected = optionIndex === selectedIndex;
+        const prefix = isSelected ? '> ' : '  ';
         const label = block.label;
-        process.stdout.write(label);
+        
+        // Clear the line first (fill with spaces to clear any previous content)
+        process.stdout.write(ansiEscapes.cursorTo(startX + this.padding, currentY));
+        const lineWidth = width - (this.padding * 2);
+        process.stdout.write(' '.repeat(lineWidth));
+        
+        // Render option with selection indicator
+        process.stdout.write(ansiEscapes.cursorTo(startX + this.padding, currentY));
+        if (isSelected) {
+          // Selected option: bold with background highlight
+          process.stdout.write(chalk.bgWhite.black(prefix + label));
+        } else {
+          // Unselected option: normal text
+          process.stdout.write(prefix + label);
+        }
         currentY++;
         optionIndex++;
       }

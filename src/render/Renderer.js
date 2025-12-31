@@ -173,10 +173,30 @@ export class Renderer {
    */
   dimBackground() {
     const terminalSize = getTerminalSize();
-    // Simple dimming: render a semi-transparent overlay
-    // For now, we'll use a simple approach - in future phases, this can be enhanced
-    // with a full shadow effect
-    // This is a placeholder for basic background dimming
+    // Render a dimmed overlay over the entire screen to hide game board
+    // Use a dark gray character to create dimming effect
+    const dimChar = '░'; // Light shade character for dimming
+    
+    for (let y = 0; y < terminalSize.rows; y++) {
+      for (let x = 0; x < terminalSize.columns; x++) {
+        process.stdout.write(ansiEscapes.cursorTo(x, y));
+        process.stdout.write(chalk.dim(dimChar));
+      }
+    }
+  }
+
+  /**
+   * Re-render just the modal (for when selection changes)
+   * @param {Modal} modal - Modal instance to render
+   */
+  renderModalOnly(modal) {
+    if (!modal) {
+      return;
+    }
+    // Re-render background dimming
+    this.dimBackground();
+    // Re-render modal
+    this.modalRenderer.renderModal(modal);
   }
 
   /**
