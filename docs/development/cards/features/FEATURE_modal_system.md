@@ -94,22 +94,13 @@ const inputHandler = new InputHandler({
 
 ### Proposed Implementation
 
-**Option 1: Modal Class with Action Callbacks** (Recommended)
-- Create a `Modal` class similar to `InputHandler` pattern
-- Modal accepts options with associated action callbacks
-- Modal handles its own input (directional keys, Enter, ESC)
-- Modal renders itself using Renderer or separate modal renderer
-
-**Option 2: Modal Manager**
-- Create a `ModalManager` class to manage active modals
-- Modals are objects with content, options, and actions
-- Manager handles input routing and rendering
-- Supports modal stack for nested modals
-
-**Option 3: Integrated with InputHandler**
-- Extend `InputHandler` to support modal mode
-- When modal is active, input is routed to modal instead of game
-- Modal options use same callback pattern as key bindings
+**Selected Approach**: Modal Manager with Separate Input Handler
+- Create a `ModalManager` class to manage active modals (required for stacking support)
+- Create a `Modal` class in `src/ui/Modal.js` (new UI directory)
+- Create separate modal input handler (complete separation from InputHandler)
+- Modal state managed externally by ModalManager
+- Renderer is "master control" - may use separate helper renderer for modal rendering
+- Supports modal stacking (hide/show behavior)
 
 ### Modal Structure
 
@@ -157,63 +148,85 @@ const inputHandler = new InputHandler({
 ```
 
 **Visual Elements**:
-- Border around modal (using box-drawing characters or simple characters)
-- Background (optional - could use ANSI background colors)
+- Border around modal using ASCII box-drawing characters (┌─┐│└─┘)
+- Background with dimmed/obscured game board behind modal
 - Title at top
-- Message content in middle
+- Message content in middle (supports scrolling if content is longer than viewport)
 - Options list at bottom
-- Selected option highlighted (e.g., `>` prefix, different color, or background highlight)
+- Selected option highlighted with `>` prefix AND background highlight
+- Modal dimensions: fixed percentages relative to terminal size
 
 ### Input Handling
 
 **Modal Input Mode**:
-- When modal is open, input should be captured by modal
-- Directional keys (up/down) navigate options
+- Separate modal input handler (complete separation from InputHandler)
+- When modal is open, input is captured by modal input handler
+- Directional keys (up/down) navigate options (vertical only, no horizontal navigation)
 - Enter key selects current option (executes action)
 - ESC key closes modal (if allowed)
-- Other keys may be ignored or handled by modal
+- Key presses are ignored while modal is opening/closing
+- Other keys are ignored by modal
 
 **Input Routing**:
-- Need to determine how to route input to modal vs game
-- Options:
-  1. Modal intercepts input before InputHandler
-  2. InputHandler checks if modal is active and routes accordingly
-  3. Separate input handler for modal mode
+- Separate modal input handler handles all modal input
+- InputHandler remains separate and handles game input
+- ModalManager coordinates between modal and game input handlers
 
 ### Implementation Steps
 
-1. **Create Modal Class**
+1. **Create UI Directory Structure**
+   - Create `src/ui/` directory
+   - Create `src/ui/Modal.js` - Modal class
+   - Create `src/ui/ModalManager.js` - ModalManager class (manages modal state and stacking)
+
+2. **Create Modal Class** (`src/ui/Modal.js`)
    - Define modal structure (title, message, options, actions)
-   - Implement option selection logic (up/down navigation)
-   - Implement action execution (Enter key)
-   - Implement modal closing (ESC key)
+   - Implement option selection logic (up/down navigation, vertical only)
+   - Implement scrolling for long content (using movement keys)
+   - Support action return values (with config flag) and explicit close method
+   - Support async actions with loading state
 
-2. **Create Modal Renderer**
-   - Render modal border and background
-   - Render title and message content
-   - Render options list with selection indicator
-   - Handle positioning (centered, etc.)
+3. **Create Modal Input Handler**
+   - Separate input handler for modal mode (complete separation from InputHandler)
+   - Handle directional keys (up/down) for option navigation
+   - Handle Enter key for option selection
+   - Handle ESC key for modal closing
+   - Ignore key presses during opening/closing animations
 
-3. **Integrate with Input System**
-   - Modify InputHandler or create modal input handler
-   - Route input to modal when modal is active
-   - Disable game input when modal is open
+4. **Create Modal Renderer Helper**
+   - Separate helper renderer used by `Renderer.js` (Renderer is master control)
+   - Render modal border using ASCII box-drawing characters (┌─┐│└─┘)
+   - Render dimmed/obscured game board background
+   - Render title and message content (with scrolling support)
+   - Render options list with `>` prefix and background highlight for selected option
+   - Handle positioning (centered, fixed percentages relative to terminal size)
 
-4. **Integrate with Rendering System**
-   - Render modal over game board
+5. **Create ModalManager** (`src/ui/ModalManager.js`)
+   - Manage modal state (open/closed, selected index) externally
+   - Support modal stacking (hide/show behavior)
+   - Handle modal lifecycle (open, close, reset on game restart)
+   - Coordinate between modal and game input handlers
+
+6. **Integrate with Rendering System**
+   - Renderer.js uses modal renderer helper to render modals
+   - Render modal over game board with dimmed background
    - Ensure modal is visible and not obscured
-   - Handle terminal resizing (if needed)
+   - Handle terminal resizing (modal size is percentage-based)
 
-5. **Add Modal Management**
-   - Support opening/closing modals
-   - Support modal stack (if multiple modals needed)
-   - Handle modal lifecycle (open, update, close)
+7. **Add Modal Animation**
+   - Animation starts as horizontal line in middle of viewport
+   - Top and bottom grow until modal achieves proper size
+   - Ignore input during animation
 
-6. **Create Example Modals**
-   - Game over modal
-   - Confirmation dialogs
-   - Informational messages
-   - Settings menu
+8. **Integrate with Game Modes**
+   - Local mode: pause game when modal is open
+   - Networked mode: game continues, other players see still character
+   - Actions execute in context of game mode (networked/local)
+
+9. **Create Example Modals**
+   - All modals use same structure (no special types)
+   - Examples: game over modal, quit confirmation, connection status notification
+   - Help screen should eventually be refactored to use modal
 
 ## Related Features
 
