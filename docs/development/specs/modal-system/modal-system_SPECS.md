@@ -842,6 +842,101 @@ export const gameConfig = {
 
 All modal visual aspects are controlled by this configuration. The `ModalRenderer` and `Renderer` classes read from `gameConfig.modal` to apply the configured styles. This allows easy customization of modal appearance without modifying code.
 
+### Text Wrapping Implementation Alternatives
+
+**Overview**: Text wrapping prevents content overflow by breaking long lines to fit within modal width. Multiple implementation approaches were considered:
+
+1. **Pre-processor Approach**
+   - Transform `text` and `label` values in Modal constructor or a preprocessing step
+   - Add `\n` characters to achieve wrapping
+   - **Pros**: Simple, content is pre-processed once
+   - **Cons**: Modifies original content, needs re-processing if modal width changes
+
+2. **Render-time Wrapping**
+   - Wrap text during rendering in ModalRenderer
+   - Compute wrapped lines on-the-fly
+   - **Pros**: Doesn't modify original content, always uses current modal width
+   - **Cons**: Recomputes on every render, more complex render logic
+
+3. **Cached Wrapped Content**
+   - Pre-compute wrapped lines when modal is created or dimensions change
+   - Store wrapped content separately from original
+   - **Pros**: Efficient rendering, preserves original content
+   - **Cons**: Requires tracking wrapped state, needs invalidation on dimension changes
+
+4. **Lazy Wrapping with Memoization** ⭐ **Selected Approach**
+   - Wrap on-demand when rendering, but cache the result
+   - Invalidate cache when modal dimensions change
+   - **Pros**: Best of both worlds (efficient + current)
+   - **Cons**: More complex state management
+   - **Newline Handling**: 
+     - Split text by existing `\n` characters first (preserves intentional line breaks)
+     - Wrap each resulting segment independently
+     - Original newlines create hard breaks (new wrapping context starts)
+     - Result is a flat array of lines where original newlines are honored
+     - Example: `"Line 1\nLong line that wraps"` → Split: `["Line 1", "Long line that wraps"]` → Wrap each → `["Line 1", "Long line", "that wraps"]`
+
+5. **Wrapper Method in Modal**
+   - Add method like `getWrappedContent(width)` that returns wrapped content blocks
+   - Original content remains unchanged
+   - **Pros**: Clean API, preserves original content
+   - **Cons**: Requires width parameter, may need caching for efficiency
+
+6. **Separate Wrapped Content Storage**
+   - Store both original and wrapped versions in Modal
+   - Update wrapped version when dimensions change
+   - **Pros**: Efficient, preserves original
+   - **Cons**: More memory, needs update mechanism
+
+**Selected Approach: Lazy Wrapping with Memoization**
+
+**Newline Handling Details**:
+
+The wrapping algorithm honors existing newlines by using a **split-then-wrap** approach:
+
+1. **Split by existing newlines first**: `text.split('\n')` creates separate segments
+2. **Wrap each segment independently**: Each segment is wrapped to fit modal width
+3. **Flatten results**: Final output is a flat array of lines
+
+**Example**:
+```
+Input: "This is a short line\nThis is a much longer line that will need to wrap because it exceeds the modal width"
+MaxWidth: 30
+
+Step 1 - Split: ["This is a short line", "This is a much longer line that will need to wrap because it exceeds the modal width"]
+Step 2 - Wrap each:
+  Segment 1: ["This is a short line"] (fits on one line)
+  Segment 2: ["This is a much longer line", "that will need to wrap", "because it exceeds the", "modal width"] (wrapped)
+Step 3 - Result: ["This is a short line", "This is a much longer line", "that will need to wrap", "because it exceeds the", "modal width"]
+```
+
+**Implementation Sketch**:
+```javascript
+function wrapTextWithNewlines(text, maxWidth) {
+  // Split by existing newlines first (preserves intentional breaks)
+  const segments = text.split('\n');
+  
+  // Wrap each segment independently
+  const wrappedLines = segments.flatMap(segment => {
+    return wrapTextSegment(segment, maxWidth);
+  });
+  
+  return wrappedLines; // Array of lines, not string with \n
+}
+
+function wrapTextSegment(segment, maxWidth) {
+  // Word-wrap logic: break at word boundaries
+  // Returns array of wrapped lines for this segment
+}
+```
+
+This approach ensures:
+- Existing `\n` characters create hard breaks (new wrapping context)
+- Each segment wraps independently
+- Intentional line breaks are preserved
+- Long lines within segments are wrapped appropriately
+- Caching provides efficiency while maintaining correctness
+
 ## Testing Requirements
 
 ### Unit Tests
