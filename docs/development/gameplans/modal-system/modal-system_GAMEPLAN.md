@@ -111,18 +111,58 @@ This gameplan implements a modal system that can display content over the game a
 - Example modal works in local mode
 - Integration tests pass
 
-### Phase 5: MVP Testing and Refinement
+### Phase 5: Integrate ModalManager into Local Mode
+
+**Goal**: Make modals functional in local mode.
+
+**Tasks**:
+- [ ] Create ModalManager instance in `src/modes/localMode.js`
+- [ ] Pass ModalManager to Renderer constructor
+- [ ] Pass ModalManager to InputHandler constructor
+- [ ] Create example "Game Over" modal with "Restart" and "Quit" options
+- [ ] Test modal can be opened and interacted with
+- [ ] Commit: "Feat: Integrate ModalManager into local mode"
+
+**Acceptance Criteria**:
+- ModalManager is instantiated in local mode
+- Renderer receives ModalManager and can render modals
+- InputHandler receives ModalManager and can handle modal input
+- Example modal can be opened and closed
+- Modal input works correctly
+- Game input is blocked when modal is open
+
+### Phase 6: Integrate ModalManager into Networked Mode
+
+**Goal**: Make modals functional in networked mode.
+
+**Tasks**:
+- [ ] Create ModalManager instance in `src/modes/networkedMode.js`
+- [ ] Pass ModalManager to Renderer constructor
+- [ ] Pass ModalManager to InputHandler constructor
+- [ ] Test modal can be opened and interacted with in networked mode
+- [ ] Commit: "Feat: Integrate ModalManager into networked mode"
+
+**Acceptance Criteria**:
+- ModalManager is instantiated in networked mode
+- Renderer receives ModalManager and can render modals
+- InputHandler receives ModalManager and can handle modal input
+- Example modal can be opened and closed
+- Modal input works correctly
+- Game input is blocked when modal is open
+
+### Phase 7: MVP Testing and Refinement
 
 **Goal**: Ensure MVP is fully functional and tested.
 
 **Tasks**:
 - [ ] Create comprehensive integration tests
-  - Modal opening/closing
+  - Modal opening/closing in both modes
   - Option navigation and selection
   - Action execution
   - Input routing (modal vs game)
 - [ ] Manual testing
   - Test in local mode
+  - Test in networked mode
   - Test modal display and interaction
   - Test that game input is blocked when modal is open
 - [ ] Fix any bugs or issues found
@@ -130,7 +170,7 @@ This gameplan implements a modal system that can display content over the game a
 - [ ] Commit: "Test: Add comprehensive modal system integration tests"
 
 **Acceptance Criteria**:
-- All MVP functionality works correctly
+- All MVP functionality works correctly in both modes
 - All tests pass (unit and integration)
 - Manual testing confirms expected behavior
 - No critical bugs

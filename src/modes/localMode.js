@@ -5,6 +5,8 @@
 import { Game } from '../game/Game.js';
 import { Renderer } from '../render/Renderer.js';
 import { InputHandler } from '../input/InputHandler.js';
+import { ModalManager } from '../ui/ModalManager.js';
+import { Modal } from '../ui/Modal.js';
 import { validateTerminalSize } from '../utils/terminal.js';
 import { gameConfig } from '../config/gameConfig.js';
 import { clientLogger } from '../utils/clientLogger.js';
@@ -17,6 +19,7 @@ export async function runLocalMode() {
   let game = null;
   let renderer = null;
   let inputHandler = null;
+  let modalManager = null;
   let showingHelp = false;
 
   try {
@@ -33,9 +36,11 @@ export async function runLocalMode() {
 
     // Initialize game components
     game = new Game();
-    renderer = new Renderer();
-    inputHandler = new InputHandler({
-      onMoveUp: () => {
+    modalManager = new ModalManager();
+    renderer = new Renderer(modalManager);
+    inputHandler = new InputHandler(
+      {
+        onMoveUp: () => {
         if (showingHelp) {
           showingHelp = false;
           if (renderer && game) {
@@ -111,6 +116,9 @@ export async function runLocalMode() {
         if (showingHelp) {
           showingHelp = false;
         }
+        if (modalManager) {
+          modalManager.reset();
+        }
         if (game && renderer) {
           game.reset();
           renderer.renderFull(game);
@@ -137,7 +145,9 @@ export async function runLocalMode() {
           renderer.renderFull(game);
         }
       },
-    });
+      },
+      modalManager
+    );
 
     // Initialize renderer
     renderer.initialize();
@@ -147,6 +157,41 @@ export async function runLocalMode() {
 
     // Initial render
     renderer.renderFull(game);
+
+    // Example: Create a "Game Over" modal (can be triggered later)
+    // This demonstrates how to create and open modals
+    const gameOverModal = new Modal({
+      title: 'Game Over',
+      content: [
+        { type: 'message', text: 'Game Over!' },
+        {
+          type: 'option',
+          label: 'Restart',
+          action: () => {
+            if (game && renderer) {
+              game.reset();
+              renderer.renderFull(game);
+            }
+          },
+        },
+        {
+          type: 'option',
+          label: 'Quit',
+          action: () => {
+            if (inputHandler) {
+              inputHandler.stop();
+            }
+            if (game) {
+              game.stop();
+            }
+          },
+        },
+      ],
+    });
+
+    // Example: Open modal (uncomment to test)
+    // modalManager.openModal(gameOverModal);
+    // renderer.renderFull(game);
 
     // Start input handling
     inputHandler.start();
