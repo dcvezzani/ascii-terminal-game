@@ -136,7 +136,7 @@ This specification details the implementation of a modal system that can display
   ],
   selectedIndex: number,  // Managed by ModalManager
   config?: {
-    closeKey?: string,  // Optional close key (e.g., 'q')
+    closeKey?: string | string[]  // Optional additional close key(s) (ESC and 'q' always work)
     useActionReturnValue?: boolean  // Enable action return value support
   }
 }
