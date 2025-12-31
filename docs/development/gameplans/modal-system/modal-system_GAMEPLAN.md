@@ -157,11 +157,14 @@ This gameplan implements a modal system that can display content over the game a
 **Goal**: Ensure MVP is fully functional and tested.
 
 **Tasks**:
-- [ ] Create comprehensive integration tests
+- [x] Create comprehensive integration tests
   - Modal opening/closing in both modes
   - Option navigation and selection
   - Action execution
   - Input routing (modal vs game)
+  - Modal state change callbacks
+  - Rendering integration
+  - End-to-end flows
 - [ ] Manual testing
   - Test in local mode
   - Test in networked mode

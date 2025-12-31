@@ -122,6 +122,9 @@ export class Renderer {
    * @param {string} [localPlayerId] - Optional local player ID for multiplayer mode
    */
   renderFull(game, networkState = null, localPlayerId = null) {
+    // Hide cursor to prevent visual artifacts
+    cliCursor.hide();
+    
     this.clearScreen();
     this.renderTitle();
 
@@ -187,16 +190,22 @@ export class Renderer {
 
   /**
    * Re-render just the modal (for when selection changes)
+   * Uses incremental rendering to only update changed option lines
    * @param {Modal} modal - Modal instance to render
    */
   renderModalOnly(modal) {
     if (!modal) {
       return;
     }
-    // Re-render background dimming
-    this.dimBackground();
-    // Re-render modal
-    this.modalRenderer.renderModal(modal);
+    // Try incremental update first (only updates changed option lines)
+    const updated = this.modalRenderer.updateSelectionOnly(modal);
+    if (!updated) {
+      // Fallback to full render if incremental update not possible
+      // Re-render background dimming
+      this.dimBackground();
+      // Re-render modal (cursor will be hidden during rendering)
+      this.modalRenderer.renderModal(modal);
+    }
   }
 
   /**
@@ -266,6 +275,9 @@ export class Renderer {
    * Render help screen
    */
   renderHelp() {
+    // Hide cursor to prevent visual artifacts
+    cliCursor.hide();
+    
     this.clearScreen();
 
     const helpLines = [

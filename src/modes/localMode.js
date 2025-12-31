@@ -40,7 +40,7 @@ export async function runLocalMode() {
     renderer = new Renderer(modalManager);
     inputHandler = new InputHandler(
       {
-        onMoveUp: () => {
+      onMoveUp: () => {
         if (showingHelp) {
           showingHelp = false;
           if (renderer && game) {
@@ -213,8 +213,8 @@ export async function runLocalMode() {
     });
 
     // Example: Open modal (uncomment to test)
-    modalManager.openModal(gameOverModal);
-    renderer.renderFull(game);
+    // modalManager.openModal(gameOverModal);
+    // renderer.renderFull(game);
 
     // Start input handling
     inputHandler.start();

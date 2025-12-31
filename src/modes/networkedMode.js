@@ -59,6 +59,40 @@ export async function runNetworkedMode() {
     renderer = new Renderer(modalManager);
     wsClient = new WebSocketClient();
 
+// Example: Create a test modal (add this after wsClient.connect() or in onConnect callback)
+const testModal = new Modal({
+  title: 'Network Test',
+  content: [
+    { type: 'message', text: 'Connected to server!' },
+    { type: 'message', text: 'This is a test modal in networked mode.' },
+    {
+      type: 'option',
+      label: 'Close',
+      action: () => {
+        clientLogger.info('Close option selected');
+        // Modal will close automatically after action
+      },
+    },
+    {
+      type: 'option',
+      label: 'Quit',
+      action: () => {
+        if (inputHandler) {
+          inputHandler.stop();
+        }
+        if (wsClient) {
+          wsClient.sendDisconnect();
+          wsClient.disconnect();
+        }
+        running = false;
+        if (game) {
+          game.stop();
+        }
+      },
+    },
+  ],
+});
+		
     // Set up WebSocket callbacks
     wsClient.onConnect(() => {
       clientLogger.info('Connected to server');
@@ -66,6 +100,13 @@ export async function runNetworkedMode() {
       if (!wsClient.reconnecting) {
       wsClient.sendConnect();
       }
+
+// Open the modal after connection is established
+// modalManager.openModal(testModal);
+// if (renderer && currentState) {
+//   renderer.renderFull(game, currentState, localPlayerId);
+// }
+			
     });
 
     // Phase 3: Server Reconciliation - Reconciliation function

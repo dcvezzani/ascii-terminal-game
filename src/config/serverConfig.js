@@ -5,7 +5,7 @@
 
 export const serverConfig = {
   websocket: {
-    enabled: false, // Enable/disable WebSocket mode
+    enabled: true, // Enable/disable WebSocket mode
     port: 3000, // WebSocket server port (default: 3000)
     host: '0.0.0.0', // Server host (default: '0.0.0.0' - accessible from network)
     broadcastIntervals: {
