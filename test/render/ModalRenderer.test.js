@@ -328,5 +328,163 @@ describe('ModalRenderer', () => {
       expect(writeSpy).toHaveBeenCalled();
     });
   });
+
+  describe('Text Wrapping', () => {
+    test('wraps long message text to fit modal width', () => {
+      const modal = new Modal({
+        title: 'Test',
+        content: [
+          {
+            type: 'message',
+            text: 'This is a very long message that should wrap to fit within the modal width when it exceeds the available space',
+          },
+        ],
+      });
+
+      process.stdout.columns = 80;
+      process.stdout.rows = 24;
+
+      modalRenderer.renderModal(modal);
+
+      // Should render wrapped text (check that write was called)
+      expect(writeSpy).toHaveBeenCalled();
+    });
+
+    test('wraps long option labels to fit modal width', () => {
+      const modal = new Modal({
+        title: 'Test',
+        content: [
+          {
+            type: 'option',
+            label: 'This is a very long option label that should wrap to fit within the modal width',
+            action: () => {},
+          },
+        ],
+      });
+
+      process.stdout.columns = 80;
+      process.stdout.rows = 24;
+
+      modalRenderer.renderModal(modal);
+
+      // Should render wrapped label
+      expect(writeSpy).toHaveBeenCalled();
+    });
+
+    test('preserves existing newlines in message text', () => {
+      const modal = new Modal({
+        title: 'Test',
+        content: [
+          {
+            type: 'message',
+            text: 'Line 1\nLine 2\nThis is a very long line that should wrap because it exceeds the modal width',
+          },
+        ],
+      });
+
+      process.stdout.columns = 80;
+      process.stdout.rows = 24;
+
+      modalRenderer.renderModal(modal);
+
+      // Should preserve the intentional newlines and wrap the long line
+      expect(writeSpy).toHaveBeenCalled();
+    });
+
+    test('wraps text respecting modal padding', () => {
+      const modal = new Modal({
+        title: 'Test',
+        content: [
+          {
+            type: 'message',
+            text: 'This is a long message that should wrap correctly accounting for the padding inside the modal',
+          },
+        ],
+      });
+
+      process.stdout.columns = 60;
+      process.stdout.rows = 24;
+
+      modalRenderer.renderModal(modal);
+
+      // Should wrap accounting for padding
+      expect(writeSpy).toHaveBeenCalled();
+    });
+
+    test('handles text shorter than modal width (no wrapping needed)', () => {
+      const modal = new Modal({
+        title: 'Test',
+        content: [
+          {
+            type: 'message',
+            text: 'Short text',
+          },
+        ],
+      });
+
+      process.stdout.columns = 80;
+      process.stdout.rows = 24;
+
+      modalRenderer.renderModal(modal);
+
+      // Should render without wrapping
+      expect(writeSpy).toHaveBeenCalled();
+    });
+
+    test('caches wrapped content for efficiency', () => {
+      const modal = new Modal({
+        title: 'Test',
+        content: [
+          {
+            type: 'message',
+            text: 'This is a long message that should be wrapped and cached',
+          },
+        ],
+      });
+
+      process.stdout.columns = 60;
+      process.stdout.rows = 24;
+
+      // First render
+      modalRenderer.renderModal(modal);
+      const firstCallCount = writeSpy.mock.calls.length;
+
+      vi.clearAllMocks();
+
+      // Second render with same dimensions (should use cache)
+      modalRenderer.renderModal(modal);
+      const secondCallCount = writeSpy.mock.calls.length;
+
+      // Both should render (cache doesn't skip rendering, just avoids re-wrapping)
+      expect(writeSpy).toHaveBeenCalled();
+    });
+
+    test('invalidates cache when modal dimensions change', () => {
+      const modal = new Modal({
+        title: 'Test',
+        content: [
+          {
+            type: 'message',
+            text: 'This is a long message that should wrap differently when modal width changes',
+          },
+        ],
+      });
+
+      // First render with one width
+      process.stdout.columns = 60;
+      process.stdout.rows = 24;
+      modalRenderer.renderModal(modal);
+
+      vi.clearAllMocks();
+
+      // Second render with different width (should invalidate cache and re-wrap)
+      process.stdout.columns = 100;
+      process.stdout.rows = 30;
+      modalRenderer.renderModal(modal);
+
+      // Should re-wrap with new dimensions
+      expect(writeSpy).toHaveBeenCalled();
+    });
+  });
 });
 

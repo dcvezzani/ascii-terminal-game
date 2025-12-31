@@ -22,6 +22,9 @@ export class ModalRenderer {
       selectedIndex: null,
       optionLines: null, // Map of optionIndex -> y position
     };
+    // Cache for wrapped text (lazy wrapping with memoization)
+    this.wrappedTextCache = new Map(); // Key: `${text}_${maxWidth}`, Value: array of lines
+    this.lastCachedWidth = null; // Track last modal width for cache invalidation
   }
 
   /**
@@ -76,6 +79,9 @@ export class ModalRenderer {
     // Calculate modal dimensions based on content and config
     const modalWidth = this.calculateModalWidth(title, content, terminalSize.columns);
     const modalHeight = this.calculateModalHeight(content, terminalSize.rows);
+
+    // Invalidate cache if modal width changed
+    this.invalidateCacheIfNeeded(modalWidth);
 
     // Center modal on screen
     const startX = getHorizontalCenter(modalWidth, terminalSize.columns);
@@ -324,6 +330,89 @@ export class ModalRenderer {
   }
 
   /**
+   * Wrap text with newline handling (split-then-wrap approach)
+   * Honors existing newlines by splitting first, then wrapping each segment
+   * @param {string} text - Text to wrap
+   * @param {number} maxWidth - Maximum width for wrapping (accounting for padding)
+   * @returns {Array<string>} Array of wrapped lines
+   */
+  wrapTextWithNewlines(text, maxWidth) {
+    // Check cache first
+    const cacheKey = `${text}_${maxWidth}`;
+    if (this.wrappedTextCache.has(cacheKey)) {
+      return this.wrappedTextCache.get(cacheKey);
+    }
+
+    // Split by existing newlines first (preserves intentional line breaks)
+    const segments = text.split('\n');
+
+    // Wrap each segment independently
+    const wrappedLines = segments.flatMap(segment => {
+      return this.wrapTextSegment(segment, maxWidth);
+    });
+
+    // Cache the result
+    this.wrappedTextCache.set(cacheKey, wrappedLines);
+
+    return wrappedLines;
+  }
+
+  /**
+   * Wrap a single text segment (no newlines) to fit within maxWidth
+   * Breaks at word boundaries when possible
+   * @param {string} segment - Text segment to wrap (no newlines)
+   * @param {number} maxWidth - Maximum width for wrapping
+   * @returns {Array<string>} Array of wrapped lines
+   */
+  wrapTextSegment(segment, maxWidth) {
+    if (segment.length <= maxWidth) {
+      return [segment]; // Fits on one line
+    }
+
+    const lines = [];
+    let remaining = segment;
+
+    while (remaining.length > maxWidth) {
+      // Try to break at a word boundary
+      let breakPoint = maxWidth;
+      const spaceIndex = remaining.lastIndexOf(' ', maxWidth);
+
+      if (spaceIndex > 0 && spaceIndex < maxWidth) {
+        // Found a space within the line, break there
+        breakPoint = spaceIndex;
+      }
+
+      // Extract line and remaining text
+      const line = remaining.substring(0, breakPoint).trim();
+      remaining = remaining.substring(breakPoint).trim();
+
+      if (line.length > 0) {
+        lines.push(line);
+      }
+    }
+
+    // Add remaining text if any
+    if (remaining.length > 0) {
+      lines.push(remaining);
+    }
+
+    return lines.length > 0 ? lines : [segment]; // Fallback to original if wrapping fails
+  }
+
+  /**
+   * Invalidate wrapped text cache
+   * Should be called when modal dimensions change
+   * @param {number} currentWidth - Current modal width (for comparison)
+   */
+  invalidateCacheIfNeeded(currentWidth) {
+    if (this.lastCachedWidth !== null && this.lastCachedWidth !== currentWidth) {
+      // Modal width changed, invalidate cache
+      this.wrappedTextCache.clear();
+    }
+    this.lastCachedWidth = currentWidth;
+  }
+
+  /**
    * Render modal border using ASCII box-drawing characters
    * @param {number} startX - Starting X position
    * @param {number} startY - Starting Y position
@@ -407,6 +496,7 @@ export class ModalRenderer {
   renderContent(startX, startY, width, content, selectedIndex) {
     let currentY = startY + 2; // Start after title line
     let optionIndex = 0; // Track option index (separate from content index)
+    const lineWidth = width - (this.padding * 2); // Available width for content (accounting for padding)
 
     content.forEach(block => {
       if (block.type === 'message') {
@@ -415,7 +505,6 @@ export class ModalRenderer {
         lines.forEach(line => {
           process.stdout.write(ansiEscapes.cursorTo(startX + this.padding, currentY));
           // Clear the line first with solid black background
-          const lineWidth = width - (this.padding * 2);
           process.stdout.write(chalk.bgBlack(' '.repeat(lineWidth)));
           // Render message
           process.stdout.write(ansiEscapes.cursorTo(startX + this.padding, currentY));
@@ -423,42 +512,48 @@ export class ModalRenderer {
           currentY++;
         });
       } else if (block.type === 'option') {
-        // Render option label with selection indicator
-        const isSelected = optionIndex === selectedIndex;
+        // Wrap option label if needed (honors existing newlines, wraps long lines)
+        // Account for prefix length when calculating available width
         const prefix = '> '; // Always show prefix for options
-        const label = block.label;
-        const lineWidth = width - (this.padding * 2);
-        const optionText = prefix + label;
+        const availableWidth = lineWidth - prefix.length;
+        const wrappedLabelLines = this.wrapTextWithNewlines(block.label, availableWidth);
         
-        // Clear the entire line first with black background
-        process.stdout.write(ansiEscapes.cursorTo(startX + this.padding, currentY));
-        process.stdout.write(chalk.bgBlack(' '.repeat(lineWidth)));
-        
-        // Render option with selection indicator
-        process.stdout.write(ansiEscapes.cursorTo(startX + this.padding, currentY));
-        if (isSelected) {
-          // Selected option: prefix + label with background highlight and text color from config
-          const selectionColor = this.getSelectionTextColor();
-          process.stdout.write(selectionColor(optionText));
-          // Fill rest of line with black background to ensure clean rendering
-          const remainingWidth = lineWidth - optionText.length;
-          if (remainingWidth > 0) {
-            process.stdout.write(chalk.bgBlack(' '.repeat(remainingWidth)));
+        // Render each wrapped line of the label
+        wrappedLabelLines.forEach((labelLine, lineIndex) => {
+          const isSelected = optionIndex === selectedIndex && lineIndex === 0; // Only first line is selectable
+          const optionText = lineIndex === 0 ? prefix + labelLine : labelLine; // Only prefix first line
+          
+          // Clear the entire line first with black background
+          process.stdout.write(ansiEscapes.cursorTo(startX + this.padding, currentY));
+          process.stdout.write(chalk.bgBlack(' '.repeat(lineWidth)));
+          
+          // Render option with selection indicator (only highlight first line)
+          process.stdout.write(ansiEscapes.cursorTo(startX + this.padding, currentY));
+          if (isSelected) {
+            // Selected option: prefix + label with background highlight and text color from config
+            const selectionColor = this.getSelectionTextColor();
+            process.stdout.write(selectionColor(optionText));
+            // Fill rest of line with black background to ensure clean rendering
+            const remainingWidth = lineWidth - optionText.length;
+            if (remainingWidth > 0) {
+              process.stdout.write(chalk.bgBlack(' '.repeat(remainingWidth)));
+            }
+          } else {
+            // Unselected option: prefix + label with normal text on black background
+            process.stdout.write(chalk.bgBlack(optionText));
+            // Fill rest of line to ensure clean rendering
+            const remainingWidth = lineWidth - optionText.length;
+            if (remainingWidth > 0) {
+              process.stdout.write(chalk.bgBlack(' '.repeat(remainingWidth)));
+            }
           }
-        } else {
-          // Unselected option: prefix + label with normal text on black background
-          process.stdout.write(chalk.bgBlack(optionText));
-          // Fill rest of line to ensure clean rendering
-          const remainingWidth = lineWidth - optionText.length;
-          if (remainingWidth > 0) {
-            process.stdout.write(chalk.bgBlack(' '.repeat(remainingWidth)));
-          }
-        }
+          
+          // Reset color state after rendering this line to prevent cursor artifacts
+          process.stdout.write(chalk.reset());
+          
+          currentY++;
+        });
         
-        // Reset color state after rendering this line to prevent cursor artifacts
-        process.stdout.write(chalk.reset());
-        
-        currentY++;
         optionIndex++;
       }
     });
