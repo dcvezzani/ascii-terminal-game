@@ -268,8 +268,8 @@ describe('WebSocket Integration', () => {
                 updatesAfterMove.set(ws, currentCount + 1);
               }
 
-              // Wait for both clients to receive at least one state update AFTER the move was sent
-              // This ensures they're comparing the same state snapshot
+              // Wait for both clients to receive state updates AFTER the move was sent
+              // Need to ensure both clients have received a state update that includes the moved position
               const allPositions = Array.from(playerPositions.values());
               const allUpdateCounts = Array.from(updatesAfterMove.values());
               const minUpdateCount = Math.min(...allUpdateCounts);
@@ -294,7 +294,7 @@ describe('WebSocket Integration', () => {
                   expect(secondTestPlayers.length).toBe(2);
                   expect(firstTestPlayers.length).toBe(secondTestPlayers.length);
 
-                  // Find the player that moved (from first client) - should be at (21, 10)
+                  // Find the player that moved (from first client) - should be at (21, 10) after moving right from (20, 10)
                   const movedPlayer = firstTestPlayers.find(p => p.x === 21 && p.y === 10);
 
                   if (movedPlayer) {
@@ -303,24 +303,71 @@ describe('WebSocket Integration', () => {
                       p => p.playerId === movedPlayer.playerId
                     );
                     expect(secondPlayer).toBeDefined();
+                    // Only verify if second client has received the update with the moved position
+                    // If second client still shows old position, wait for more updates
+                    if (secondPlayer.x === 20 && secondPlayer.y === 10) {
+                      // Second client hasn't received the update yet, wait for more updates
+                      return; // Don't resolve yet, wait for next STATE_UPDATE
+                    }
                     expect(secondPlayer.x).toBe(movedPlayer.x);
                     expect(secondPlayer.y).toBe(movedPlayer.y);
                   } else {
                     // If no player at (21, 10), check if positions match for all test players
-                    firstTestPlayers.forEach(firstPlayer => {
-                      const secondPlayer = secondTestPlayers.find(
-                        p => p.playerId === firstPlayer.playerId
-                      );
-                      expect(secondPlayer).toBeDefined();
-                      expect(secondPlayer.x).toBe(firstPlayer.x);
-                      expect(secondPlayer.y).toBe(firstPlayer.y);
-                    });
+                    // But only if we've received enough updates to ensure synchronization
+                    if (minUpdateCount >= 2) {
+                      // After multiple updates, positions should be synchronized
+                      firstTestPlayers.forEach(firstPlayer => {
+                        const secondPlayer = secondTestPlayers.find(
+                          p => p.playerId === firstPlayer.playerId
+                        );
+                        expect(secondPlayer).toBeDefined();
+                        expect(secondPlayer.x).toBe(firstPlayer.x);
+                        expect(secondPlayer.y).toBe(firstPlayer.y);
+                      });
+                    } else {
+                      // Not enough updates yet, wait for more
+                      return; // Don't resolve yet
+                    }
                   }
                 }
 
-                clearTimeout(timeoutId);
-                clients.forEach(client => client.close());
-                resolve();
+                // Only resolve if we've verified synchronization
+                // Check if we found a moved player and verified it, or if we've checked all players
+                const firstPositionsCheck = playerPositions.get(clients[0]);
+                const secondPositionsCheck = playerPositions.get(clients[1]);
+                if (firstPositionsCheck && secondPositionsCheck) {
+                  const firstTestPlayersCheck = firstPositionsCheck.filter(p => playerIds.has(p.playerId));
+                  const secondTestPlayersCheck = secondPositionsCheck.filter(p => playerIds.has(p.playerId));
+                  
+                  // Check if any player has moved to (21, 10)
+                  const anyMovedPlayer = firstTestPlayersCheck.find(p => p.x === 21 && p.y === 10);
+                  if (anyMovedPlayer) {
+                    // Verify second client also sees this player at (21, 10)
+                    const secondMovedPlayer = secondTestPlayersCheck.find(
+                      p => p.playerId === anyMovedPlayer.playerId
+                    );
+                    if (secondMovedPlayer && secondMovedPlayer.x === 21 && secondMovedPlayer.y === 10) {
+                      // Both clients see the moved position - synchronization confirmed
+                      clearTimeout(timeoutId);
+                      clients.forEach(client => client.close());
+                      resolve();
+                    }
+                    // Otherwise, wait for more updates
+                  } else if (minUpdateCount >= 2) {
+                    // After multiple updates, verify all positions match
+                    const allMatch = firstTestPlayersCheck.every(firstPlayer => {
+                      const secondPlayer = secondTestPlayersCheck.find(
+                        p => p.playerId === firstPlayer.playerId
+                      );
+                      return secondPlayer && secondPlayer.x === firstPlayer.x && secondPlayer.y === firstPlayer.y;
+                    });
+                    if (allMatch) {
+                      clearTimeout(timeoutId);
+                      clients.forEach(client => client.close());
+                      resolve();
+                    }
+                  }
+                }
               }
             }
           });
