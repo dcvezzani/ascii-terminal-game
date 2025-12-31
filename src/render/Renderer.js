@@ -4,6 +4,7 @@ import cliCursor from 'cli-cursor';
 import { getHorizontalCenter, getTerminalSize } from '../utils/terminal.js';
 import { gameConfig } from '../config/gameConfig.js';
 import { Board } from '../game/Board.js';
+import { ModalRenderer } from './ModalRenderer.js';
 import {
   EMPTY_SPACE_CHAR,
   WALL_CHAR,
@@ -15,12 +16,14 @@ import {
  * Renderer class handles all terminal rendering for the game
  */
 export class Renderer {
-  constructor() {
+  constructor(modalManager = null) {
     this.titleOffset = gameConfig.renderer.titleOffset;
     this.boardOffset = gameConfig.renderer.boardOffset;
     this.statusBarOffset = gameConfig.renderer.statusBarOffset;
     this.boardWidth = gameConfig.board.width;
     this.boardHeight = gameConfig.board.height;
+    this.modalManager = modalManager;
+    this.modalRenderer = new ModalRenderer();
   }
 
   /**
@@ -144,8 +147,36 @@ export class Renderer {
       this.renderStatusBar(game.getScore(), position.x, position.y);
     }
 
+    // Render modal if one is open
+    if (this.modalManager && this.modalManager.hasOpenModal()) {
+      const modal = this.modalManager.getCurrentModal();
+      this.renderModal(modal);
+    }
+
     // Move cursor out of the way
     process.stdout.write(ansiEscapes.cursorTo(0, this.statusBarOffset + 2));
+  }
+
+  /**
+   * Render a modal over the game board
+   * @param {Modal} modal - Modal instance to render
+   */
+  renderModal(modal) {
+    // Simple background dimming (not full shadow effect yet)
+    this.dimBackground();
+    // Render modal using ModalRenderer helper
+    this.modalRenderer.renderModal(modal);
+  }
+
+  /**
+   * Dim the background behind the modal (simple dimming, not full shadow effect yet)
+   */
+  dimBackground() {
+    const terminalSize = getTerminalSize();
+    // Simple dimming: render a semi-transparent overlay
+    // For now, we'll use a simple approach - in future phases, this can be enhanced
+    // with a full shadow effect
+    // This is a placeholder for basic background dimming
   }
 
   /**
