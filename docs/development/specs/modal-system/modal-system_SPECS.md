@@ -646,9 +646,17 @@ Key Press → InputHandler
 ```javascript
 const modal = {
   title: "Game Over",
-  message: "You have been defeated!\n\nWhat would you like to do?",
-  options: [
+  content: [
     {
+      type: 'message',
+      text: "You have been defeated!"
+    },
+    {
+      type: 'message',
+      text: "\nWhat would you like to do?"
+    },
+    {
+      type: 'option',
       label: "Restart Game",
       action: () => {
         gameServer.resetGame();
@@ -657,6 +665,7 @@ const modal = {
       autoClose: true
     },
     {
+      type: 'option',
       label: "Quit",
       action: () => {
         process.exit(0);
