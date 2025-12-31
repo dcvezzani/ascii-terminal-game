@@ -165,7 +165,7 @@ This specification details the implementation of a modal system that can display
 **Details**:
 
 - Modal is centered on screen (not game board)
-- Modal dimensions: fixed size with fixed percentages relative to terminal size
+- Modal dimensions: configurable percentages relative to terminal size (via gameConfig.modal.dimensions)
 - Border: ASCII box-drawing characters (┌─┐│└─┘)
 - Background: dimmed/obscured game board behind modal
 - Shadow effect: visual depth indicator
@@ -801,6 +801,13 @@ export const gameConfig = {
       enabled: true,              // Enable background dimming
       character: '░',            // Dimming character (light shade)
     },
+    // Dimensions configuration
+    dimensions: {
+      enabled: true,              // Enable percentage-based sizing (false = use fixed minWidth/minHeight)
+      width: 60,                 // Modal width as percentage of terminal width (0-100)
+      height: 50,                 // Modal height as percentage of terminal height (0-100)
+      // Note: If height is missing but width is present, height will use width value
+    },
   },
 };
 ```
@@ -821,6 +828,15 @@ export const gameConfig = {
 - **Background Dimming**:
   - `enabled`: Toggle background dimming
   - `character`: Character used for dimming effect (default: '░')
+
+- **Dimensions**:
+  - `enabled`: Toggle percentage-based sizing (default: true)
+    - When `true`: Modal dimensions are calculated as percentages of terminal size
+    - When `false`: Modal uses fixed `minWidth` and `minHeight` values
+  - `width`: Modal width as percentage of terminal width (0-100, default: 60)
+  - `height`: Modal height as percentage of terminal height (0-100, default: 50)
+  - **Special behavior**: If `height` is missing but `width` is present, `height` will use the `width` value
+  - **Defaults**: If `dimensions` config is missing or `enabled` is false, modal falls back to fixed sizing
 
 **Usage**:
 
