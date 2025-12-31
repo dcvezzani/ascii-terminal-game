@@ -60,7 +60,7 @@ This specification details the implementation of a modal system that can display
   - Resets modals on game restart
 - `src/ui/ModalInputHandler.js` - Modal input handler helper
   - Helper class for modal input handling
-  - Handles directional keys, Enter, ESC, optional close key
+  - Handles directional keys, Enter, ESC, 'q'
   - Ignores input during animations
   - Used by `InputHandler.js` (InputHandler is master control)
 - `src/render/ModalRenderer.js` - Modal renderer helper
@@ -277,7 +277,7 @@ This specification details the implementation of a modal system that can display
 **Acceptance Criteria**:
 
 - [ ] ESC key always closes modal
-- [ ] Optional configurable close key works (if set)
+- [ ] 'q' key always closes modal
 - [ ] Auto-close after action works (default: true)
 - [ ] Closing modal restores previous modal in stack
 - [ ] Closing last modal returns to game
@@ -644,7 +644,6 @@ const modal = {
     }
   ],
   config: {
-    closeKey: 'q',  // Optional
     useActionReturnValue: false  // Optional
   }
 };
@@ -780,7 +779,7 @@ render() {
 - [ ] Options are selectable with Enter key
 - [ ] Actions execute correctly (sync and async)
 - [ ] Modal closes with ESC key
-- [ ] Optional close key works (if configured)
+- [ ] Modal closes with 'q' key
 - [ ] Message scrolling works for long content
 - [ ] Modal stacking works (hide/show behavior)
 - [ ] Local mode pauses/resumes with modal
