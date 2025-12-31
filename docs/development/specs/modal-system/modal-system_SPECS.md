@@ -649,6 +649,9 @@ const modal = {
     }
   ],
   config: {
+    closeKey: 'x',  // Optional: single additional close key
+    // OR
+    // closeKey: ['x', 'c'],  // Optional: multiple additional close keys
     useActionReturnValue: false  // Optional
   }
 };
