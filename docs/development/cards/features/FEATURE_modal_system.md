@@ -167,10 +167,10 @@ const inputHandler = new InputHandler({
 - Directional keys (up/down) navigate options (vertical only, no horizontal navigation)
 - Enter key selects current option (executes action)
 - ESC key always closes modal
-- Configurable close key (e.g., 'q') - optional
+- 'q' key always closes modal
 - Auto-close after action is optional (via configuration flag, closes by default)
 - Key presses are ignored while modal is opening/closing
-- Other keys are ignored by modal
+- Other keys are ignored by modal (only directional, Enter, ESC, 'q' are handled)
 
 **Input Routing**:
 - InputHandler checks modal state before handling input
@@ -201,7 +201,7 @@ const inputHandler = new InputHandler({
    - Handle directional keys (up/down) for option navigation
    - Handle Enter key for option selection
    - Handle ESC key for modal closing (always closes)
-   - Handle optional configurable close key (e.g., 'q')
+   - Handle 'q' key for modal closing (always closes)
    - Ignore key presses during opening/closing animations
    - Return boolean indicating if key was handled
 

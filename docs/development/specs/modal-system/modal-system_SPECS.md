@@ -270,7 +270,7 @@ This specification details the implementation of a modal system that can display
 **Details**:
 
 - ESC key: always closes modal
-- Configurable close key: optional (e.g., 'q')
+- 'q' key: always closes modal
 - Auto-close after action: optional (via configuration flag, closes by default)
 - Closing modal: restores previous modal in stack (if any) or returns to game
 
@@ -322,7 +322,7 @@ Game → Modal A → Modal B
 - When modal is open: InputHandler delegates to ModalInputHandler helper
 - When modal is closed: InputHandler handles game input normally
 - Key presses ignored during opening/closing animations
-- Other keys ignored by modal (only directional, Enter, ESC, optional close key)
+- Other keys ignored by modal (only directional, Enter, ESC, 'q')
 
 **Input Flow**:
 
@@ -511,7 +511,7 @@ Key Press → InputHandler
   - Up/down: navigate options or scroll message
   - Enter: select option
   - ESC: close modal
-  - Optional close key: close modal (if configured)
+  - 'q': close modal
 - Animation handling: ignores input during animations
 - Returns boolean: `true` if key was handled, `false` if not
 
