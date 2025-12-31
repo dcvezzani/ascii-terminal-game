@@ -48,5 +48,34 @@ export class Modal {
   setSelectedIndex(index) {
     this.selectedIndex = index;
   }
+
+  /**
+   * Execute the action from the currently selected option
+   * @param {ModalManager} modalManager - ModalManager instance for closing modal if needed
+   */
+  executeSelectedAction(modalManager) {
+    const content = this.content;
+    const options = content.filter(block => block.type === 'option');
+
+    // Check if selected index is valid
+    if (this.selectedIndex < 0 || this.selectedIndex >= options.length) {
+      return; // Invalid index, do nothing
+    }
+
+    const selectedOption = options[this.selectedIndex];
+    if (!selectedOption || !selectedOption.action) {
+      return; // No action to execute
+    }
+
+    // Execute the action
+    selectedOption.action();
+
+    // Close modal after action (default behavior)
+    // Check autoClose flag (defaults to true if not specified)
+    const autoClose = selectedOption.autoClose !== false;
+    if (autoClose && modalManager) {
+      modalManager.closeModal();
+    }
+  }
 }
 

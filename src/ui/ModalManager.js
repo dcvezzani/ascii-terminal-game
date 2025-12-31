@@ -48,5 +48,16 @@ export class ModalManager {
   reset() {
     this.currentModal = null;
   }
+
+  /**
+   * Execute the action from the currently selected option in the open modal
+   */
+  executeSelectedAction() {
+    if (!this.currentModal) {
+      return; // No modal open, do nothing
+    }
+
+    this.currentModal.executeSelectedAction(this);
+  }
 }
 

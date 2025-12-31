@@ -44,8 +44,8 @@ export class ModalInputHandler {
 
     // Handle Enter key for option selection
     if (keyString === 'return' || keyString === 'enter') {
-      // Action execution will be handled in Phase 4
-      // For now, just return that we handled the key
+      // Execute action from selected option
+      this.modalManager.executeSelectedAction();
       return true;
     }
 
