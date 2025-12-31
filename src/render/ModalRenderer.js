@@ -500,9 +500,11 @@ export class ModalRenderer {
 
     content.forEach(block => {
       if (block.type === 'message') {
-        // Render message text (handle multi-line)
-        const lines = block.text.split('\n');
-        lines.forEach(line => {
+        // Wrap message text if needed (honors existing newlines, wraps long lines)
+        const wrappedTextLines = this.wrapTextWithNewlines(block.text, lineWidth);
+        
+        // Render each wrapped line
+        wrappedTextLines.forEach(line => {
           process.stdout.write(ansiEscapes.cursorTo(startX + this.padding, currentY));
           // Clear the line first with solid black background
           process.stdout.write(chalk.bgBlack(' '.repeat(lineWidth)));
