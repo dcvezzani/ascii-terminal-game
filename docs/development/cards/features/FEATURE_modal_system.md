@@ -324,11 +324,15 @@ const inputHandler = new InputHandler({
 
 - This is a UI/UX enhancement
 - Should not impact game performance significantly
-- Modal rendering should be efficient (only when open)
-- Consider using existing terminal utilities (ansi-escapes, chalk) for rendering
-- Action system should be flexible to support various use cases
-- Modal system should be extensible for future features
-- Consider modal animations/transitions (optional, low priority)
-- May want to support modal templates for common use cases (confirmation, info, etc.)
-- Could be extended to support input fields in modals (future enhancement)
+- Modal rendering should be efficient (only render when open)
+- Use existing terminal utilities (ansi-escapes, chalk) for rendering
+- Action system supports both return values and explicit close methods (configurable)
+- Modal system supports stacking with hide/show behavior
+- All modals use same structure - no special modal types needed
+- Modal animations: horizontal line grows top/bottom to full size
+- Future enhancements: input fields, modal themes/styles
+- Help screen should eventually be refactored to use modal component
+- Error handling: report errors in logs, no fallback error modal
+- Modal dimensions: fixed percentages relative to terminal size
+- Content scrolling: use movement keys to scroll long content within modal viewport
 
