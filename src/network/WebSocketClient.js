@@ -119,6 +119,27 @@ export class WebSocketClient {
   }
 
   /**
+   * Calculate retry delay based on attempt number and exponential backoff settings
+   * @param {number} attemptNumber - The attempt number (1-based)
+   * @returns {number} Delay in milliseconds
+   */
+  calculateRetryDelay(attemptNumber) {
+    const { retryDelay, exponentialBackoff, maxRetryDelay } = clientConfig.reconnection;
+    
+    if (!exponentialBackoff) {
+      return retryDelay;
+    }
+    
+    // Calculate exponential delay: retryDelay * 2^(attemptNumber - 1)
+    // Attempt 1: retryDelay * 2^0 = retryDelay (1000ms)
+    // Attempt 2: retryDelay * 2^1 = retryDelay * 2 (2000ms)
+    // Attempt 3: retryDelay * 2^2 = retryDelay * 4 (4000ms)
+    // etc.
+    const calculatedDelay = retryDelay * Math.pow(2, attemptNumber - 1);
+    return Math.min(calculatedDelay, maxRetryDelay);
+  }
+
+  /**
    * Attempt to reconnect to the server with exponential backoff
    */
   async attemptReconnect() {
@@ -134,8 +155,7 @@ export class WebSocketClient {
     }
 
     // Calculate delay with exponential backoff
-    const baseDelay = clientConfig.reconnection.retryDelay;
-    const delay = Math.min(baseDelay * Math.pow(2, this.reconnectAttempts - 1), clientConfig.reconnection.maxRetryDelay);
+    const delay = this.calculateRetryDelay(this.reconnectAttempts);
 
     this.reconnectTimer = setTimeout(async () => {
       try {
