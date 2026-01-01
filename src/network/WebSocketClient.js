@@ -6,7 +6,7 @@
 import WebSocket from 'ws';
 import { parseMessage, createMessage } from './MessageHandler.js';
 import { MessageTypes } from './MessageTypes.js';
-import { serverConfig } from '../config/serverConfig.js';
+import { clientConfig } from '../config/clientConfig.js';
 
 /**
  * WebSocket Client class
@@ -14,9 +14,8 @@ import { serverConfig } from '../config/serverConfig.js';
  */
 export class WebSocketClient {
   constructor(url = null) {
-    this.url =
-      url ||
-      `ws://${serverConfig.websocket.host === '0.0.0.0' ? 'localhost' : serverConfig.websocket.host}:${serverConfig.websocket.port}`;
+    // Priority: constructor param > env var > config file
+    this.url = url || process.env.WEBSOCKET_URL || clientConfig.websocket.url;
     this.ws = null;
     this.connected = false;
     this.clientId = null;
@@ -76,8 +75,8 @@ export class WebSocketClient {
           // Attempt reconnection if enabled and not manually disconnected
           if (
             !this.manualDisconnect &&
-            serverConfig.reconnection.enabled &&
-            this.reconnectAttempts < serverConfig.reconnection.maxAttempts
+            clientConfig.reconnection.enabled &&
+            this.reconnectAttempts < clientConfig.reconnection.maxAttempts
           ) {
             this.attemptReconnect();
           } else {
@@ -135,8 +134,8 @@ export class WebSocketClient {
     }
 
     // Calculate delay with exponential backoff
-    const baseDelay = serverConfig.reconnection.retryDelay;
-    const delay = Math.min(baseDelay * Math.pow(2, this.reconnectAttempts - 1), 30000); // Max 30 seconds
+    const baseDelay = clientConfig.reconnection.retryDelay;
+    const delay = Math.min(baseDelay * Math.pow(2, this.reconnectAttempts - 1), clientConfig.reconnection.maxRetryDelay);
 
     this.reconnectTimer = setTimeout(async () => {
       try {
@@ -153,7 +152,7 @@ export class WebSocketClient {
       } catch (error) {
         this.reconnecting = false;
         // Will trigger another reconnect attempt if maxAttempts not reached
-        if (this.reconnectAttempts < serverConfig.reconnection.maxAttempts) {
+        if (this.reconnectAttempts < clientConfig.reconnection.maxAttempts) {
           this.attemptReconnect();
         } else {
           // Max attempts reached
