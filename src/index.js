@@ -4,6 +4,10 @@
  * Main entry point for the terminal game
  */
 
+// Load environment variables from .env file (must be before config imports)
+import dotenv from 'dotenv';
+dotenv.config();
+
 import { serverConfig } from './config/serverConfig.js';
 import { clientLogger } from './utils/clientLogger.js';
 import { runLocalMode } from './modes/localMode.js';
