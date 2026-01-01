@@ -11,6 +11,7 @@ This gameplan implements WebSocket connection configuration in the client config
 
 - ✅ **Phase 1: Add dotenv Support** - COMPLETE
 - ✅ **Phase 2: Update Client Configuration** - COMPLETE
+- ✅ **Phase 3: Update WebSocketClient** - COMPLETE
 - ⏳ **Phase 3: Update WebSocketClient** - NOT STARTED
 - ⏳ **Phase 4: Implement Exponential Backoff** - NOT STARTED
 - ⏳ **Phase 5: Update Tests** - NOT STARTED
@@ -91,35 +92,35 @@ This gameplan implements WebSocket connection configuration in the client config
 **Goal**: Update `WebSocketClient` to use `clientConfig` instead of `serverConfig`.
 
 **Tasks**:
-- [ ] Open `src/network/WebSocketClient.js`
-- [ ] Remove `serverConfig` import
-- [ ] Add `clientConfig` import: `import { clientConfig } from '../config/clientConfig.js';`
-- [ ] Update constructor to use `clientConfig.websocket.url`
+- [x] Open `src/network/WebSocketClient.js`
+- [x] Remove `serverConfig` import
+- [x] Add `clientConfig` import: `import { clientConfig } from '../config/clientConfig.js';`
+- [x] Update constructor to use `clientConfig.websocket.url`
   - Priority: constructor param > env var > config file
   - `this.url = url || process.env.WEBSOCKET_URL || clientConfig.websocket.url;`
-- [ ] Update reconnection logic to use `clientConfig.reconnection`
+- [x] Update reconnection logic to use `clientConfig.reconnection`
   - Replace `serverConfig.reconnection.enabled` with `clientConfig.reconnection.enabled`
   - Replace `serverConfig.reconnection.maxAttempts` with `clientConfig.reconnection.maxAttempts`
   - Replace `serverConfig.reconnection.retryDelay` with `clientConfig.reconnection.retryDelay`
-- [ ] Remove hardcoded `0.0.0.0` → `localhost` conversion logic (no longer needed)
-- [ ] Verify all references to `serverConfig` are removed
-- [ ] Run existing tests to ensure nothing broke
-- [ ] Commit: "Enhancement: Update WebSocketClient to use clientConfig instead of serverConfig"
+- [x] Remove hardcoded `0.0.0.0` → `localhost` conversion logic (no longer needed)
+- [x] Verify all references to `serverConfig` are removed
+- [x] Run existing tests to ensure nothing broke
+- [x] Commit: "Enhancement: Update WebSocketClient to use clientConfig instead of serverConfig"
 
 **Verification Checklist**:
-- [ ] `serverConfig` import removed
-- [ ] `clientConfig` imported
-- [ ] URL construction uses `clientConfig.websocket.url`
-- [ ] Reconnection uses `clientConfig.reconnection` settings
-- [ ] No references to `serverConfig` remain
-- [ ] Existing tests pass
+- [x] `serverConfig` import removed
+- [x] `clientConfig` imported
+- [x] URL construction uses `clientConfig.websocket.url`
+- [x] Reconnection uses `clientConfig.reconnection` settings
+- [x] No references to `serverConfig` remain
+- [x] Existing tests pass
 
 **Acceptance Criteria**:
-- [ ] `WebSocketClient` imports `clientConfig` instead of `serverConfig`
-- [ ] No references to `serverConfig` in `WebSocketClient`
-- [ ] URL is constructed from `clientConfig.websocket.url`
-- [ ] Reconnection uses `clientConfig.reconnection` settings
-- [ ] Existing tests pass
+- [x] `WebSocketClient` imports `clientConfig` instead of `serverConfig`
+- [x] No references to `serverConfig` in `WebSocketClient`
+- [x] URL is constructed from `clientConfig.websocket.url`
+- [x] Reconnection uses `clientConfig.reconnection` settings
+- [x] Existing tests pass
 
 ## Phase 4: Implement Exponential Backoff (~25 minutes)
 
