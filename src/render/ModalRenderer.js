@@ -20,7 +20,9 @@ export class ModalRenderer {
       startY: null,
       width: null,
       selectedIndex: null,
-      optionLines: null, // Map of optionIndex -> y position
+      optionLines: null, // Map of optionIndex -> [y1, y2, ...] (array of Y positions for wrapped lines)
+      scrollPosition: null, // Track scroll position for incremental updates
+      modalHeight: null, // Track modal height for viewport calculation
     };
     // Cache for wrapped text (lazy wrapping with memoization)
     this.wrappedTextCache = new Map(); // Key: `${text}_${maxWidth}`, Value: array of lines
@@ -98,8 +100,8 @@ export class ModalRenderer {
     this.renderTitle(startX, startY, modalWidth, title);
     
     // Build option lines map for incremental updates
-    const optionLines = this.buildOptionLinesMap(startX, startY, content, modalWidth);
-    this.renderContent(startX, startY, modalWidth, content, modal.getSelectedIndex());
+    const optionLines = this.buildOptionLinesMap(startX, startY, content, modalWidth, modal.getScrollPosition());
+    this.renderContent(startX, startY, modalWidth, content, modal.getSelectedIndex(), modal.getScrollPosition(), modalHeight);
     
     // Store rendered state for incremental updates
     this.lastRenderedState = {
@@ -108,6 +110,8 @@ export class ModalRenderer {
       width: modalWidth,
       selectedIndex: modal.getSelectedIndex(),
       optionLines,
+      scrollPosition: modal.getScrollPosition(),
+      modalHeight,
     };
     
     // Reset all color/background state to prevent cursor artifacts
@@ -121,34 +125,48 @@ export class ModalRenderer {
   }
 
   /**
-   * Build a map of option indices to their Y positions
+   * Build a map of option indices to their Y positions (accounting for scroll position)
    * @param {number} startX - Starting X position
    * @param {number} startY - Starting Y position
    * @param {Array} content - Content blocks
-   * @returns {Map<number, number>} Map of optionIndex -> y position
+   * @param {number} width - Modal width
+   * @param {number} scrollPosition - Current scroll position (default: 0)
+   * @returns {Map<number, Array<number>>} Map of optionIndex -> [y1, y2, ...] (array of Y positions for wrapped lines)
    */
-  buildOptionLinesMap(startX, startY, content, width) {
+  buildOptionLinesMap(startX, startY, content, width, scrollPosition = 0) {
     const optionLines = new Map(); // Maps optionIndex -> [y1, y2, ...] (array of Y positions for wrapped lines)
-    let currentY = startY + 2; // Start after title line
+    const viewportStartY = startY + 2; // Start after title line
+    let lineIndex = 0;
     let optionIndex = 0;
     const lineWidth = width - (this.padding * 2);
-    const prefix = '> '; // Prefix for options
-    const availableWidth = lineWidth - prefix.length;
 
+    // Build all content lines to track positions accurately
+    const allLines = this.buildContentLines(content, width);
+
+    // Track Y positions for each option, accounting for scroll position
     content.forEach(block => {
       if (block.type === 'message') {
-        // Use wrapping to get accurate line count
         const wrappedLines = this.wrapTextWithNewlines(block.text, lineWidth);
-        currentY += wrappedLines.length;
+        lineIndex += wrappedLines.length;
       } else if (block.type === 'option') {
-        // Use wrapping to get all wrapped lines for this option
-        const wrappedLabelLines = this.wrapTextWithNewlines(block.label, availableWidth);
+        const wrappedLabelLines = this.wrapTextWithNewlines(block.label, lineWidth - 2);
         const optionYPositions = [];
-        wrappedLabelLines.forEach((labelLine, lineIndex) => {
-          optionYPositions.push(currentY);
-        currentY++;
+        
+        wrappedLabelLines.forEach((labelLine, labelIndex) => {
+          const absoluteLineIndex = lineIndex + labelIndex;
+          // Calculate Y position if line is visible in viewport
+          if (absoluteLineIndex >= scrollPosition) {
+            const relativeLineIndex = absoluteLineIndex - scrollPosition;
+            const yPosition = viewportStartY + relativeLineIndex;
+            optionYPositions.push(yPosition);
+          } else {
+            // Line is scrolled out of view above viewport
+            optionYPositions.push(null);
+          }
         });
+        
         optionLines.set(optionIndex, optionYPositions);
+        lineIndex += wrappedLabelLines.length;
         optionIndex++;
       }
     });
@@ -168,10 +186,16 @@ export class ModalRenderer {
       return false;
     }
 
-    const { startX, startY, width, selectedIndex: lastSelectedIndex, optionLines } = this.lastRenderedState;
+    const { startX, startY, width, selectedIndex: lastSelectedIndex, optionLines, scrollPosition: lastScrollPosition, modalHeight } = this.lastRenderedState;
     const currentSelectedIndex = modal.getSelectedIndex();
+    const currentScrollPosition = modal.getScrollPosition();
     const content = modal.getContent();
     const options = content.filter(block => block.type === 'option');
+
+    // If scroll position changed, need full re-render (can't do incremental update)
+    if (currentScrollPosition !== lastScrollPosition) {
+      return false; // Trigger full render
+    }
 
     // Only update if selection actually changed
     if (currentSelectedIndex === lastSelectedIndex) {
@@ -211,42 +235,43 @@ export class ModalRenderer {
       // Wrap the label to get all lines (same as in renderContent)
       const wrappedLabelLines = this.wrapTextWithNewlines(option.label, availableWidth);
 
-      // Render each wrapped line of the option
+      // Render each wrapped line of the option (only if visible in viewport)
       wrappedLabelLines.forEach((labelLine, lineIndex) => {
         const y = yPositions[lineIndex];
-        if (y === undefined) {
-          return; // Invalid line index
+        // Skip if line is scrolled out of view (y is null) or invalid
+        if (y === null || y === undefined) {
+          return; // Line is not visible in viewport
         }
 
         const optionText = lineIndex === 0 ? prefix + labelLine : labelLine; // Only prefix first line
 
-      // Clear the entire line first with black background
-      process.stdout.write(ansiEscapes.cursorTo(startX + this.padding, y));
-      process.stdout.write(chalk.bgBlack(' '.repeat(lineWidth)));
+        // Clear the entire line first with black background
+        process.stdout.write(ansiEscapes.cursorTo(startX + this.padding, y));
+        process.stdout.write(chalk.bgBlack(' '.repeat(lineWidth)));
 
         // Render option with selection indicator (only highlight first line)
-      process.stdout.write(ansiEscapes.cursorTo(startX + this.padding, y));
+        process.stdout.write(ansiEscapes.cursorTo(startX + this.padding, y));
         if (isSelected && lineIndex === 0) {
-        // Selected option: prefix + label with background highlight and text color from config
-        const selectionColor = this.getSelectionTextColor();
-        process.stdout.write(selectionColor(optionText));
+          // Selected option: prefix + label with background highlight and text color from config
+          const selectionColor = this.getSelectionTextColor();
+          process.stdout.write(selectionColor(optionText));
           // Fill rest of line with black background to ensure clean rendering
-        const remainingWidth = lineWidth - optionText.length;
-        if (remainingWidth > 0) {
-          process.stdout.write(chalk.bgBlack(' '.repeat(remainingWidth)));
-        }
-      } else {
-        // Unselected option: prefix + label with normal text on black background
-        process.stdout.write(chalk.bgBlack(optionText));
+          const remainingWidth = lineWidth - optionText.length;
+          if (remainingWidth > 0) {
+            process.stdout.write(chalk.bgBlack(' '.repeat(remainingWidth)));
+          }
+        } else {
+          // Unselected option: prefix + label with normal text on black background
+          process.stdout.write(chalk.bgBlack(optionText));
           // Fill rest of line to ensure clean rendering
-        const remainingWidth = lineWidth - optionText.length;
-        if (remainingWidth > 0) {
-          process.stdout.write(chalk.bgBlack(' '.repeat(remainingWidth)));
+          const remainingWidth = lineWidth - optionText.length;
+          if (remainingWidth > 0) {
+            process.stdout.write(chalk.bgBlack(' '.repeat(remainingWidth)));
+          }
         }
-      }
 
-      // Reset color state after rendering this line
-      process.stdout.write(chalk.reset());
+        // Reset color state after rendering this line
+        process.stdout.write(chalk.reset());
       });
     });
 
@@ -555,79 +580,122 @@ export class ModalRenderer {
   }
 
   /**
-   * Render modal content (messages and options)
+   * Build all content lines with wrapping (for viewport clipping)
+   * @param {Array} content - Content blocks (messages and options)
+   * @param {number} width - Modal width
+   * @returns {Array} Array of line objects with type, text/label, and metadata
+   */
+  buildContentLines(content, width) {
+    const allLines = [];
+    const lineWidth = width - (this.padding * 2);
+    let optionIndex = 0; // Track option index across all content
+
+    content.forEach(block => {
+      if (block.type === 'message') {
+        const wrapped = this.wrapTextWithNewlines(block.text, lineWidth);
+        wrapped.forEach(line => {
+          allLines.push({ type: 'message', text: line });
+        });
+      } else if (block.type === 'option') {
+        const wrapped = this.wrapTextWithNewlines(block.label, lineWidth - 2);
+        wrapped.forEach((line, index) => {
+          allLines.push({
+            type: 'option',
+            label: line,
+            isFirstLine: index === 0,
+            optionIndex: optionIndex,
+            block: block, // Store reference to original block for action/active state
+          });
+        });
+        optionIndex++;
+      }
+    });
+
+    return allLines;
+  }
+
+  /**
+   * Render modal content (messages and options) with viewport clipping
    * @param {number} startX - Starting X position
    * @param {number} startY - Starting Y position
    * @param {number} width - Modal width
    * @param {Array} content - Content blocks
    * @param {number} selectedIndex - Currently selected option index
+   * @param {number} scrollPosition - Current scroll position (default: 0)
+   * @param {number} modalHeight - Modal height (for viewport calculation)
    */
-  renderContent(startX, startY, width, content, selectedIndex) {
-    let currentY = startY + 2; // Start after title line
-    let optionIndex = 0; // Track option index (separate from content index)
-    const lineWidth = width - (this.padding * 2); // Available width for content (accounting for padding)
+  renderContent(startX, startY, width, content, selectedIndex, scrollPosition = 0, modalHeight = null) {
+    // Calculate viewport and total height for clipping
+    let viewport, totalHeight, maxScroll, clampedScroll;
+    
+    if (modalHeight !== null) {
+      viewport = this.calculateViewport(startY, modalHeight);
+      totalHeight = this.calculateTotalContentHeight(content, width);
+      maxScroll = this.calculateMaxScroll(totalHeight, viewport.viewportHeight);
+      clampedScroll = Math.max(0, Math.min(scrollPosition, maxScroll));
+    } else {
+      // Fallback to old behavior if modalHeight not provided (backward compatibility)
+      viewport = { viewportStartY: startY + 2, viewportEndY: startY + 100, viewportHeight: 100 };
+      clampedScroll = 0;
+    }
 
-    content.forEach(block => {
-      if (block.type === 'message') {
-        // Wrap message text if needed (honors existing newlines, wraps long lines)
-        const wrappedTextLines = this.wrapTextWithNewlines(block.text, lineWidth);
-        
-        // Render each wrapped line
-        wrappedTextLines.forEach(line => {
-          process.stdout.write(ansiEscapes.cursorTo(startX + this.padding, currentY));
-          // Clear the line first with solid black background
-          process.stdout.write(chalk.bgBlack(' '.repeat(lineWidth)));
-          // Render message
-          process.stdout.write(ansiEscapes.cursorTo(startX + this.padding, currentY));
-          process.stdout.write(chalk.bgBlack(line));
-          currentY++;
-        });
-      } else if (block.type === 'option') {
-        // Wrap option label if needed (honors existing newlines, wraps long lines)
-        // Account for prefix length when calculating available width
-        const prefix = '> '; // Always show prefix for options
-        const availableWidth = lineWidth - prefix.length;
-        const wrappedLabelLines = this.wrapTextWithNewlines(block.label, availableWidth);
-        
-        // Render each wrapped line of the label
-        wrappedLabelLines.forEach((labelLine, lineIndex) => {
-          const isSelected = optionIndex === selectedIndex && lineIndex === 0; // Only first line is selectable
-          const optionText = lineIndex === 0 ? prefix + labelLine : labelLine; // Only prefix first line
-          
-          // Clear the entire line first with black background
-          process.stdout.write(ansiEscapes.cursorTo(startX + this.padding, currentY));
-          process.stdout.write(chalk.bgBlack(' '.repeat(lineWidth)));
-          
-          // Render option with selection indicator (only highlight first line)
-          process.stdout.write(ansiEscapes.cursorTo(startX + this.padding, currentY));
-          if (isSelected) {
-            // Selected option: prefix + label with background highlight and text color from config
-            const selectionColor = this.getSelectionTextColor();
-            process.stdout.write(selectionColor(optionText));
-            // Fill rest of line with black background to ensure clean rendering
-            const remainingWidth = lineWidth - optionText.length;
-            if (remainingWidth > 0) {
-              process.stdout.write(chalk.bgBlack(' '.repeat(remainingWidth)));
-            }
-          } else {
-            // Unselected option: prefix + label with normal text on black background
-            process.stdout.write(chalk.bgBlack(optionText));
-            // Fill rest of line to ensure clean rendering
-            const remainingWidth = lineWidth - optionText.length;
-            if (remainingWidth > 0) {
-              process.stdout.write(chalk.bgBlack(' '.repeat(remainingWidth)));
-            }
+    // Build all content lines (with wrapping)
+    const allLines = this.buildContentLines(content, width);
+
+    // Calculate visible range
+    const visibleStart = clampedScroll;
+    const visibleEnd = clampedScroll + viewport.viewportHeight - 1;
+
+    // Render only visible lines
+    let currentY = viewport.viewportStartY;
+    const lineWidth = width - (this.padding * 2);
+    const prefix = '> ';
+
+    for (let i = visibleStart; i <= visibleEnd && i < allLines.length; i++) {
+      const line = allLines[i];
+
+      if (line.type === 'message') {
+        // Render message line
+        process.stdout.write(ansiEscapes.cursorTo(startX + this.padding, currentY));
+        process.stdout.write(chalk.bgBlack(' '.repeat(lineWidth)));
+        process.stdout.write(ansiEscapes.cursorTo(startX + this.padding, currentY));
+        process.stdout.write(chalk.bgBlack(line.text));
+      } else if (line.type === 'option') {
+        // Render option line
+        const isSelected = line.optionIndex === selectedIndex && line.isFirstLine;
+        const optionText = line.isFirstLine ? prefix + line.label : line.label;
+
+        // Clear the entire line first with black background
+        process.stdout.write(ansiEscapes.cursorTo(startX + this.padding, currentY));
+        process.stdout.write(chalk.bgBlack(' '.repeat(lineWidth)));
+
+        // Render option with selection indicator
+        process.stdout.write(ansiEscapes.cursorTo(startX + this.padding, currentY));
+        if (isSelected) {
+          // Selected option: prefix + label with background highlight and text color from config
+          const selectionColor = this.getSelectionTextColor();
+          process.stdout.write(selectionColor(optionText));
+          // Fill rest of line with black background to ensure clean rendering
+          const remainingWidth = lineWidth - optionText.length;
+          if (remainingWidth > 0) {
+            process.stdout.write(chalk.bgBlack(' '.repeat(remainingWidth)));
           }
-          
-          // Reset color state after rendering this line to prevent cursor artifacts
-          process.stdout.write(chalk.reset());
-          
-          currentY++;
-        });
-        
-        optionIndex++;
+        } else {
+          // Unselected option: prefix + label with normal text on black background
+          process.stdout.write(chalk.bgBlack(optionText));
+          // Fill rest of line to ensure clean rendering
+          const remainingWidth = lineWidth - optionText.length;
+          if (remainingWidth > 0) {
+            process.stdout.write(chalk.bgBlack(' '.repeat(remainingWidth)));
+          }
+        }
+
+        // Reset color state after rendering this line to prevent cursor artifacts
+        process.stdout.write(chalk.reset());
       }
-    });
+
+      currentY++;
+    }
   }
 
   /**
