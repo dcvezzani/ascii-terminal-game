@@ -696,6 +696,48 @@ export class ModalRenderer {
 
       currentY++;
     }
+
+    // Render scroll indicators if modalHeight is provided
+    if (modalHeight !== null) {
+      this.renderScrollIndicators(startX, startY, width, modalHeight, clampedScroll, maxScroll, viewport.viewportHeight);
+    }
+  }
+
+  /**
+   * Render scroll indicators (arrows and progress bar)
+   * @param {number} startX - Starting X position of modal
+   * @param {number} startY - Starting Y position of modal
+   * @param {number} modalWidth - Modal width
+   * @param {number} modalHeight - Modal height
+   * @param {number} scrollPosition - Current scroll position
+   * @param {number} maxScroll - Maximum scroll position
+   * @param {number} viewportHeight - Viewport height
+   */
+  renderScrollIndicators(startX, startY, modalWidth, modalHeight, scrollPosition, maxScroll, viewportHeight) {
+    const viewport = this.calculateViewport(startY, modalHeight);
+    const indicatorX = startX + modalWidth - 1; // Right edge
+
+    // Top indicator (↑)
+    if (scrollPosition > 0) {
+      process.stdout.write(ansiEscapes.cursorTo(indicatorX, viewport.viewportStartY));
+      process.stdout.write(chalk.dim('↑'));
+    }
+
+    // Bottom indicator (↓)
+    if (scrollPosition < maxScroll) {
+      process.stdout.write(ansiEscapes.cursorTo(indicatorX, viewport.viewportEndY));
+      process.stdout.write(chalk.dim('↓'));
+    }
+
+    // Progress bar (right side)
+    if (maxScroll > 0) {
+      const progressRatio = scrollPosition / maxScroll;
+      let progressBarY = viewport.viewportStartY + Math.floor(progressRatio * viewportHeight);
+      // Clamp to viewport boundaries
+      progressBarY = Math.max(viewport.viewportStartY, Math.min(progressBarY, viewport.viewportEndY));
+      process.stdout.write(ansiEscapes.cursorTo(indicatorX, progressBarY));
+      process.stdout.write(chalk.dim('█')); // Solid block for progress
+    }
   }
 
   /**

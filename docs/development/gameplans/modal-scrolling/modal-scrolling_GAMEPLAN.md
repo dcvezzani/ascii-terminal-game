@@ -12,7 +12,7 @@ This gameplan implements scrolling support for the modal system, allowing users 
 - ✅ **Phase 1: Enhance Modal Class** - COMPLETE
 - ✅ **Phase 2: Enhance ModalRenderer - Viewport and Height Calculations** - COMPLETE
 - ✅ **Phase 3: Enhance ModalRenderer - Viewport Clipping and Rendering** - COMPLETE
-- ⏳ **Phase 4: Enhance ModalRenderer - Scroll Indicators** - NOT STARTED
+- ✅ **Phase 4: Enhance ModalRenderer - Scroll Indicators** - COMPLETE
 - ⏳ **Phase 5: Enhance ModalInputHandler - Scrolling and Selection** - NOT STARTED
 - ⏳ **Phase 6: Enhance ModalManager - Scroll Position Persistence** - NOT STARTED
 - ⏳ **Phase 7: Add Option State Rendering (Active vs Selected)** - NOT STARTED
@@ -275,8 +275,8 @@ This gameplan implements scrolling support for the modal system, allowing users 
 **Goal**: Add scroll indicators (arrows and progress bar) to ModalRenderer.
 
 **Tasks**:
-- [ ] Open `src/render/ModalRenderer.js`
-- [ ] Add `renderScrollIndicators()` method
+- [x] Open `src/render/ModalRenderer.js`
+- [x] Add `renderScrollIndicators()` method
   ```javascript
   renderScrollIndicators(startX, startY, modalWidth, modalHeight, scrollPosition, maxScroll, viewportHeight) {
     const viewport = this.calculateViewport(startY, modalHeight);
@@ -303,40 +303,40 @@ This gameplan implements scrolling support for the modal system, allowing users 
     }
   }
   ```
-- [ ] Update `renderContent()` to call `renderScrollIndicators()` after rendering content
+- [x] Update `renderContent()` to call `renderScrollIndicators()` after rendering content
   ```javascript
   // Render scroll indicators
   this.renderScrollIndicators(startX, startY, width, modalHeight, clampedScroll, maxScroll, viewport.viewportHeight);
   ```
-- [ ] Update `renderModal()` to pass `modalHeight` to `renderContent()` (or calculate it)
+- [x] Update `renderModal()` to pass `modalHeight` to `renderContent()` (or calculate it)
   - Need modalHeight for viewport calculation
-- [ ] Update `updateSelectionOnly()` to also update scroll indicators if needed
-  - Re-render indicators when scroll position changes
-- [ ] Create unit tests for scroll indicators (`test/render/ModalRenderer.indicators.test.js`)
+- [x] Update `updateSelectionOnly()` to also update scroll indicators if needed
+  - Re-render indicators when scroll position changes (handled by full render when scroll position changes)
+- [x] Create unit tests for scroll indicators (`test/render/ModalRenderer.indicators.test.js`)
   - Test `↑` indicator shown when scrollable above
   - Test `↓` indicator shown when scrollable below
   - Test progress bar rendered on right side
   - Test progress bar position reflects scroll position
   - Test progress bar at top when at top boundary
   - Test progress bar at bottom when at bottom boundary
-- [ ] Run tests to verify scroll indicators
-- [ ] Commit: "Enhancement: Add scroll indicators to ModalRenderer"
+- [x] Run tests to verify scroll indicators
+- [x] Commit: "Enhancement: Add scroll indicators to ModalRenderer"
 
 **Verification Checklist**:
-- [ ] `renderScrollIndicators()` method exists
-- [ ] Top indicator (`↑`) shown when scrollable above
-- [ ] Bottom indicator (`↓`) shown when scrollable below
-- [ ] Progress bar rendered on right side
-- [ ] Progress bar position reflects scroll position
-- [ ] Progress bar at boundaries (top/bottom)
-- [ ] Unit tests pass
+- [x] `renderScrollIndicators()` method exists
+- [x] Top indicator (`↑`) shown when scrollable above
+- [x] Bottom indicator (`↓`) shown when scrollable below
+- [x] Progress bar rendered on right side
+- [x] Progress bar position reflects scroll position
+- [x] Progress bar at boundaries (top/bottom)
+- [x] Unit tests pass
 
 **Acceptance Criteria**:
-- [ ] Scroll indicators rendered correctly
-- [ ] Indicators update dynamically as user scrolls
-- [ ] Progress bar position accurate
-- [ ] Indicators show correct state at boundaries
-- [ ] Unit tests pass
+- [x] Scroll indicators rendered correctly
+- [x] Indicators update dynamically as user scrolls
+- [x] Progress bar position accurate
+- [x] Indicators show correct state at boundaries
+- [x] Unit tests pass
 
 ## Phase 5: Enhance ModalInputHandler - Scrolling and Selection (~40 minutes)
 
