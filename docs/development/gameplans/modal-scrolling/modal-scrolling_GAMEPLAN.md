@@ -14,7 +14,7 @@ This gameplan implements scrolling support for the modal system, allowing users 
 - ✅ **Phase 3: Enhance ModalRenderer - Viewport Clipping and Rendering** - COMPLETE
 - ✅ **Phase 4: Enhance ModalRenderer - Scroll Indicators** - COMPLETE
 - ✅ **Phase 5: Enhance ModalInputHandler - Scrolling and Selection** - COMPLETE
-- ⏳ **Phase 6: Enhance ModalManager - Scroll Position Persistence** - NOT STARTED
+- ✅ **Phase 6: Enhance ModalManager - Scroll Position Persistence** - COMPLETE
 - ⏳ **Phase 7: Add Option State Rendering (Active vs Selected)** - NOT STARTED
 - ⏳ **Phase 8: Update Tests** - NOT STARTED
 - ⏳ **Phase 9: Integration Testing** - NOT STARTED
@@ -459,8 +459,8 @@ This gameplan implements scrolling support for the modal system, allowing users 
 **Goal**: Add modal stacking support and preserve scroll position during stacking.
 
 **Tasks**:
-- [ ] Open `src/ui/ModalManager.js`
-- [ ] Add `modalStack` property to track stacked modals
+- [x] Open `src/ui/ModalManager.js`
+- [x] Add `modalStack` property to track stacked modals
   ```javascript
   constructor() {
     this.currentModal = null;
