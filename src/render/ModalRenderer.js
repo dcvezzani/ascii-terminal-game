@@ -229,8 +229,8 @@ export class ModalRenderer {
     // Re-render only the option lines that changed
     // Need to get lineWidth for wrapping calculations
     const lineWidth = width - (this.padding * 2);
-    const prefix = '> ';
-    const availableWidth = lineWidth - prefix.length;
+    const prefixLength = 2; // Prefix is always 2 characters ('> ', '✓ ', or '  ')
+    const availableWidth = lineWidth - prefixLength;
 
     indicesToUpdate.forEach(optionIndex => {
       const yPositions = optionLines.get(optionIndex);
@@ -244,6 +244,18 @@ export class ModalRenderer {
       }
 
       const isSelected = optionIndex === currentSelectedIndex;
+      const isActive = option.active === true;
+      
+      // Determine prefix based on state (selected takes precedence over active)
+      let prefix = '';
+      if (isSelected) {
+        prefix = '> '; // Selected indicator
+      } else if (isActive) {
+        prefix = '✓ '; // Active indicator (checkmark)
+      } else {
+        prefix = '  '; // No indicator (two spaces for alignment)
+      }
+      
       // Wrap the label to get all lines (same as in renderContent)
       const wrappedLabelLines = this.wrapTextWithNewlines(option.label, availableWidth);
 
@@ -667,7 +679,6 @@ export class ModalRenderer {
     // Render only visible lines
     let currentY = viewport.viewportStartY;
     const lineWidth = width - (this.padding * 2);
-    const prefix = '> ';
 
     for (let i = visibleStart; i <= visibleEnd && i < allLines.length; i++) {
       const line = allLines[i];
@@ -681,6 +692,18 @@ export class ModalRenderer {
       } else if (line.type === 'option') {
         // Render option line
         const isSelected = line.optionIndex === selectedIndex && line.isFirstLine;
+        const isActive = line.block && line.block.active === true;
+        
+        // Determine prefix based on state (selected takes precedence over active)
+        let prefix = '';
+        if (isSelected) {
+          prefix = '> '; // Selected indicator
+        } else if (isActive) {
+          prefix = '✓ '; // Active indicator (checkmark)
+        } else {
+          prefix = '  '; // No indicator (two spaces for alignment)
+        }
+        
         const optionText = line.isFirstLine ? prefix + line.label : line.label;
 
         // Clear the entire line first with black background
