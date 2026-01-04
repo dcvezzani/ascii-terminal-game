@@ -33,15 +33,19 @@ export class ModalInputHandler {
 
     // Scrolling (movement keys)
     if (keyString === 'up' || keyString === 'w') {
-      modal.scrollUp();
-      this.modalManager.triggerStateChange(); // Re-render
+      const changed = modal.scrollUp();
+      if (changed) {
+        this.modalManager.triggerStateChange(); // Only re-render if changed
+      }
       return true;
     }
 
     if (keyString === 'down' || keyString === 's') {
       const maxScroll = this.calculateMaxScroll(modal);
-      modal.scrollDown(maxScroll);
-      this.modalManager.triggerStateChange(); // Re-render
+      const changed = modal.scrollDown(maxScroll);
+      if (changed) {
+        this.modalManager.triggerStateChange(); // Only re-render if changed
+      }
       return true;
     }
 
