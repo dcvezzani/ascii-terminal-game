@@ -467,7 +467,7 @@ This gameplan implements scrolling support for the modal system, allowing users 
     this.modalStack = []; // NEW: Stack for modal stacking
   }
   ```
-- [ ] Update `openModal()` to push current modal to stack if one exists
+- [x] Update `openModal()` to push current modal to stack if one exists
   ```javascript
   openModal(modal) {
     // If there's already a modal open, preserve it in stack
@@ -478,7 +478,7 @@ This gameplan implements scrolling support for the modal system, allowing users 
     // New modal starts with scrollPosition = 0 (handled in Modal constructor)
   }
   ```
-- [ ] Update `closeModal()` to restore modal from stack if one exists
+- [x] Update `closeModal()` to restore modal from stack if one exists
   ```javascript
   closeModal() {
     this.currentModal = null;
@@ -489,35 +489,35 @@ This gameplan implements scrolling support for the modal system, allowing users 
     }
   }
   ```
-- [ ] Update `reset()` to clear stack
+- [x] Update `reset()` to clear stack
   ```javascript
   reset() {
     this.currentModal = null;
     this.modalStack = [];
   }
   ```
-- [ ] Create unit tests for scroll position persistence (`test/ui/ModalManager.scrolling.test.js`)
+- [x] Create unit tests for scroll position persistence (`test/ui/ModalManager.scrolling.test.js`)
   - Test scroll position preserved during modal stacking
   - Test scroll position restored when modal shown again
   - Test each modal maintains its own scroll position
   - Test modal stacking works correctly
-- [ ] Run tests to verify scroll position persistence
-- [ ] Commit: "Enhancement: Add modal stacking and scroll position persistence to ModalManager"
+- [x] Run tests to verify scroll position persistence
+- [x] Commit: "Enhancement: Add modal stacking and scroll position persistence to ModalManager"
 
 **Verification Checklist**:
-- [ ] `modalStack` property exists
-- [ ] Scroll position preserved when modal is hidden (stacking)
-- [ ] Scroll position restored when modal is shown again
-- [ ] Each modal maintains its own scroll position
-- [ ] Modal stacking works correctly
-- [ ] Unit tests pass
+- [x] `modalStack` property exists
+- [x] Scroll position preserved when modal is hidden (stacking)
+- [x] Scroll position restored when modal is shown again
+- [x] Each modal maintains its own scroll position
+- [x] Modal stacking works correctly
+- [x] Unit tests pass
 
 **Acceptance Criteria**:
-- [ ] Scroll position preserved during modal stacking
-- [ ] Scroll position restored when modal shown again
-- [ ] Each modal maintains its own scroll position
-- [ ] Modal stacking works correctly
-- [ ] Unit tests pass
+- [x] Scroll position preserved during modal stacking
+- [x] Scroll position restored when modal shown again
+- [x] Each modal maintains its own scroll position
+- [x] Modal stacking works correctly
+- [x] Unit tests pass
 
 ## Phase 7: Add Option State Rendering (Active vs Selected) (~30 minutes)
 
