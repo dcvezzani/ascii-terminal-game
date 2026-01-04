@@ -13,6 +13,10 @@ import { clientLogger } from './utils/clientLogger.js';
 import { runLocalMode } from './modes/localMode.js';
 import { runNetworkedMode } from './modes/networkedMode.js';
 
+// Attach clientLogger to globalThis for debugging access
+// This allows debug logging in components that don't have direct access to the logger
+globalThis.clientLogger = clientLogger;
+
 // Re-export for backward compatibility
 export { runNetworkedMode };
 

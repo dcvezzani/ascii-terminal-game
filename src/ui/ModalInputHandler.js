@@ -48,9 +48,16 @@ export class ModalInputHandler {
       // This prevents flickering when estimated maxScroll is larger than actual maxScroll
       // The renderer will clamp the position, so we need to be conservative here
       const nextPosition = Math.min(currentPosition + 1, maxScroll);
+      if (typeof globalThis.clientLogger !== 'undefined' && typeof globalThis.clientLogger.debug === 'function') {
+        globalThis.clientLogger.debug('ModalInputHandler: nextPosition', { 
+          nextPosition, 
+          currentPosition, 
+          maxScroll 
+        });
+      }
       if (nextPosition === currentPosition) {
         // Position wouldn't change (already at or beyond maxScroll), don't attempt to scroll
-        return true;
+        return true; // Key was handled, just no action needed
       }
       
       const changed = modal.scrollDown(maxScroll);
