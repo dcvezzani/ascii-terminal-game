@@ -179,7 +179,7 @@ updateCell(x, y, char, colorFn) {
 
 ## Status
 
-**Status**: 🔴 OPEN
+**Status**: ✅ FIXED
 
 **Priority**: HIGH
 
@@ -187,6 +187,43 @@ updateCell(x, y, char, colorFn) {
 - Affects user experience significantly
 - Should be fixed before multiplayer release
 - Relatively straightforward fix (add modal check)
+
+**Fix Date**: 2026-01-04
+
+**Solution Implemented**: Option 1 - Skip Incremental Updates When Modal is Open
+
+### Implementation Details
+
+1. **Added Modal State Check** (Commit: `285123b`):
+   - Added check for `modalManager.hasOpenModal()` before rendering in `onStateUpdate` callback
+   - Check is placed after state validation and predicted position initialization
+   - Check is placed before both initial render and incremental update logic
+
+2. **Skip Rendering When Modal is Open**:
+   - When modal is open, skip all rendering updates (both `renderFull()` and incremental updates)
+   - State updates are still received and stored (`currentState = gameState`)
+   - Reconciliation still occurs for state tracking purposes
+
+3. **Preserve State Tracking**:
+   - `currentState` is still updated when modal is open
+   - When modal closes, next state update will trigger full render to show current game state
+   - This is handled automatically by the existing modal state change callback
+
+### How It Works
+
+- **Modal Open + State Update**: State is updated, but rendering is skipped
+- **Modal Close**: Modal state change callback triggers full re-render (existing behavior)
+- **Next State Update After Modal Close**: Full render occurs (because `previousState` wasn't updated while modal was open)
+
+### Files Modified
+
+- `src/modes/networkedMode.js` - Added modal check in `onStateUpdate` callback (lines 302-314)
+
+### Testing
+
+- Modal system tests passing (27/27 tests)
+- Renderer modal tests passing (4/4 tests)
+- Implementation verified to skip rendering when modal is open
 
 ## Notes
 
