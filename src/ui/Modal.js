@@ -76,21 +76,27 @@ export class Modal {
   /**
    * Scroll up by one line (decrements scroll position)
    * Scroll position is clamped to 0 at the top boundary
+   * @returns {boolean} True if scroll position changed, false if already at top
    */
   scrollUp() {
     if (this.scrollPosition > 0) {
       this.scrollPosition--;
+      return true; // Position changed
     }
+    return false; // Position unchanged (at boundary)
   }
 
   /**
    * Scroll down by one line (increments scroll position)
    * Scroll position is clamped to maxScroll at the bottom boundary
    * @param {number} maxScroll - Maximum scroll position (total content lines - viewport height)
+   * @returns {boolean} True if scroll position changed, false if already at bottom
    */
   scrollDown(maxScroll) {
+    const previousPosition = this.scrollPosition;
     // Clamp to maxScroll to prevent scrolling beyond boundaries
     this.scrollPosition = Math.min(this.scrollPosition + 1, maxScroll);
+    return this.scrollPosition !== previousPosition; // Return true if changed
   }
 
   /**
