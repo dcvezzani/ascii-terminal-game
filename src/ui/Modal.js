@@ -16,6 +16,7 @@ export class Modal {
     this.selectedIndex = config.selectedIndex ?? 0;
     this.scrollPosition = 0; // Scroll position (defaults to 0)
     this.action = config.action; // Modal-level action (optional)
+    this.maxScroll = null; // Maximum scroll position (calculated by ModalRenderer, null until first render)
   }
 
   /**
@@ -105,6 +106,22 @@ export class Modal {
    */
   getAction() {
     return this.action;
+  }
+
+  /**
+   * Get the maximum scroll position
+   * @returns {number|null} Maximum scroll position or null if not yet calculated
+   */
+  getMaxScroll() {
+    return this.maxScroll;
+  }
+
+  /**
+   * Set the maximum scroll position (called by ModalRenderer after calculation)
+   * @param {number} maxScroll - Maximum scroll position
+   */
+  setMaxScroll(maxScroll) {
+    this.maxScroll = maxScroll;
   }
 
   /**

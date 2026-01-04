@@ -41,18 +41,25 @@ export class ModalInputHandler {
     }
 
     if (keyString === 'down' || keyString === 's') {
-      const maxScroll = this.calculateMaxScroll(modal);
+      // Use actual maxScroll from modal (calculated by ModalRenderer) if available
+      // Fall back to estimate only if not yet calculated (shouldn't happen in normal flow)
+      let maxScroll = modal.getMaxScroll();
+      if (maxScroll === null) {
+        // Fallback to estimate if maxScroll not yet calculated (shouldn't happen after first render)
+        maxScroll = this.calculateMaxScroll(modal);
+      }
+      
       const currentPosition = modal.getScrollPosition();
       
       // Check if position would actually change before calling scrollDown
-      // This prevents flickering when estimated maxScroll is larger than actual maxScroll
-      // The renderer will clamp the position, so we need to be conservative here
+      // This prevents flickering when at the boundary
       const nextPosition = Math.min(currentPosition + 1, maxScroll);
       if (typeof globalThis.clientLogger !== 'undefined' && typeof globalThis.clientLogger.debug === 'function') {
         globalThis.clientLogger.debug('ModalInputHandler: nextPosition', { 
           nextPosition, 
           currentPosition, 
-          maxScroll 
+          maxScroll,
+          usingEstimate: modal.getMaxScroll() === null
         });
       }
       if (nextPosition === currentPosition) {
@@ -90,23 +97,23 @@ export class ModalInputHandler {
   }
 
   /**
-   * Calculate maximum scroll position for a modal
+   * Calculate maximum scroll position for a modal (fallback estimation)
    * @param {Modal} modal - Modal instance
-   * @returns {number} Maximum scroll position
+   * @returns {number} Maximum scroll position (estimated)
+   * @deprecated This is only used as a fallback if modal.getMaxScroll() returns null
+   * The actual maxScroll should be calculated by ModalRenderer and stored in the modal
    */
   calculateMaxScroll(modal) {
     // Simple estimation based on content
-    // For accurate calculation, we'd need ModalRenderer with viewport info
-    // This is a placeholder that estimates based on content length
-    // IMPORTANT: This must UNDERESTIMATE, not overestimate, to prevent flickering
-    // If we overestimate, the check won't prevent scrolling when at the actual boundary
+    // This should only be used as a fallback if modal.getMaxScroll() is null
+    // (which shouldn't happen after the first render)
     const content = modal.getContent();
     let totalLines = 0;
     
     // Estimate total lines (rough calculation)
     // Use larger line width (50 chars) to produce FEWER estimated lines
     // This makes the estimate more conservative (underestimates total lines)
-    const estimatedLineWidth = 50; // Increased from 40 to underestimate
+    const estimatedLineWidth = 50;
     content.forEach(block => {
       if (block.type === 'message') {
         // Use larger line width to underestimate (fewer lines = more conservative)
@@ -121,7 +128,7 @@ export class ModalInputHandler {
     // Estimate viewport height (rough: assume ~10-15 lines visible)
     // Use LARGER viewport height to reduce maxScroll (more conservative)
     // Reduced by 1 to account for bottom border space (viewport reduced by 1 line)
-    const estimatedViewportHeight = 12; // Increased from 11 to underestimate maxScroll
+    const estimatedViewportHeight = 12;
     
     // Max scroll is total lines minus viewport height
     // Add safety margin of 2 to ensure we never overestimate

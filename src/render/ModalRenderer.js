@@ -103,6 +103,10 @@ export class ModalRenderer {
     const viewport = this.calculateViewport(startY, modalHeight);
     const totalHeight = this.calculateTotalContentHeight(content, modalWidth);
     const maxScroll = this.calculateMaxScroll(totalHeight, viewport.viewportHeight);
+    
+    // Store maxScroll in modal so ModalInputHandler can use the actual value instead of estimating
+    modal.setMaxScroll(maxScroll);
+    
     const currentScrollPosition = modal.getScrollPosition();
     const clampedScroll = Math.max(0, Math.min(currentScrollPosition, maxScroll));
     
