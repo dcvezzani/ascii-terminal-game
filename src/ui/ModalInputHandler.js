@@ -98,16 +98,18 @@ export class ModalInputHandler {
     // Simple estimation based on content
     // For accurate calculation, we'd need ModalRenderer with viewport info
     // This is a placeholder that estimates based on content length
+    // IMPORTANT: This must UNDERESTIMATE, not overestimate, to prevent flickering
+    // If we overestimate, the check won't prevent scrolling when at the actual boundary
     const content = modal.getContent();
     let totalLines = 0;
     
     // Estimate total lines (rough calculation)
-    // Use conservative line width (40 chars) to account for word-wrapping
-    // which may produce more lines than simple character division
-    const estimatedLineWidth = 40;
+    // Use larger line width (50 chars) to produce FEWER estimated lines
+    // This makes the estimate more conservative (underestimates total lines)
+    const estimatedLineWidth = 50; // Increased from 40 to underestimate
     content.forEach(block => {
       if (block.type === 'message') {
-        // Conservative estimate: use smaller line width to account for word-wrapping
+        // Use larger line width to underestimate (fewer lines = more conservative)
         const estimatedLines = Math.ceil(block.text.length / estimatedLineWidth) || 1;
         totalLines += estimatedLines;
       } else if (block.type === 'option') {
@@ -117,13 +119,15 @@ export class ModalInputHandler {
     });
 
     // Estimate viewport height (rough: assume ~10-15 lines visible)
+    // Use LARGER viewport height to reduce maxScroll (more conservative)
     // Reduced by 1 to account for bottom border space (viewport reduced by 1 line)
-    const estimatedViewportHeight = 11;
+    const estimatedViewportHeight = 12; // Increased from 11 to underestimate maxScroll
     
     // Max scroll is total lines minus viewport height
-    // Use a more conservative estimate (no buffer) to prevent over-estimation
-    // This helps prevent flickering when estimated maxScroll > actual maxScroll
-    const maxScroll = Math.max(0, totalLines - estimatedViewportHeight);
+    // Add safety margin of 2 to ensure we never overestimate
+    // This prevents flickering when estimated maxScroll > actual maxScroll
+    const estimatedMaxScroll = Math.max(0, totalLines - estimatedViewportHeight);
+    const maxScroll = Math.max(0, estimatedMaxScroll - 2); // Safety margin: subtract 2
     
     return maxScroll;
   }
