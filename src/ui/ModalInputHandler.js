@@ -43,12 +43,16 @@ export class ModalInputHandler {
     if (keyString === 'down' || keyString === 's') {
       const maxScroll = this.calculateMaxScroll(modal);
       const currentPosition = modal.getScrollPosition();
-      // Check if already at or beyond estimated maxScroll before attempting to scroll
+      
+      // Check if position would actually change before calling scrollDown
       // This prevents flickering when estimated maxScroll is larger than actual maxScroll
-      if (currentPosition >= maxScroll) {
-        // Already at estimated bottom, don't attempt to scroll
+      // The renderer will clamp the position, so we need to be conservative here
+      const nextPosition = Math.min(currentPosition + 1, maxScroll);
+      if (nextPosition === currentPosition) {
+        // Position wouldn't change (already at or beyond maxScroll), don't attempt to scroll
         return true;
       }
+      
       const changed = modal.scrollDown(maxScroll);
       if (changed) {
         this.modalManager.triggerStateChange(); // Only re-render if changed
@@ -110,9 +114,9 @@ export class ModalInputHandler {
     const estimatedViewportHeight = 11;
     
     // Max scroll is total lines minus viewport height
-    // Add a small buffer (+2) to ensure we can always scroll to the last line
-    // This accounts for differences between estimation and actual wrapping
-    const maxScroll = Math.max(0, totalLines - estimatedViewportHeight + 2);
+    // Use a more conservative estimate (no buffer) to prevent over-estimation
+    // This helps prevent flickering when estimated maxScroll > actual maxScroll
+    const maxScroll = Math.max(0, totalLines - estimatedViewportHeight);
     
     return maxScroll;
   }
