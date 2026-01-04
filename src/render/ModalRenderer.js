@@ -99,9 +99,21 @@ export class ModalRenderer {
     this.renderBackground(startX, startY, modalWidth, modalHeight);
     this.renderTitle(startX, startY, modalWidth, title);
     
+    // Calculate actual maxScroll to clamp scroll position
+    const viewport = this.calculateViewport(startY, modalHeight);
+    const totalHeight = this.calculateTotalContentHeight(content, modalWidth);
+    const maxScroll = this.calculateMaxScroll(totalHeight, viewport.viewportHeight);
+    const currentScrollPosition = modal.getScrollPosition();
+    const clampedScroll = Math.max(0, Math.min(currentScrollPosition, maxScroll));
+    
+    // Update modal's scroll position to clamped value to keep it in sync
+    if (clampedScroll !== currentScrollPosition) {
+      modal.setScrollPosition(clampedScroll, maxScroll);
+    }
+    
     // Build option lines map for incremental updates
-    const optionLines = this.buildOptionLinesMap(startX, startY, content, modalWidth, modal.getScrollPosition());
-    this.renderContent(startX, startY, modalWidth, content, modal.getSelectedIndex(), modal.getScrollPosition(), modalHeight);
+    const optionLines = this.buildOptionLinesMap(startX, startY, content, modalWidth, clampedScroll);
+    this.renderContent(startX, startY, modalWidth, content, modal.getSelectedIndex(), clampedScroll, modalHeight);
     
     // Store rendered state for incremental updates
     this.lastRenderedState = {
@@ -110,7 +122,7 @@ export class ModalRenderer {
       width: modalWidth,
       selectedIndex: modal.getSelectedIndex(),
       optionLines,
-      scrollPosition: modal.getScrollPosition(),
+      scrollPosition: clampedScroll,
       modalHeight,
     };
     

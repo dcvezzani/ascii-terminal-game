@@ -273,6 +273,14 @@ describe('ModalRenderer Viewport Clipping', () => {
         content: [
           { type: 'message', text: 'Line 1' },
           { type: 'message', text: 'Line 2' },
+          { type: 'message', text: 'Line 3' },
+          { type: 'message', text: 'Line 4' },
+          { type: 'message', text: 'Line 5' },
+          { type: 'message', text: 'Line 6' },
+          { type: 'message', text: 'Line 7' },
+          { type: 'message', text: 'Line 8' },
+          { type: 'message', text: 'Line 9' },
+          { type: 'message', text: 'Line 10' },
         ],
       });
 
@@ -285,6 +293,8 @@ describe('ModalRenderer Viewport Clipping', () => {
       expect(renderContentSpy).toHaveBeenCalled();
       const lastCall = renderContentSpy.mock.calls[renderContentSpy.mock.calls.length - 1];
       const scrollPositionArg = lastCall[5]; // 6th argument (0-indexed: startX, startY, width, content, selectedIndex, scrollPosition)
+      // With 10 lines of content, viewport should be smaller, so maxScroll should be > 0
+      // Scroll position 1 should be valid and passed through (clamped if needed)
       expect(scrollPositionArg).toBe(1);
     });
 

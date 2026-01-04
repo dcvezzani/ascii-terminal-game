@@ -63,9 +63,14 @@ export class Modal {
   /**
    * Set the scroll position
    * @param {number} position - Scroll position to set (clamped to 0 minimum)
+   * @param {number} [maxScroll] - Optional maximum scroll position to clamp to
    */
-  setScrollPosition(position) {
-    this.scrollPosition = Math.max(0, position);
+  setScrollPosition(position, maxScroll = null) {
+    if (maxScroll !== null) {
+      this.scrollPosition = Math.max(0, Math.min(position, maxScroll));
+    } else {
+      this.scrollPosition = Math.max(0, position);
+    }
   }
 
   /**
@@ -84,9 +89,8 @@ export class Modal {
    * @param {number} maxScroll - Maximum scroll position (total content lines - viewport height)
    */
   scrollDown(maxScroll) {
-    if (this.scrollPosition < maxScroll) {
-      this.scrollPosition++;
-    }
+    // Clamp to maxScroll to prevent scrolling beyond boundaries
+    this.scrollPosition = Math.min(this.scrollPosition + 1, maxScroll);
   }
 
   /**
