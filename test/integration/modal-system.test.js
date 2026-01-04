@@ -100,103 +100,87 @@ describe('Modal System - Comprehensive Integration Tests', () => {
     });
   });
 
-  describe('Option Navigation and Selection', () => {
-    test('can navigate through options with arrow keys', () => {
+  describe('Content Scrolling', () => {
+    test('movement keys scroll content instead of navigating options', () => {
       const modal = new Modal({
         title: 'Menu',
-        content: [
-          { type: 'option', label: 'Option 1', action: () => {} },
-          { type: 'option', label: 'Option 2', action: () => {} },
-          { type: 'option', label: 'Option 3', action: () => {} },
-        ],
+        content: Array.from({ length: 20 }, (_, i) => ({
+          type: 'message',
+          text: `Line ${i + 1}`,
+        })),
       });
 
       modalManager.openModal(modal);
-      expect(modal.getSelectedIndex()).toBe(0);
+      expect(modal.getSelectedIndex()).toBe(0); // Selection unchanged
+      expect(modal.getScrollPosition()).toBe(0);
 
-      // Navigate down
+      // Down arrow scrolls content down
       inputHandler.handleKeypress('', { name: 'down' });
-      expect(modal.getSelectedIndex()).toBe(1);
+      expect(modal.getScrollPosition()).toBeGreaterThan(0);
+      expect(modal.getSelectedIndex()).toBe(0); // Selection unchanged
 
-      inputHandler.handleKeypress('', { name: 'down' });
-      expect(modal.getSelectedIndex()).toBe(2);
-
-      // Navigate up
+      // Up arrow scrolls content up
+      const scrollPos = modal.getScrollPosition();
       inputHandler.handleKeypress('', { name: 'up' });
-      expect(modal.getSelectedIndex()).toBe(1);
-
-      inputHandler.handleKeypress('', { name: 'up' });
-      expect(modal.getSelectedIndex()).toBe(0);
+      expect(modal.getScrollPosition()).toBeLessThan(scrollPos);
+      expect(modal.getSelectedIndex()).toBe(0); // Selection unchanged
     });
 
-    test('can navigate with WASD keys', () => {
+    test('WASD keys scroll content', () => {
       const modal = new Modal({
         title: 'Menu',
-        content: [
-          { type: 'option', label: 'Option 1', action: () => {} },
-          { type: 'option', label: 'Option 2', action: () => {} },
-        ],
+        content: Array.from({ length: 20 }, (_, i) => ({
+          type: 'message',
+          text: `Line ${i + 1}`,
+        })),
       });
 
       modalManager.openModal(modal);
-      expect(modal.getSelectedIndex()).toBe(0);
+      expect(modal.getScrollPosition()).toBe(0);
 
-      // Navigate with 's' (down)
+      // 's' key scrolls down
       inputHandler.handleKeypress('s', { name: 's' });
-      expect(modal.getSelectedIndex()).toBe(1);
+      expect(modal.getScrollPosition()).toBeGreaterThan(0);
 
-      // Navigate with 'w' (up)
+      // 'w' key scrolls up
+      const scrollPos = modal.getScrollPosition();
       inputHandler.handleKeypress('w', { name: 'w' });
-      expect(modal.getSelectedIndex()).toBe(0);
+      expect(modal.getScrollPosition()).toBeLessThan(scrollPos);
     });
 
-    test('navigation skips message blocks', () => {
+    test('scrolling does not go below 0', () => {
       const modal = new Modal({
         title: 'Menu',
-        content: [
-          { type: 'message', text: 'Message 1' },
-          { type: 'option', label: 'Option 1', action: () => {} },
-          { type: 'message', text: 'Message 2' },
-          { type: 'option', label: 'Option 2', action: () => {} },
-        ],
+        content: [{ type: 'message', text: 'Line 1' }],
       });
 
       modalManager.openModal(modal);
-      expect(modal.getSelectedIndex()).toBe(0); // First option (index 0 of options array)
+      expect(modal.getScrollPosition()).toBe(0);
 
-      // Navigate to second option (should skip message)
-      inputHandler.handleKeypress('', { name: 'down' });
-      expect(modal.getSelectedIndex()).toBe(1); // Second option
-
-      // Navigate back
+      // Try to scroll up from top
       inputHandler.handleKeypress('', { name: 'up' });
-      expect(modal.getSelectedIndex()).toBe(0); // First option
+      expect(modal.getScrollPosition()).toBe(0); // Should stay at 0
     });
 
-    test('cannot navigate beyond option bounds', () => {
+    test('scrolling does not exceed maxScroll', () => {
       const modal = new Modal({
         title: 'Menu',
-        content: [
-          { type: 'option', label: 'Option 1', action: () => {} },
-          { type: 'option', label: 'Option 2', action: () => {} },
-        ],
+        content: Array.from({ length: 20 }, (_, i) => ({
+          type: 'message',
+          text: `Line ${i + 1}`,
+        })),
       });
 
       modalManager.openModal(modal);
-      expect(modal.getSelectedIndex()).toBe(0);
+      
+      // Scroll to bottom (get maxScroll from the input handler's modalInputHandler)
+      const modalInputHandler = inputHandler.modalInputHandler;
+      const maxScroll = modalInputHandler.calculateMaxScroll(modal);
+      modal.setScrollPosition(maxScroll);
 
-      // Try to navigate up from first option
-      inputHandler.handleKeypress('', { name: 'up' });
-      expect(modal.getSelectedIndex()).toBe(0); // Should stay at 0
-
-      // Navigate to last option
+      // Try to scroll down from bottom
       inputHandler.handleKeypress('', { name: 'down' });
-      inputHandler.handleKeypress('', { name: 'down' });
-      expect(modal.getSelectedIndex()).toBe(1); // Last option
-
-      // Try to navigate down from last option
-      inputHandler.handleKeypress('', { name: 'down' });
-      expect(modal.getSelectedIndex()).toBe(1); // Should stay at 1
+      expect(modal.getScrollPosition()).toBe(maxScroll); // Should stay at max
     });
   });
 
@@ -233,9 +217,10 @@ describe('Modal System - Comprehensive Integration Tests', () => {
       expect(action1).toHaveBeenCalledTimes(1);
       expect(action2).not.toHaveBeenCalled();
 
-      // Reopen and select second option
+      // Reopen and select second option (set selected index directly since movement keys now scroll)
       modalManager.openModal(modal);
-      inputHandler.handleKeypress('', { name: 'down' });
+      const currentModal = modalManager.getCurrentModal();
+      currentModal.setSelectedIndex(1); // Set to second option
       inputHandler.handleKeypress('', { name: 'return' });
       expect(action1).toHaveBeenCalledTimes(1); // Still only once
       expect(action2).toHaveBeenCalledTimes(1);
@@ -352,19 +337,19 @@ describe('Modal System - Comprehensive Integration Tests', () => {
   });
 
   describe('Modal State Change Callback', () => {
-    test('triggers callback when modal selection changes', () => {
+    test('triggers callback when modal scrolls', () => {
       const modal = new Modal({
         title: 'Menu',
-        content: [
-          { type: 'option', label: 'Option 1', action: () => {} },
-          { type: 'option', label: 'Option 2', action: () => {} },
-        ],
+        content: Array.from({ length: 20 }, (_, i) => ({
+          type: 'message',
+          text: `Line ${i + 1}`,
+        })),
       });
 
       modalManager.openModal(modal);
       onModalStateChangeSpy.mockClear();
 
-      // Navigate to trigger callback
+      // Scroll to trigger callback
       inputHandler.handleKeypress('', { name: 'down' });
       expect(onModalStateChangeSpy).toHaveBeenCalled();
     });
@@ -425,13 +410,13 @@ describe('Modal System - Comprehensive Integration Tests', () => {
       expect(writeSpy).toHaveBeenCalled();
     });
 
-    test('renderModalOnly updates only changed option lines', () => {
+    test('renderModalOnly updates when modal scrolls', () => {
       const modal = new Modal({
         title: 'Menu',
-        content: [
-          { type: 'option', label: 'Option 1', action: () => {} },
-          { type: 'option', label: 'Option 2', action: () => {} },
-        ],
+        content: Array.from({ length: 20 }, (_, i) => ({
+          type: 'message',
+          text: `Line ${i + 1}`,
+        })),
       });
 
       modalManager.openModal(modal);
@@ -440,16 +425,16 @@ describe('Modal System - Comprehensive Integration Tests', () => {
       renderer.renderFull(game);
       writeSpy.mockClear();
 
-      // Change selection
+      // Scroll content
       inputHandler.handleKeypress('', { name: 'down' });
       
-      // Should trigger incremental update
+      // Should trigger state change callback
       expect(onModalStateChangeSpy).toHaveBeenCalled();
     });
   });
 
   describe('End-to-End Flow', () => {
-    test('complete flow: open, navigate, select, execute, close', () => {
+    test('complete flow: open, scroll, select, execute, close', () => {
       const restartAction = vi.fn();
       const quitAction = vi.fn();
 
@@ -467,15 +452,25 @@ describe('Modal System - Comprehensive Integration Tests', () => {
       expect(modalManager.hasOpenModal()).toBe(true);
       expect(modal.getSelectedIndex()).toBe(0);
 
-      // Navigate to second option
+      // Scroll content (movement keys now scroll, not navigate)
+      // Add more content to make scrolling possible
+      modal.content.push(
+        ...Array.from({ length: 20 }, (_, i) => ({
+          type: 'message',
+          text: `Additional line ${i + 1}`,
+        }))
+      );
+      
       inputHandler.handleKeypress('', { name: 'down' });
-      expect(modal.getSelectedIndex()).toBe(1);
+      expect(modal.getScrollPosition()).toBeGreaterThan(0);
+      expect(modal.getSelectedIndex()).toBe(0); // Selection unchanged
 
-      // Navigate back to first
+      // Scroll back up
       inputHandler.handleKeypress('', { name: 'up' });
-      expect(modal.getSelectedIndex()).toBe(0);
+      expect(modal.getScrollPosition()).toBe(0);
+      expect(modal.getSelectedIndex()).toBe(0); // Selection unchanged
 
-      // Select first option
+      // Select first option (default selected)
       inputHandler.handleKeypress('', { name: 'return' });
 
       // Action should execute and modal should close
@@ -496,15 +491,16 @@ describe('Modal System - Comprehensive Integration Tests', () => {
         ],
       });
 
-      // First selection
+      // First selection (defaults to first option)
       modalManager.openModal(modal);
       inputHandler.handleKeypress('', { name: 'return' });
       expect(action1).toHaveBeenCalledTimes(1);
       expect(modalManager.hasOpenModal()).toBe(false);
 
-      // Reopen and select second option
+      // Reopen and select second option (set selected index directly since movement keys now scroll)
       modalManager.openModal(modal);
-      inputHandler.handleKeypress('', { name: 'down' });
+      const currentModal = modalManager.getCurrentModal();
+      currentModal.setSelectedIndex(1); // Set to second option
       inputHandler.handleKeypress('', { name: 'return' });
       expect(action1).toHaveBeenCalledTimes(1); // Still only once
       expect(action2).toHaveBeenCalledTimes(1);

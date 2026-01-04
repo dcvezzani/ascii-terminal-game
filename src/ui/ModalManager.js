@@ -8,6 +8,7 @@ export class ModalManager {
    */
   constructor() {
     this.currentModal = null;
+    this.stateChangeCallback = null; // Callback to trigger re-rendering
   }
 
   /**
@@ -58,6 +59,23 @@ export class ModalManager {
     }
 
     this.currentModal.executeSelectedAction(this);
+  }
+
+  /**
+   * Set the callback function to trigger when modal state changes (for re-rendering)
+   * @param {Function} callback - Callback function to call when state changes
+   */
+  setStateChangeCallback(callback) {
+    this.stateChangeCallback = callback;
+  }
+
+  /**
+   * Trigger state change callback (for re-rendering after scroll/selection changes)
+   */
+  triggerStateChange() {
+    if (this.stateChangeCallback) {
+      this.stateChangeCallback();
+    }
   }
 }
 

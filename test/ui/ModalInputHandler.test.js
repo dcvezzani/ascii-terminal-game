@@ -19,39 +19,28 @@ describe('ModalInputHandler', () => {
     });
   });
 
-  describe('handleKeypress() - Up/Down Navigation', () => {
-    test('handles up arrow key to navigate options (skip message blocks)', () => {
+  describe('handleKeypress() - Scrolling', () => {
+    test('handles up arrow key to scroll content up', () => {
       modal = new Modal({
         title: 'Test',
         content: [
           { type: 'message', text: 'Message 1' },
           { type: 'option', label: 'Option 1', action: () => {} },
-          { type: 'message', text: 'Message 2' },
-          { type: 'option', label: 'Option 2', action: () => {} },
-          { type: 'option', label: 'Option 3', action: () => {} },
         ],
       });
 
       modalManager.openModal(modal);
-      expect(modal.getSelectedIndex()).toBe(0); // Start at first option
+      modal.setScrollPosition(5); // Start scrolled down
+      const initialSelectedIndex = modal.getSelectedIndex();
 
-      // Press down arrow - should move to next option (skip message)
-      const handled1 = modalInputHandler.handleKeypress('', { name: 'down' }, modal);
-      expect(handled1).toBe(true);
-      expect(modal.getSelectedIndex()).toBe(1); // Should be at Option 2
-
-      // Press down arrow again - should move to next option
-      const handled2 = modalInputHandler.handleKeypress('', { name: 'down' }, modal);
-      expect(handled2).toBe(true);
-      expect(modal.getSelectedIndex()).toBe(2); // Should be at Option 3
-
-      // Press up arrow - should move back
-      const handled3 = modalInputHandler.handleKeypress('', { name: 'up' }, modal);
-      expect(handled3).toBe(true);
-      expect(modal.getSelectedIndex()).toBe(1); // Back to Option 2
+      // Press up arrow - should scroll up, not change selection
+      const handled = modalInputHandler.handleKeypress('', { name: 'up' }, modal);
+      expect(handled).toBe(true);
+      expect(modal.getScrollPosition()).toBe(4); // Scrolled up
+      expect(modal.getSelectedIndex()).toBe(initialSelectedIndex); // Selection unchanged
     });
 
-    test('handles "w" key for up navigation', () => {
+    test('handles "w" key to scroll content up', () => {
       modal = new Modal({
         title: 'Test',
         content: [
@@ -61,31 +50,35 @@ describe('ModalInputHandler', () => {
       });
 
       modalManager.openModal(modal);
-      modal.setSelectedIndex(1); // Start at second option
+      modal.setScrollPosition(3);
+      const initialSelectedIndex = modal.getSelectedIndex();
 
       const handled = modalInputHandler.handleKeypress('w', { name: 'w' }, modal);
       expect(handled).toBe(true);
-      expect(modal.getSelectedIndex()).toBe(0); // Should move to first option
+      expect(modal.getScrollPosition()).toBe(2); // Scrolled up
+      expect(modal.getSelectedIndex()).toBe(initialSelectedIndex); // Selection unchanged
     });
 
-    test('handles "s" key for down navigation', () => {
+    test('handles "s" key to scroll content down', () => {
       modal = new Modal({
         title: 'Test',
-        content: [
-          { type: 'option', label: 'Option 1', action: () => {} },
-          { type: 'option', label: 'Option 2', action: () => {} },
-        ],
+        content: Array.from({ length: 20 }, (_, i) => ({
+          type: 'message',
+          text: `Line ${i + 1}`,
+        })),
       });
 
       modalManager.openModal(modal);
-      expect(modal.getSelectedIndex()).toBe(0); // Start at first option
+      modal.setScrollPosition(0);
+      const initialSelectedIndex = modal.getSelectedIndex();
 
       const handled = modalInputHandler.handleKeypress('s', { name: 's' }, modal);
       expect(handled).toBe(true);
-      expect(modal.getSelectedIndex()).toBe(1); // Should move to second option
+      expect(modal.getScrollPosition()).toBeGreaterThan(0); // Scrolled down
+      expect(modal.getSelectedIndex()).toBe(initialSelectedIndex); // Selection unchanged
     });
 
-    test('does not navigate below last option', () => {
+    test('does not scroll below 0', () => {
       modal = new Modal({
         title: 'Test',
         content: [
@@ -95,48 +88,29 @@ describe('ModalInputHandler', () => {
       });
 
       modalManager.openModal(modal);
-      modal.setSelectedIndex(1); // At last option
-
-      const handled = modalInputHandler.handleKeypress('', { name: 'down' }, modal);
-      expect(handled).toBe(true);
-      expect(modal.getSelectedIndex()).toBe(1); // Should stay at last option
-    });
-
-    test('does not navigate above first option', () => {
-      modal = new Modal({
-        title: 'Test',
-        content: [
-          { type: 'option', label: 'Option 1', action: () => {} },
-          { type: 'option', label: 'Option 2', action: () => {} },
-        ],
-      });
-
-      modalManager.openModal(modal);
-      expect(modal.getSelectedIndex()).toBe(0); // At first option
+      modal.setScrollPosition(0); // At top
 
       const handled = modalInputHandler.handleKeypress('', { name: 'up' }, modal);
       expect(handled).toBe(true);
-      expect(modal.getSelectedIndex()).toBe(0); // Should stay at first option
+      expect(modal.getScrollPosition()).toBe(0); // Should stay at 0
     });
 
-    test('skips message blocks when navigating', () => {
+    test('does not scroll beyond maxScroll', () => {
       modal = new Modal({
         title: 'Test',
         content: [
-          { type: 'message', text: 'Message 1' },
           { type: 'option', label: 'Option 1', action: () => {} },
-          { type: 'message', text: 'Message 2' },
-          { type: 'message', text: 'Message 3' },
           { type: 'option', label: 'Option 2', action: () => {} },
         ],
       });
 
       modalManager.openModal(modal);
-      expect(modal.getSelectedIndex()).toBe(0); // At Option 1
+      const maxScroll = modalInputHandler.calculateMaxScroll(modal);
+      modal.setScrollPosition(maxScroll); // At bottom
 
-      // Down should skip messages and go to Option 2
-      modalInputHandler.handleKeypress('', { name: 'down' }, modal);
-      expect(modal.getSelectedIndex()).toBe(1); // Should be at Option 2
+      const handled = modalInputHandler.handleKeypress('', { name: 'down' }, modal);
+      expect(handled).toBe(true);
+      expect(modal.getScrollPosition()).toBe(maxScroll); // Should stay at max
     });
   });
 

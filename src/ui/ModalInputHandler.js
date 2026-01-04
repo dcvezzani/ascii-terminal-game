@@ -31,21 +31,29 @@ export class ModalInputHandler {
 
     const keyString = String(keyNameOrSequence).toLowerCase();
 
-    // Handle up/down navigation
+    // Scrolling (movement keys)
     if (keyString === 'up' || keyString === 'w') {
-      this.navigateUp(modal);
+      modal.scrollUp();
+      this.modalManager.triggerStateChange(); // Re-render
       return true;
     }
 
     if (keyString === 'down' || keyString === 's') {
-      this.navigateDown(modal);
+      const maxScroll = this.calculateMaxScroll(modal);
+      modal.scrollDown(maxScroll);
+      this.modalManager.triggerStateChange(); // Re-render
       return true;
     }
 
-    // Handle Enter key for option selection
+    // Handle Enter key for option selection and close modal
     if (keyString === 'return' || keyString === 'enter') {
-      // Execute action from selected option
-      this.modalManager.executeSelectedAction();
+      this.selectOptionAndClose(modal);
+      return true;
+    }
+
+    // Handle Space key for option selection and keep modal open
+    if (keyString === 'space') {
+      this.selectOptionAndKeepOpen(modal);
       return true;
     }
 
@@ -60,28 +68,123 @@ export class ModalInputHandler {
   }
 
   /**
-   * Navigate to previous option (skip message blocks)
+   * Calculate maximum scroll position for a modal
+   * @param {Modal} modal - Modal instance
+   * @returns {number} Maximum scroll position
+   */
+  calculateMaxScroll(modal) {
+    // Simple estimation based on content
+    // For accurate calculation, we'd need ModalRenderer with viewport info
+    // This is a placeholder that estimates based on content length
+    const content = modal.getContent();
+    let totalLines = 0;
+    
+    // Estimate total lines (rough calculation)
+    content.forEach(block => {
+      if (block.type === 'message') {
+        // Rough estimate: assume messages wrap to ~2-3 lines on average
+        const estimatedLines = Math.ceil(block.text.length / 50) || 1;
+        totalLines += estimatedLines;
+      } else if (block.type === 'option') {
+        // Options are typically 1 line
+        totalLines += 1;
+      }
+    });
+
+    // Estimate viewport height (rough: assume ~10-15 lines visible)
+    const estimatedViewportHeight = 12;
+    
+    // Max scroll is total lines minus viewport height
+    const maxScroll = Math.max(0, totalLines - estimatedViewportHeight);
+    
+    return maxScroll;
+  }
+
+  /**
+   * Select option and close modal (Enter key)
    * @param {Modal} modal - Modal instance
    */
-  navigateUp(modal) {
-    const currentIndex = modal.getSelectedIndex();
-    if (currentIndex > 0) {
-      modal.setSelectedIndex(currentIndex - 1);
+  selectOptionAndClose(modal) {
+    if (this.isSelectedOptionVisible(modal)) {
+      this.executeOptionAction(modal, true); // close = true
     }
   }
 
   /**
-   * Navigate to next option (skip message blocks)
+   * Select option and keep modal open (Space key)
    * @param {Modal} modal - Modal instance
    */
-  navigateDown(modal) {
+  selectOptionAndKeepOpen(modal) {
+    if (this.isSelectedOptionVisible(modal)) {
+      this.executeOptionAction(modal, false); // close = false
+    }
+  }
+
+  /**
+   * Execute option action with optional modal close
+   * @param {Modal} modal - Modal instance
+   * @param {boolean} shouldClose - Whether to close modal after action (if autoClose allows)
+   */
+  executeOptionAction(modal, shouldClose) {
     const content = modal.getContent();
     const options = content.filter(block => block.type === 'option');
-    const currentIndex = modal.getSelectedIndex();
+    const selectedOption = options[modal.getSelectedIndex()];
 
-    if (currentIndex < options.length - 1) {
-      modal.setSelectedIndex(currentIndex + 1);
+    if (selectedOption && selectedOption.action) {
+      const optionsParam = { modal }; // Pass modal reference
+      selectedOption.action(optionsParam);
+
+      // Check autoClose flag (defaults to true if not specified)
+      const autoClose = selectedOption.autoClose !== false;
+      if (shouldClose && autoClose && this.modalManager) {
+        this.modalManager.closeModal();
+      }
     }
+  }
+
+  /**
+   * Check if selected option is visible in viewport
+   * @param {Modal} modal - Modal instance
+   * @returns {boolean} True if selected option is visible, false otherwise
+   */
+  isSelectedOptionVisible(modal) {
+    // Simple check: if scroll position is reasonable, assume option is visible
+    // For accurate check, we'd need to know exact option positions and viewport
+    // This is a placeholder that does a basic check
+    const content = modal.getContent();
+    const options = content.filter(block => block.type === 'option');
+    const selectedIndex = modal.getSelectedIndex();
+
+    if (selectedIndex < 0 || selectedIndex >= options.length) {
+      return false; // Invalid selection
+    }
+
+    // Count lines before selected option
+    let linesBeforeOption = 0;
+    let optionCount = 0;
+    
+    for (const block of content) {
+      if (block.type === 'message') {
+        const estimatedLines = Math.ceil(block.text.length / 50) || 1;
+        linesBeforeOption += estimatedLines;
+      } else if (block.type === 'option') {
+        if (optionCount === selectedIndex) {
+          // Found selected option
+          break;
+        }
+        linesBeforeOption += 1;
+        optionCount++;
+      }
+    }
+
+    // Check if option is within visible viewport (rough estimate)
+    const scrollPosition = modal.getScrollPosition();
+    const estimatedViewportHeight = 12;
+    const visibleStart = scrollPosition;
+    const visibleEnd = scrollPosition + estimatedViewportHeight;
+
+    // Option is visible if its start line is within viewport
+    return linesBeforeOption >= visibleStart && linesBeforeOption < visibleEnd;
   }
 }
 

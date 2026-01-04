@@ -22,6 +22,12 @@ export class InputHandler {
     this.modalManager = modalManager;
     this.modalInputHandler = modalManager ? new ModalInputHandler(modalManager) : null;
     this.onModalStateChange = onModalStateChange; // Callback to trigger re-render
+    
+    // Set state change callback on ModalManager so it can trigger re-rendering
+    if (modalManager && onModalStateChange) {
+      modalManager.setStateChangeCallback(onModalStateChange);
+    }
+    
     this.rl = null;
     this.listening = false;
     this.buffer = '';

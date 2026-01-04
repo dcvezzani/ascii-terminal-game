@@ -13,7 +13,7 @@ This gameplan implements scrolling support for the modal system, allowing users 
 - ✅ **Phase 2: Enhance ModalRenderer - Viewport and Height Calculations** - COMPLETE
 - ✅ **Phase 3: Enhance ModalRenderer - Viewport Clipping and Rendering** - COMPLETE
 - ✅ **Phase 4: Enhance ModalRenderer - Scroll Indicators** - COMPLETE
-- ⏳ **Phase 5: Enhance ModalInputHandler - Scrolling and Selection** - NOT STARTED
+- ✅ **Phase 5: Enhance ModalInputHandler - Scrolling and Selection** - COMPLETE
 - ⏳ **Phase 6: Enhance ModalManager - Scroll Position Persistence** - NOT STARTED
 - ⏳ **Phase 7: Add Option State Rendering (Active vs Selected)** - NOT STARTED
 - ⏳ **Phase 8: Update Tests** - NOT STARTED
@@ -343,8 +343,8 @@ This gameplan implements scrolling support for the modal system, allowing users 
 **Goal**: Update ModalInputHandler to handle scrolling with movement keys and new selection behavior.
 
 **Tasks**:
-- [ ] Open `src/ui/ModalInputHandler.js`
-- [ ] Add `calculateMaxScroll(modal)` helper method
+- [x] Open `src/ui/ModalInputHandler.js`
+- [x] Add `calculateMaxScroll(modal)` helper method
   ```javascript
   calculateMaxScroll(modal) {
     // Need access to renderer or calculate here
@@ -353,7 +353,7 @@ This gameplan implements scrolling support for the modal system, allowing users 
     // This is a placeholder - actual implementation depends on architecture
   }
   ```
-- [ ] Update `handleKeypress()` to handle scrolling with movement keys
+- [x] Update `handleKeypress()` to handle scrolling with movement keys
   ```javascript
   // Scrolling (movement keys)
   if (keyString === 'up' || keyString === 'w') {
@@ -369,21 +369,21 @@ This gameplan implements scrolling support for the modal system, allowing users 
     return true;
   }
   ```
-- [ ] Update Enter key handling to select option and close modal
+- [x] Update Enter key handling to select option and close modal
   ```javascript
   if (keyString === 'return' || keyString === 'enter') {
     this.selectOptionAndClose(modal);
     return true;
   }
   ```
-- [ ] Add Space key handling to select option and keep modal open
+- [x] Add Space key handling to select option and keep modal open
   ```javascript
   if (keyString === 'space') {
     this.selectOptionAndKeepOpen(modal);
     return true;
   }
   ```
-- [ ] Add `selectOptionAndClose(modal)` method
+- [x] Add `selectOptionAndClose(modal)` method
   ```javascript
   selectOptionAndClose(modal) {
     if (this.isSelectedOptionVisible(modal)) {
@@ -391,7 +391,7 @@ This gameplan implements scrolling support for the modal system, allowing users 
     }
   }
   ```
-- [ ] Add `selectOptionAndKeepOpen(modal)` method
+- [x] Add `selectOptionAndKeepOpen(modal)` method
   ```javascript
   selectOptionAndKeepOpen(modal) {
     if (this.isSelectedOptionVisible(modal)) {
@@ -399,7 +399,7 @@ This gameplan implements scrolling support for the modal system, allowing users 
     }
   }
   ```
-- [ ] Update `executeOptionAction(modal, shouldClose)` method
+- [x] Update `executeOptionAction(modal, shouldClose)` method
   ```javascript
   executeOptionAction(modal, shouldClose) {
     const content = modal.getContent();
@@ -416,7 +416,7 @@ This gameplan implements scrolling support for the modal system, allowing users 
     }
   }
   ```
-- [ ] Add `isSelectedOptionVisible(modal)` method
+- [x] Add `isSelectedOptionVisible(modal)` method
   ```javascript
   isSelectedOptionVisible(modal) {
     // Check if selected option is within visible viewport
@@ -425,34 +425,34 @@ This gameplan implements scrolling support for the modal system, allowing users 
     return true; // Placeholder
   }
   ```
-- [ ] Remove old `navigateUp()` and `navigateDown()` methods (movement keys now scroll)
-- [ ] Update `ModalManager` to add `triggerStateChange()` method if needed (for re-rendering)
-- [ ] Create unit tests for scrolling and selection (`test/ui/ModalInputHandler.scrolling.test.js`)
+- [x] Remove old `navigateUp()` and `navigateDown()` methods (movement keys now scroll)
+- [x] Update `ModalManager` to add `triggerStateChange()` method if needed (for re-rendering)
+- [x] Create unit tests for scrolling and selection (`test/ui/ModalInputHandler.scrolling.test.js`)
   - Test movement keys scroll content
   - Test Enter key selects and closes modal
   - Test Space key selects and keeps modal open
   - Test option actions receive `options` parameter
   - Test modal reference in `options.modal`
   - Test selected option visibility check
-- [ ] Run tests to verify scrolling and selection
-- [ ] Commit: "Enhancement: Update ModalInputHandler for scrolling and new selection behavior"
+- [x] Run tests to verify scrolling and selection
+- [x] Commit: "Enhancement: Update ModalInputHandler for scrolling and new selection behavior"
 
 **Verification Checklist**:
-- [ ] Movement keys scroll content (not navigate options)
-- [ ] Enter key selects option and closes modal
-- [ ] Space key selects option and keeps modal open
-- [ ] Option actions receive `options` parameter with `modal` reference
-- [ ] Selected option visibility check works
-- [ ] Old navigation methods removed
-- [ ] Unit tests pass
+- [x] Movement keys scroll content (not navigate options)
+- [x] Enter key selects option and closes modal
+- [x] Space key selects option and keeps modal open
+- [x] Option actions receive `options` parameter with `modal` reference
+- [x] Selected option visibility check works
+- [x] Old navigation methods removed
+- [x] Unit tests pass
 
 **Acceptance Criteria**:
-- [ ] Movement keys scroll content
-- [ ] Enter key selects and closes modal
-- [ ] Space key selects and keeps modal open
-- [ ] Option actions receive modal reference
-- [ ] Only visible options can be selected
-- [ ] Unit tests pass
+- [x] Movement keys scroll content
+- [x] Enter key selects and closes modal
+- [x] Space key selects and keeps modal open
+- [x] Option actions receive modal reference
+- [x] Only visible options can be selected
+- [x] Unit tests pass
 
 ## Phase 6: Enhance ModalManager - Scroll Position Persistence (~20 minutes)
 

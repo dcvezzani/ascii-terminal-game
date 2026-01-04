@@ -31,13 +31,23 @@ describe('Modal Action Execution - Integration', () => {
       expect(modalManager.hasOpenModal()).toBe(true);
       expect(modal.getSelectedIndex()).toBe(0); // First option selected
 
-      // Navigate to second option
+      // Scroll content (movement keys now scroll, not navigate)
+      // Add more content to make scrolling possible
+      modal.content.push(
+        ...Array.from({ length: 20 }, (_, i) => ({
+          type: 'message',
+          text: `Additional line ${i + 1}`,
+        }))
+      );
+      
       modalInputHandler.handleKeypress('', { name: 'down' }, modal);
-      expect(modal.getSelectedIndex()).toBe(1);
+      expect(modal.getScrollPosition()).toBeGreaterThan(0);
+      expect(modal.getSelectedIndex()).toBe(0); // Selection unchanged
 
-      // Navigate back to first option
+      // Scroll back up
       modalInputHandler.handleKeypress('', { name: 'up' }, modal);
-      expect(modal.getSelectedIndex()).toBe(0);
+      expect(modal.getScrollPosition()).toBe(0);
+      expect(modal.getSelectedIndex()).toBe(0); // Selection unchanged
 
       // Select first option (Restart) with Enter
       modalInputHandler.handleKeypress('', { name: 'return' }, modal);
@@ -96,10 +106,11 @@ describe('Modal Action Execution - Integration', () => {
       expect(action2).not.toHaveBeenCalled();
       expect(modalManager.hasOpenModal()).toBe(false);
 
-      // Reopen and select second option
+      // Reopen and select second option (set selected index directly since movement keys now scroll)
       modalManager.openModal(modal);
-      modalInputHandler.handleKeypress('', { name: 'down' }, modal);
-      modalInputHandler.handleKeypress('', { name: 'return' }, modal);
+      const currentModal = modalManager.getCurrentModal();
+      currentModal.setSelectedIndex(1); // Set to second option
+      modalInputHandler.handleKeypress('', { name: 'return' }, currentModal);
       expect(action1).toHaveBeenCalledTimes(1); // Still only called once
       expect(action2).toHaveBeenCalledTimes(1);
       expect(modalManager.hasOpenModal()).toBe(false);
