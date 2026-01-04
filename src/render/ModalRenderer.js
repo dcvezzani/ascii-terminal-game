@@ -501,8 +501,14 @@ export class ModalRenderer {
    * @param {number} totalHeight - Total content height (all lines)
    * @param {number} viewportHeight - Viewport height (visible lines)
    * @returns {number} Maximum scroll position (0 if content fits in viewport)
+   * 
+   * When scrolled to maxScroll, the last line (index totalHeight - 1) should be visible.
+   * visibleEnd = maxScroll + viewportHeight - 1 should equal totalHeight - 1
+   * Therefore: maxScroll = totalHeight - viewportHeight
    */
   calculateMaxScroll(totalHeight, viewportHeight) {
+    // Ensure we can scroll to show the last line
+    // When scrollPosition = maxScroll, visibleEnd should be totalHeight - 1
     return Math.max(0, totalHeight - viewportHeight);
   }
 

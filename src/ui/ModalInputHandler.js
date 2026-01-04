@@ -92,7 +92,8 @@ export class ModalInputHandler {
     });
 
     // Estimate viewport height (rough: assume ~10-15 lines visible)
-    const estimatedViewportHeight = 12;
+    // Reduced by 1 to account for bottom border space (viewport reduced by 1 line)
+    const estimatedViewportHeight = 11;
     
     // Max scroll is total lines minus viewport height
     const maxScroll = Math.max(0, totalLines - estimatedViewportHeight);
