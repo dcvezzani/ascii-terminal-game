@@ -42,6 +42,13 @@ export class ModalInputHandler {
 
     if (keyString === 'down' || keyString === 's') {
       const maxScroll = this.calculateMaxScroll(modal);
+      const currentPosition = modal.getScrollPosition();
+      // Check if already at or beyond estimated maxScroll before attempting to scroll
+      // This prevents flickering when estimated maxScroll is larger than actual maxScroll
+      if (currentPosition >= maxScroll) {
+        // Already at estimated bottom, don't attempt to scroll
+        return true;
+      }
       const changed = modal.scrollDown(maxScroll);
       if (changed) {
         this.modalManager.triggerStateChange(); // Only re-render if changed
