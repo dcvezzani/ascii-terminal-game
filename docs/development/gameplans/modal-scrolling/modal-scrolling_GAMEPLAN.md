@@ -15,7 +15,7 @@ This gameplan implements scrolling support for the modal system, allowing users 
 - ✅ **Phase 4: Enhance ModalRenderer - Scroll Indicators** - COMPLETE
 - ✅ **Phase 5: Enhance ModalInputHandler - Scrolling and Selection** - COMPLETE
 - ✅ **Phase 6: Enhance ModalManager - Scroll Position Persistence** - COMPLETE
-- ⏳ **Phase 7: Add Option State Rendering (Active vs Selected)** - NOT STARTED
+- ✅ **Phase 7: Add Option State Rendering (Active vs Selected)** - COMPLETE
 - ⏳ **Phase 8: Update Tests** - NOT STARTED
 - ⏳ **Phase 9: Integration Testing** - NOT STARTED
 
@@ -524,14 +524,14 @@ This gameplan implements scrolling support for the modal system, allowing users 
 **Goal**: Render options with appropriate glyphs for selected and active states.
 
 **Tasks**:
-- [ ] Open `src/render/ModalRenderer.js`
-- [ ] Update `renderContent()` to check for active state on options
+- [x] Open `src/render/ModalRenderer.js`
+- [x] Update `renderContent()` to check for active state on options
   ```javascript
   // In option rendering:
   const isSelected = optionIndex === selectedIndex && lineIndex === 0;
   const isActive = block.active === true; // Check active property
   ```
-- [ ] Update option rendering logic to show different glyphs
+- [x] Update option rendering logic to show different glyphs
   ```javascript
   let prefix = '';
   if (isSelected) {
@@ -542,34 +542,34 @@ This gameplan implements scrolling support for the modal system, allowing users 
     prefix = '  '; // No indicator (two spaces for alignment)
   }
   ```
-- [ ] Update `updateSelectionOnly()` to handle active state rendering
+- [x] Update `updateSelectionOnly()` to handle active state rendering
   - Render active options with checkmark even when not selected
   - Render selected option with `>` prefix
-- [ ] Update `buildOptionLinesMap()` to track active state if needed
-- [ ] Create unit tests for option state rendering (`test/render/ModalRenderer.optionStates.test.js`)
+- [x] Update `buildOptionLinesMap()` to track active state if needed
+- [x] Create unit tests for option state rendering (`test/render/ModalRenderer.optionStates.test.js`)
   - Test selected option rendered with `>` prefix
   - Test active option rendered with checkmark glyph
   - Test both states can exist simultaneously
   - Test selected option must be visible
   - Test active state persists in hidden content
-- [ ] Run tests to verify option state rendering
-- [ ] Commit: "Enhancement: Add option state rendering (active vs selected) to ModalRenderer"
+- [x] Run tests to verify option state rendering
+- [x] Commit: "Enhancement: Add option state rendering (active vs selected) to ModalRenderer"
 
 **Verification Checklist**:
-- [ ] Selected option rendered with `>` prefix
-- [ ] Active option rendered with checkmark glyph
-- [ ] Both states can exist simultaneously
-- [ ] Selected option must be visible
-- [ ] Active state persists in hidden content
-- [ ] Unit tests pass
+- [x] Selected option rendered with `>` prefix
+- [x] Active option rendered with checkmark glyph
+- [x] Both states can exist simultaneously
+- [x] Selected option must be visible
+- [x] Active state persists in hidden content
+- [x] Unit tests pass
 
 **Acceptance Criteria**:
-- [ ] Selected option rendered with `>` prefix
-- [ ] Active option rendered with checkmark glyph
-- [ ] Both states can exist simultaneously
-- [ ] Selected option must be visible
-- [ ] Active state persists in hidden content
-- [ ] Unit tests pass
+- [x] Selected option rendered with `>` prefix
+- [x] Active option rendered with checkmark glyph
+- [x] Both states can exist simultaneously
+- [x] Selected option must be visible
+- [x] Active state persists in hidden content
+- [x] Unit tests pass
 
 ## Phase 8: Update Tests (~30 minutes)
 
