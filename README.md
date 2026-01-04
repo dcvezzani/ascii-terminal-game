@@ -96,9 +96,7 @@ The game supports multiplayer via WebSocket. To run in multiplayer mode:
    npm start
    ```
 
-   The client will automatically connect to the server if `serverConfig.websocket.enabled` is set to `true` in `src/config/serverConfig.js`.
-
-**Note**: By default, WebSocket mode is disabled. To enable it, set `serverConfig.websocket.enabled = true` in `src/config/serverConfig.js`.
+   The client will automatically connect to the WebSocket server using the configuration in `src/config/clientConfig.js` or environment variables.
 
 ## Game Description
 
@@ -237,6 +235,57 @@ npm run test:watch
 - **Code Quality**: Follow existing code patterns and standards
 
 ## Configuration
+
+### WebSocket Client Configuration
+
+Client WebSocket settings can be configured in `src/config/clientConfig.js` or via environment variables:
+
+```javascript
+export const clientConfig = {
+  websocket: {
+    url: 'ws://localhost:3000',  // Full WebSocket URL (default: 'ws://localhost:3000')
+  },
+  reconnection: {
+    enabled: true,              // Enable reconnection support (default: true)
+    maxAttempts: 5,             // Maximum reconnection attempts (default: 5)
+    retryDelay: 1000,           // Initial retry delay in milliseconds (default: 1000ms)
+    exponentialBackoff: true,    // Use exponential backoff (default: true)
+    maxRetryDelay: 30000,       // Maximum retry delay when using exponential backoff (default: 30000ms)
+  },
+};
+```
+
+**Configuration Precedence** (highest to lowest):
+1. Constructor parameter (when creating `WebSocketClient` instance)
+2. Environment variables (via `.env` file or system environment)
+3. Config file (`clientConfig.js`)
+
+### Environment Variables
+
+You can override client configuration using environment variables. Create a `.env` file in the project root (see `.env.sample` for template):
+
+```env
+# WebSocket Configuration
+WEBSOCKET_URL=ws://localhost:3000
+
+# Reconnection Settings
+WEBSOCKET_RECONNECTION_ENABLED=true
+WEBSOCKET_RECONNECTION_MAX_ATTEMPTS=5
+WEBSOCKET_RECONNECTION_RETRY_DELAY=1000
+WEBSOCKET_RECONNECTION_EXPONENTIAL_BACKOFF=true
+WEBSOCKET_RECONNECTION_MAX_RETRY_DELAY=30000
+```
+
+**Environment Variable Reference**:
+
+- `WEBSOCKET_URL` - Full WebSocket URL (e.g., `ws://example.com:3000`)
+- `WEBSOCKET_RECONNECTION_ENABLED` - Enable/disable reconnection (`true`/`false`)
+- `WEBSOCKET_RECONNECTION_MAX_ATTEMPTS` - Maximum reconnection attempts (number)
+- `WEBSOCKET_RECONNECTION_RETRY_DELAY` - Initial retry delay in milliseconds (number)
+- `WEBSOCKET_RECONNECTION_EXPONENTIAL_BACKOFF` - Enable exponential backoff (`true`/`false`)
+- `WEBSOCKET_RECONNECTION_MAX_RETRY_DELAY` - Maximum retry delay in milliseconds (number)
+
+**Exponential Backoff**: When enabled, retry delays increase exponentially: 1000ms → 2000ms → 4000ms → 8000ms → 16000ms → 30000ms (capped at `maxRetryDelay`).
 
 ### WebSocket Server Configuration
 
