@@ -7,7 +7,7 @@ import { Board } from '../game/Board.js';
 import { Renderer } from '../render/Renderer.js';
 import { InputHandler } from '../input/InputHandler.js';
 import { ModalManager } from '../ui/ModalManager.js';
-import { Modal } from '../ui/Modal.js';
+import { testModal } from './testModal.js';
 import { validateTerminalSize } from '../utils/terminal.js';
 import { gameConfig } from '../config/gameConfig.js';
 import { WebSocketClient } from '../network/WebSocketClient.js';
@@ -59,54 +59,27 @@ export async function runNetworkedMode() {
     renderer = new Renderer(modalManager);
     wsClient = new WebSocketClient();
 
-// Example: Create a test modal (add this after wsClient.connect() or in onConnect callback)
-const testModal = new Modal({
-  title: 'Network Test',
-  content: [
-    { type: 'message', text: 'Connected to server!' },
-    { type: 'message', text: 'This is a test modal in networked mode.' },
-    {
-      type: 'option',
-      label: 'Close',
-      action: () => {
-        clientLogger.info('Close option selected');
-        // Modal will close automatically after action
-      },
-    },
-    {
-      type: 'option',
-      label: 'Quit',
-      action: () => {
-        if (inputHandler) {
-          inputHandler.stop();
-        }
-        if (wsClient) {
-          wsClient.sendDisconnect();
-          wsClient.disconnect();
-        }
-        running = false;
-        if (game) {
-          game.stop();
-        }
-      },
-    },
-  ],
-});
-		
     // Set up WebSocket callbacks
     wsClient.onConnect(() => {
       clientLogger.info('Connected to server');
       // Only send CONNECT if not reconnecting (reconnection will send it with playerId)
       if (!wsClient.reconnecting) {
-      wsClient.sendConnect();
+        wsClient.sendConnect();
       }
 
-// Open the modal after connection is established
-modalManager.openModal(testModal);
-if (renderer && currentState) {
-  renderer.renderFull(game, currentState, localPlayerId);
-}
-			
+      // Create and open test modal after connection is established
+      const testModalInstance = testModal({
+        inputHandler,
+        wsClient,
+        game,
+        setRunning: (value) => {
+          running = value;
+        },
+      });
+      modalManager.openModal(testModalInstance);
+      if (renderer && currentState) {
+        renderer.renderFull(game, currentState, localPlayerId);
+      }
     });
 
     // Phase 3: Server Reconciliation - Reconciliation function
