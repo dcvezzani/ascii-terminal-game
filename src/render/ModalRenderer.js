@@ -468,7 +468,7 @@ export class ModalRenderer {
    */
   calculateViewport(startY, modalHeight) {
     const viewportStartY = startY + 2; // After title line
-    const viewportEndY = startY + modalHeight - 1; // Before bottom border
+    const viewportEndY = startY + modalHeight - 2; // Two lines before bottom border (leaves space for bottom border)
     const viewportHeight = viewportEndY - viewportStartY + 1;
     return { viewportStartY, viewportEndY, viewportHeight };
   }

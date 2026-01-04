@@ -22,8 +22,8 @@ describe('ModalRenderer Viewport and Height Calculations', () => {
 
       expect(viewport).toBeDefined();
       expect(viewport.viewportStartY).toBe(12); // startY + 2 (after title line)
-      expect(viewport.viewportEndY).toBe(24); // startY + modalHeight - 1
-      expect(viewport.viewportHeight).toBe(13); // viewportEndY - viewportStartY + 1
+      expect(viewport.viewportEndY).toBe(23); // startY + modalHeight - 2 (leaves space for bottom border)
+      expect(viewport.viewportHeight).toBe(12); // viewportEndY - viewportStartY + 1 (reduced by 1 to show bottom border)
     });
 
     test('calculates viewport height correctly for different modal heights', () => {
@@ -34,8 +34,8 @@ describe('ModalRenderer Viewport and Height Calculations', () => {
       const viewport1 = modalRenderer.calculateViewport(startY, modalHeight1);
       const viewport2 = modalRenderer.calculateViewport(startY, modalHeight2);
 
-      expect(viewport1.viewportHeight).toBe(8); // (5 + 10 - 1) - (5 + 2) + 1 = 8
-      expect(viewport2.viewportHeight).toBe(18); // (5 + 20 - 1) - (5 + 2) + 1 = 18
+      expect(viewport1.viewportHeight).toBe(7); // (5 + 10 - 2) - (5 + 2) + 1 = 7 (reduced by 1)
+      expect(viewport2.viewportHeight).toBe(17); // (5 + 20 - 2) - (5 + 2) + 1 = 17 (reduced by 1)
     });
 
     test('viewportStartY is always startY + 2', () => {
@@ -47,13 +47,13 @@ describe('ModalRenderer Viewport and Height Calculations', () => {
       expect(viewport.viewportStartY).toBe(2);
     });
 
-    test('viewportEndY is always startY + modalHeight - 1', () => {
+    test('viewportEndY is always startY + modalHeight - 2', () => {
       const startY = 10;
       const modalHeight = 15;
 
       const viewport = modalRenderer.calculateViewport(startY, modalHeight);
 
-      expect(viewport.viewportEndY).toBe(24); // 10 + 15 - 1
+      expect(viewport.viewportEndY).toBe(23); // 10 + 15 - 2 (leaves space for bottom border)
     });
   });
 
@@ -253,9 +253,9 @@ describe('ModalRenderer Viewport and Height Calculations', () => {
       const totalHeight = modalRenderer.calculateTotalContentHeight(content, width);
       const maxScroll = modalRenderer.calculateMaxScroll(totalHeight, viewport.viewportHeight);
 
-      expect(viewport.viewportHeight).toBe(13);
+      expect(viewport.viewportHeight).toBe(12); // Reduced by 1 to show bottom border
       expect(totalHeight).toBe(10);
-      // Content (10 lines) fits in viewport (13 lines), so maxScroll should be 0
+      // Content (10 lines) fits in viewport (12 lines), so maxScroll should be 0
       expect(maxScroll).toBe(0);
     });
 
@@ -280,10 +280,10 @@ describe('ModalRenderer Viewport and Height Calculations', () => {
       const totalHeight = modalRenderer.calculateTotalContentHeight(content, width);
       const maxScroll = modalRenderer.calculateMaxScroll(totalHeight, viewport.viewportHeight);
 
-      expect(viewport.viewportHeight).toBe(8); // (10 + 10 - 1) - (10 + 2) + 1 = 8
+      expect(viewport.viewportHeight).toBe(7); // (10 + 10 - 2) - (10 + 2) + 1 = 7 (reduced by 1)
       expect(totalHeight).toBe(10);
-      // Content (10 lines) exceeds viewport (8 lines), so maxScroll should be 2
-      expect(maxScroll).toBe(2); // 10 - 8 = 2
+      // Content (10 lines) exceeds viewport (7 lines), so maxScroll should be 3
+      expect(maxScroll).toBe(3); // 10 - 7 = 3
     });
   });
 });
