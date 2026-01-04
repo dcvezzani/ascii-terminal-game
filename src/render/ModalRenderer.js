@@ -146,7 +146,7 @@ export class ModalRenderer {
         const optionYPositions = [];
         wrappedLabelLines.forEach((labelLine, lineIndex) => {
           optionYPositions.push(currentY);
-          currentY++;
+        currentY++;
         });
         optionLines.set(optionIndex, optionYPositions);
         optionIndex++;
@@ -220,33 +220,33 @@ export class ModalRenderer {
 
         const optionText = lineIndex === 0 ? prefix + labelLine : labelLine; // Only prefix first line
 
-        // Clear the entire line first with black background
-        process.stdout.write(ansiEscapes.cursorTo(startX + this.padding, y));
-        process.stdout.write(chalk.bgBlack(' '.repeat(lineWidth)));
+      // Clear the entire line first with black background
+      process.stdout.write(ansiEscapes.cursorTo(startX + this.padding, y));
+      process.stdout.write(chalk.bgBlack(' '.repeat(lineWidth)));
 
         // Render option with selection indicator (only highlight first line)
-        process.stdout.write(ansiEscapes.cursorTo(startX + this.padding, y));
+      process.stdout.write(ansiEscapes.cursorTo(startX + this.padding, y));
         if (isSelected && lineIndex === 0) {
-          // Selected option: prefix + label with background highlight and text color from config
-          const selectionColor = this.getSelectionTextColor();
-          process.stdout.write(selectionColor(optionText));
+        // Selected option: prefix + label with background highlight and text color from config
+        const selectionColor = this.getSelectionTextColor();
+        process.stdout.write(selectionColor(optionText));
           // Fill rest of line with black background to ensure clean rendering
-          const remainingWidth = lineWidth - optionText.length;
-          if (remainingWidth > 0) {
-            process.stdout.write(chalk.bgBlack(' '.repeat(remainingWidth)));
-          }
-        } else {
-          // Unselected option: prefix + label with normal text on black background
-          process.stdout.write(chalk.bgBlack(optionText));
-          // Fill rest of line to ensure clean rendering
-          const remainingWidth = lineWidth - optionText.length;
-          if (remainingWidth > 0) {
-            process.stdout.write(chalk.bgBlack(' '.repeat(remainingWidth)));
-          }
+        const remainingWidth = lineWidth - optionText.length;
+        if (remainingWidth > 0) {
+          process.stdout.write(chalk.bgBlack(' '.repeat(remainingWidth)));
         }
+      } else {
+        // Unselected option: prefix + label with normal text on black background
+        process.stdout.write(chalk.bgBlack(optionText));
+          // Fill rest of line to ensure clean rendering
+        const remainingWidth = lineWidth - optionText.length;
+        if (remainingWidth > 0) {
+          process.stdout.write(chalk.bgBlack(' '.repeat(remainingWidth)));
+        }
+      }
 
-        // Reset color state after rendering this line
-        process.stdout.write(chalk.reset());
+      // Reset color state after rendering this line
+      process.stdout.write(chalk.reset());
       });
     });
 
@@ -433,6 +433,52 @@ export class ModalRenderer {
       this.wrappedTextCache.clear();
     }
     this.lastCachedWidth = currentWidth;
+  }
+
+  /**
+   * Calculate viewport boundaries for modal content area
+   * @param {number} startY - Starting Y position of modal
+   * @param {number} modalHeight - Total modal height
+   * @returns {Object} Viewport boundaries with viewportStartY, viewportEndY, and viewportHeight
+   */
+  calculateViewport(startY, modalHeight) {
+    const viewportStartY = startY + 2; // After title line
+    const viewportEndY = startY + modalHeight - 1; // Before bottom border
+    const viewportHeight = viewportEndY - viewportStartY + 1;
+    return { viewportStartY, viewportEndY, viewportHeight };
+  }
+
+  /**
+   * Calculate total content height including wrapped text lines
+   * @param {Array} content - Content blocks (messages and options)
+   * @param {number} width - Modal width
+   * @returns {number} Total number of lines (including wrapped lines)
+   */
+  calculateTotalContentHeight(content, width) {
+    let totalLines = 0;
+    const lineWidth = width - (this.padding * 2);
+
+    content.forEach(block => {
+      if (block.type === 'message') {
+        const wrapped = this.wrapTextWithNewlines(block.text, lineWidth);
+        totalLines += wrapped.length;
+      } else if (block.type === 'option') {
+        const wrapped = this.wrapTextWithNewlines(block.label, lineWidth - 2);
+        totalLines += wrapped.length;
+      }
+    });
+
+    return totalLines;
+  }
+
+  /**
+   * Calculate maximum scroll position
+   * @param {number} totalHeight - Total content height (all lines)
+   * @param {number} viewportHeight - Viewport height (visible lines)
+   * @returns {number} Maximum scroll position (0 if content fits in viewport)
+   */
+  calculateMaxScroll(totalHeight, viewportHeight) {
+    return Math.max(0, totalHeight - viewportHeight);
   }
 
   /**
