@@ -80,10 +80,13 @@ export class ModalInputHandler {
     let totalLines = 0;
     
     // Estimate total lines (rough calculation)
+    // Use conservative line width (40 chars) to account for word-wrapping
+    // which may produce more lines than simple character division
+    const estimatedLineWidth = 40;
     content.forEach(block => {
       if (block.type === 'message') {
-        // Rough estimate: assume messages wrap to ~2-3 lines on average
-        const estimatedLines = Math.ceil(block.text.length / 50) || 1;
+        // Conservative estimate: use smaller line width to account for word-wrapping
+        const estimatedLines = Math.ceil(block.text.length / estimatedLineWidth) || 1;
         totalLines += estimatedLines;
       } else if (block.type === 'option') {
         // Options are typically 1 line
@@ -96,7 +99,9 @@ export class ModalInputHandler {
     const estimatedViewportHeight = 11;
     
     // Max scroll is total lines minus viewport height
-    const maxScroll = Math.max(0, totalLines - estimatedViewportHeight);
+    // Add a small buffer (+2) to ensure we can always scroll to the last line
+    // This accounts for differences between estimation and actual wrapping
+    const maxScroll = Math.max(0, totalLines - estimatedViewportHeight + 2);
     
     return maxScroll;
   }
