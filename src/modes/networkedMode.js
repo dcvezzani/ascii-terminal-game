@@ -299,6 +299,20 @@ if (renderer && currentState) {
           }
         }
 
+        // Check if modal is open - skip rendering updates if so
+        // State updates are still received and stored (currentState updated above)
+        // but rendering is skipped to prevent overwriting modal content
+        if (modalManager && modalManager.hasOpenModal()) {
+          // Modal is open - skip rendering updates
+          // State is still updated (currentState = gameState on line 242)
+          // When modal closes, next state update will trigger full render
+          // Still do reconciliation for state tracking purposes
+          if (clientConfig.prediction.enabled && localPlayerId) {
+            reconcileWithServer(gameState);
+          }
+          return; // Skip rendering updates
+        }
+
         // Phase 1: State Tracking - Handle initial render detection
         if (previousState === null) {
           // First render - use renderFull()
