@@ -112,6 +112,30 @@ describe('Modal Scrolling', () => {
       modal.scrollUp();
       expect(modal.getScrollPosition()).toBe(2);
     });
+
+    test('scrollUp() returns true when position changes', () => {
+      const modal = new Modal({
+        title: 'Test Modal',
+        content: [],
+      });
+
+      modal.setScrollPosition(5);
+      const result = modal.scrollUp();
+      expect(result).toBe(true);
+      expect(modal.getScrollPosition()).toBe(4);
+    });
+
+    test('scrollUp() returns false when at top boundary', () => {
+      const modal = new Modal({
+        title: 'Test Modal',
+        content: [],
+      });
+
+      modal.setScrollPosition(0);
+      const result = modal.scrollUp();
+      expect(result).toBe(false);
+      expect(modal.getScrollPosition()).toBe(0);
+    });
   });
 
   describe('Scroll Down Method', () => {
@@ -176,6 +200,43 @@ describe('Modal Scrolling', () => {
       modal.scrollDown(maxScroll);
       modal.scrollDown(maxScroll);
       expect(modal.getScrollPosition()).toBe(3);
+    });
+
+    test('scrollDown() returns true when position changes', () => {
+      const modal = new Modal({
+        title: 'Test Modal',
+        content: [],
+      });
+
+      modal.setScrollPosition(0);
+      const result = modal.scrollDown(10);
+      expect(result).toBe(true);
+      expect(modal.getScrollPosition()).toBe(1);
+    });
+
+    test('scrollDown() returns false when at bottom boundary', () => {
+      const modal = new Modal({
+        title: 'Test Modal',
+        content: [],
+      });
+
+      const maxScroll = 5;
+      modal.setScrollPosition(5);
+      const result = modal.scrollDown(maxScroll);
+      expect(result).toBe(false);
+      expect(modal.getScrollPosition()).toBe(5);
+    });
+
+    test('scrollDown() returns false when maxScroll is 0', () => {
+      const modal = new Modal({
+        title: 'Test Modal',
+        content: [],
+      });
+
+      modal.setScrollPosition(0);
+      const result = modal.scrollDown(0);
+      expect(result).toBe(false);
+      expect(modal.getScrollPosition()).toBe(0);
     });
   });
 

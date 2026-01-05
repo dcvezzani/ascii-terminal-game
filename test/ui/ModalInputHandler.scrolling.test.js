@@ -125,6 +125,93 @@ describe('ModalInputHandler Scrolling and Selection', () => {
     });
   });
 
+  describe('Conditional Re-rendering Based on Scroll Return Values', () => {
+    test('triggerStateChange() called when scrollUp() changes position', () => {
+      const modal = new Modal({
+        title: 'Test Modal',
+        content: [{ type: 'message', text: 'Line 1' }],
+      });
+
+      modal.setScrollPosition(5);
+      modalManager.openModal(modal);
+      stateChangeCallback.mockClear();
+
+      modalInputHandler.handleKeypress('', { name: 'up' }, modal);
+
+      expect(modal.getScrollPosition()).toBe(4);
+      expect(stateChangeCallback).toHaveBeenCalledTimes(1);
+    });
+
+    test('triggerStateChange() NOT called when scrollUp() at boundary', () => {
+      const modal = new Modal({
+        title: 'Test Modal',
+        content: [{ type: 'message', text: 'Line 1' }],
+      });
+
+      modal.setScrollPosition(0);
+      modalManager.openModal(modal);
+      stateChangeCallback.mockClear();
+
+      modalInputHandler.handleKeypress('', { name: 'up' }, modal);
+
+      expect(modal.getScrollPosition()).toBe(0);
+      expect(stateChangeCallback).not.toHaveBeenCalled();
+    });
+
+    test('triggerStateChange() called when scrollDown() changes position', () => {
+      const modal = new Modal({
+        title: 'Test Modal',
+        content: [{ type: 'message', text: 'Line 1' }],
+      });
+
+      modal.setScrollPosition(0);
+      modalManager.openModal(modal);
+      vi.spyOn(modalInputHandler, 'calculateMaxScroll').mockReturnValue(10);
+      stateChangeCallback.mockClear();
+
+      modalInputHandler.handleKeypress('', { name: 'down' }, modal);
+
+      expect(modal.getScrollPosition()).toBe(1);
+      expect(stateChangeCallback).toHaveBeenCalledTimes(1);
+    });
+
+    test('triggerStateChange() NOT called when scrollDown() at boundary', () => {
+      const modal = new Modal({
+        title: 'Test Modal',
+        content: [{ type: 'message', text: 'Line 1' }],
+      });
+
+      modal.setScrollPosition(10);
+      modalManager.openModal(modal);
+      vi.spyOn(modalInputHandler, 'calculateMaxScroll').mockReturnValue(10);
+      stateChangeCallback.mockClear();
+
+      modalInputHandler.handleKeypress('', { name: 'down' }, modal);
+
+      expect(modal.getScrollPosition()).toBe(10);
+      expect(stateChangeCallback).not.toHaveBeenCalled();
+    });
+
+    test('rapid keypresses at boundary do not trigger multiple re-renders', () => {
+      const modal = new Modal({
+        title: 'Test Modal',
+        content: [{ type: 'message', text: 'Line 1' }],
+      });
+
+      modal.setScrollPosition(0);
+      modalManager.openModal(modal);
+      stateChangeCallback.mockClear();
+
+      // Try to scroll up multiple times at top boundary
+      modalInputHandler.handleKeypress('', { name: 'up' }, modal);
+      modalInputHandler.handleKeypress('', { name: 'up' }, modal);
+      modalInputHandler.handleKeypress('', { name: 'up' }, modal);
+
+      expect(modal.getScrollPosition()).toBe(0);
+      expect(stateChangeCallback).not.toHaveBeenCalled();
+    });
+  });
+
   describe('Enter key selection', () => {
     test('Enter key selects option and closes modal', () => {
       const actionSpy = vi.fn();
