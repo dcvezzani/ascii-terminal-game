@@ -1,6 +1,10 @@
 import clientConfig from '../config/clientConfig.js';
+import { configureLogger } from './utils/logger.js';
 import logger from './utils/logger.js';
 import networkedMode from './modes/networkedMode.js';
+
+// Configure logger for client mode (files only, no console)
+configureLogger('client');
 
 // Set logger level from config
 logger.level = clientConfig.logging.level;

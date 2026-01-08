@@ -13,24 +13,13 @@ if (!existsSync(logsDir)) {
   mkdirSync(logsDir, { recursive: true });
 }
 
-// Create logger instance
-const logger = winston.createLogger({
-  level: 'info',
-  format: winston.format.combine(
-    winston.format.timestamp(),
-    winston.format.errors({ stack: true }),
-    winston.format.splat(),
-    winston.format.json()
-  ),
-  defaultMeta: { service: 'game' },
-  transports: [
-    // Write all logs to console
-    new winston.transports.Console({
-      format: winston.format.combine(
-        winston.format.colorize(),
-        winston.format.simple()
-      )
-    }),
+/**
+ * Create transports based on mode
+ * @param {'server'|'client'} mode - Logger mode
+ * @returns {winston.transport[]} Array of transports
+ */
+function createTransports(mode) {
+  const transports = [
     // Write all logs to file
     new winston.transports.File({
       filename: join(logsDir, 'error.log'),
@@ -39,7 +28,49 @@ const logger = winston.createLogger({
     new winston.transports.File({
       filename: join(logsDir, 'combined.log')
     })
-  ]
+  ];
+
+  // Server mode: also log to console
+  if (mode === 'server') {
+    transports.unshift(
+      new winston.transports.Console({
+        format: winston.format.combine(
+          winston.format.colorize(),
+          winston.format.simple()
+        )
+      })
+    );
+  }
+
+  return transports;
+}
+
+// Create logger instance (defaults to server mode)
+// Entry points should call configureLogger() to set the mode before other imports
+let logger = winston.createLogger({
+  level: 'info',
+  format: winston.format.combine(
+    winston.format.timestamp(),
+    winston.format.errors({ stack: true }),
+    winston.format.splat(),
+    winston.format.json()
+  ),
+  defaultMeta: { service: 'game' },
+  transports: createTransports('server')
 });
+
+/**
+ * Configure the logger for a specific mode
+ * Must be called early, before other modules import the logger
+ * @param {'server'|'client'} mode - Logger mode: 'server' logs to console and files, 'client' logs to files only
+ */
+export function configureLogger(mode) {
+  // Clear existing transports
+  logger.clear();
+  
+  // Add transports for the specified mode
+  const transports = createTransports(mode);
+  transports.forEach(transport => logger.add(transport));
+}
 
 export default logger;

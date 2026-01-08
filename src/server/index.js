@@ -1,6 +1,10 @@
 import serverConfig from '../../config/serverConfig.js';
+import { configureLogger } from '../utils/logger.js';
 import logger from '../utils/logger.js';
 import Server from './server.js';
+
+// Configure logger for server mode (console + files)
+configureLogger('server');
 
 // Set logger level from config
 logger.level = serverConfig.logging.level;
