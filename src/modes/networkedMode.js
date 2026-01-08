@@ -56,14 +56,75 @@ export async function networkedMode() {
 
   // Set up input handlers
   inputHandler.onMove((dx, dy) => {
-    if (wsClient.isConnected() && localPlayerId) {
-      try {
-        const moveMessage = MessageHandler.createMessage(MessageTypes.MOVE, { dx, dy });
-        wsClient.send(moveMessage);
-      } catch (error) {
-        logger.error('Error sending MOVE message:', error);
+    if (!wsClient.isConnected() || !localPlayerId) {
+      return;
+    }
+
+    // Check if prediction is enabled
+    if (clientConfig.prediction?.enabled !== false) {
+      // Get current predicted position (or fall back to server position)
+      const currentPos = localPlayerPredictedPosition.x !== null
+        ? localPlayerPredictedPosition
+        : getServerPlayerPosition();
+
+      if (!currentPos || currentPos.x === null) {
+        // Can't predict without valid position
+        sendMoveToServer(dx, dy);
+        return;
+      }
+
+      // Calculate new position
+      const newX = currentPos.x + dx;
+      const newY = currentPos.y + dy;
+
+      // Validate new position
+      if (validateMovement(newX, newY, currentState)) {
+        // Valid movement - update prediction immediately
+        const oldPos = { ...localPlayerPredictedPosition };
+        localPlayerPredictedPosition = { x: newX, y: newY };
+
+        // Create board adapter for rendering
+        const board = {
+          width: currentState.board.width,
+          height: currentState.board.height,
+          grid: currentState.board.grid,
+          getCell: (x, y) => {
+            if (y < 0 || y >= currentState.board.grid.length) return null;
+            if (x < 0 || x >= currentState.board.grid[y].length) return null;
+            return currentState.board.grid[y][x];
+          },
+          isWall: (x, y) => {
+            const cell = board.getCell(x, y);
+            return cell === '#';
+          }
+        };
+
+        // Get other players for rendering
+        const otherPlayers = (currentState.players || []).filter(
+          p => p.playerId !== localPlayerId
+        );
+        const entities = currentState.entities || [];
+
+        // Render immediately
+        renderer.restoreCellContent(oldPos.x, oldPos.y, board, otherPlayers, entities);
+        renderer.updateCell(
+          newX,
+          newY,
+          renderer.config.playerGlyph,
+          renderer.config.playerColor
+        );
+
+        // Update status bar with new position
+        renderer.renderStatusBar(
+          currentState.score || 0,
+          { x: newX, y: newY },
+          currentState.board.height
+        );
       }
     }
+
+    // Always send to server (server is authoritative)
+    sendMoveToServer(dx, dy);
   });
 
   inputHandler.onQuit(() => {
@@ -80,6 +141,20 @@ export async function networkedMode() {
     }
     const localPlayer = currentState.players.find(p => p.playerId === localPlayerId);
     return localPlayer ? { x: localPlayer.x, y: localPlayer.y } : null;
+  }
+
+  /**
+   * Send MOVE message to server
+   * @param {number} dx - Delta X (-1, 0, or 1)
+   * @param {number} dy - Delta Y (-1, 0, or 1)
+   */
+  function sendMoveToServer(dx, dy) {
+    try {
+      const moveMessage = MessageHandler.createMessage(MessageTypes.MOVE, { dx, dy });
+      wsClient.send(moveMessage);
+    } catch (error) {
+      logger.error('Error sending MOVE message:', error);
+    }
   }
 
   /**
@@ -270,9 +345,14 @@ export async function networkedMode() {
         serialize: () => currentState.board.grid
       };
 
-      // Find local player position
+      // Get local player position (predicted or server)
       const localPlayer = currentState.players?.find(p => p.playerId === localPlayerId);
-      const position = localPlayer ? { x: localPlayer.x, y: localPlayer.y } : null;
+      const serverPosition = localPlayer ? { x: localPlayer.x, y: localPlayer.y } : null;
+      
+      // Use predicted position if available, otherwise server position
+      const position = localPlayerPredictedPosition.x !== null
+        ? localPlayerPredictedPosition
+        : serverPosition;
 
       // First render: use full render
       // Exclude local player from server state rendering
@@ -315,9 +395,12 @@ export async function networkedMode() {
       }
 
       // Incremental render
-      // Track local player position changes
-      const previousLocalPlayer = previousState.players?.find(p => p.playerId === localPlayerId);
-      const previousLocalPosition = previousLocalPlayer ? { x: previousLocalPlayer.x, y: previousLocalPlayer.y } : null;
+      // Track local player position changes (use predicted position for comparison)
+      const previousPredictedPosition = localPlayerPredictedPosition.x !== null
+        ? localPlayerPredictedPosition
+        : (previousState.players?.find(p => p.playerId === localPlayerId)
+          ? { x: previousState.players.find(p => p.playerId === localPlayerId).x, y: previousState.players.find(p => p.playerId === localPlayerId).y }
+          : null);
 
       renderer.renderIncremental(
         changes,
@@ -330,20 +413,20 @@ export async function networkedMode() {
         currentState.board.height
       );
 
-      // Handle local player movement separately
-      if (position && previousLocalPosition) {
-        if (previousLocalPosition.x !== position.x || previousLocalPosition.y !== position.y) {
+      // Handle local player movement separately (using predicted position)
+      if (position && previousPredictedPosition) {
+        if (previousPredictedPosition.x !== position.x || previousPredictedPosition.y !== position.y) {
           // Local player moved - clear old position and draw at new position
           renderer.restoreCellContent(
-            previousLocalPosition.x,
-            previousLocalPosition.y,
+            previousPredictedPosition.x,
+            previousPredictedPosition.y,
             board,
             otherPlayers,
             currentState.entities || []
           );
           renderer.updateCell(position.x, position.y, renderer.config.playerGlyph, renderer.config.playerColor);
         }
-      } else if (position && !previousLocalPosition) {
+      } else if (position && !previousPredictedPosition) {
         // Local player just joined - draw at position
         renderer.updateCell(position.x, position.y, renderer.config.playerGlyph, renderer.config.playerColor);
       }
@@ -373,8 +456,12 @@ export async function networkedMode() {
           },
           serialize: () => currentState.board.grid
         };
+        // Get local player position (predicted or server)
         const localPlayer = currentState.players?.find(p => p.playerId === localPlayerId);
-        const position = localPlayer ? { x: localPlayer.x, y: localPlayer.y } : null;
+        const serverPosition = localPlayer ? { x: localPlayer.x, y: localPlayer.y } : null;
+        const position = localPlayerPredictedPosition.x !== null
+          ? localPlayerPredictedPosition
+          : serverPosition;
         
         // Exclude local player from server state rendering
         const otherPlayersFallback = (currentState.players || []).filter(
@@ -384,7 +471,7 @@ export async function networkedMode() {
         renderer.clearScreen();
         renderer.renderTitle();
         renderer.renderBoard(board, otherPlayersFallback);
-        // Render local player separately
+        // Render local player separately using predicted/server position
         if (position) {
           renderer.updateCell(position.x, position.y, renderer.config.playerGlyph, renderer.config.playerColor);
         }
