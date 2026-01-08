@@ -19,6 +19,7 @@ export async function networkedMode() {
   let currentState = null;
   let previousState = null; // Track previous state for change detection
   let localPlayerId = null;
+  let localPlayerPredictedPosition = { x: null, y: null }; // Predicted position for client-side prediction
   let running = true;
 
   // Set up WebSocket event handlers
@@ -70,6 +71,18 @@ export async function networkedMode() {
   });
 
   /**
+   * Get server player position
+   * @returns {{x: number, y: number}|null} Server position or null if not found
+   */
+  function getServerPlayerPosition() {
+    if (!currentState || !currentState.players) {
+      return null;
+    }
+    const localPlayer = currentState.players.find(p => p.playerId === localPlayerId);
+    return localPlayer ? { x: localPlayer.x, y: localPlayer.y } : null;
+  }
+
+  /**
    * Handle CONNECT response
    */
   function handleConnect(message) {
@@ -86,6 +99,15 @@ export async function networkedMode() {
       
       localPlayerId = playerId;
       currentState = gameState;
+      
+      // Initialize prediction from server position
+      if (gameState.players) {
+        const localPlayer = gameState.players.find(p => p.playerId === localPlayerId);
+        if (localPlayer) {
+          localPlayerPredictedPosition = { x: localPlayer.x, y: localPlayer.y };
+          logger.debug(`Initialized prediction position: (${localPlayer.x}, ${localPlayer.y})`);
+        }
+      }
       
       logger.info(`Joined as ${playerName} (${playerId})`);
       
@@ -108,6 +130,16 @@ export async function networkedMode() {
       }
       
       currentState = message.payload;
+      
+      // Initialize prediction if not already set
+      if (localPlayerPredictedPosition.x === null && localPlayerId && currentState.players) {
+        const localPlayer = currentState.players.find(p => p.playerId === localPlayerId);
+        if (localPlayer) {
+          localPlayerPredictedPosition = { x: localPlayer.x, y: localPlayer.y };
+          logger.debug(`Initialized prediction position from STATE_UPDATE: (${localPlayer.x}, ${localPlayer.y})`);
+        }
+      }
+      
       render();
     } catch (error) {
       logger.error('Error handling STATE_UPDATE:', error);
