@@ -153,6 +153,7 @@ export async function networkedMode() {
     try {
       const moveMessage = MessageHandler.createMessage(MessageTypes.MOVE, { dx, dy });
       wsClient.send(moveMessage);
+      logger.debug(`Sent MOVE message: (${dx}, ${dy})`);
     } catch (error) {
       logger.error('Error sending MOVE message:', error);
     }
