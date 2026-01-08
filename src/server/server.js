@@ -139,12 +139,8 @@ export class Server {
     // Add to connection manager
     this.connectionManager.addConnection(clientId, ws);
 
-    // Send CONNECT message with clientId
-    const connectMessage = MessageHandler.createMessage(
-      MessageTypes.CONNECT,
-      { clientId }
-    );
-    ws.send(JSON.stringify(connectMessage));
+    // Don't send initial CONNECT message - wait for client to send CONNECT first
+    // The client will send CONNECT, and we'll respond with full game state
 
     // Set up message handler
     ws.on('message', (data) => {

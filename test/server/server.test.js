@@ -76,17 +76,15 @@ describe('Server', () => {
       await new Promise(resolve => setTimeout(resolve, 100));
     }, 15000);
 
-    it('should send CONNECT message on connection', async () => {
+    it('should not send CONNECT message on connection (waits for client)', async () => {
       await server.start();
 
       const WebSocket = (await import('ws')).WebSocket;
       const client = new WebSocket(`ws://localhost:${TEST_PORT}`);
 
-      const messagePromise = new Promise((resolve) => {
-        client.on('message', (data) => {
-          const message = JSON.parse(data.toString());
-          resolve(message);
-        });
+      let messageReceived = false;
+      client.on('message', () => {
+        messageReceived = true;
       });
 
       await new Promise((resolve) => {
@@ -95,9 +93,11 @@ describe('Server', () => {
         });
       });
 
-      const message = await messagePromise;
-      expect(message.type).toBe(MessageTypes.CONNECT);
-      expect(message.payload.clientId).toBeDefined();
+      // Wait a bit to ensure no message is sent
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Server should not send CONNECT message automatically
+      expect(messageReceived).toBe(false);
 
       client.close();
       await new Promise(resolve => setTimeout(resolve, 100));

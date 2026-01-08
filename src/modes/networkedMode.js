@@ -22,7 +22,7 @@ export async function networkedMode() {
   // Set up WebSocket event handlers
   wsClient.on('connect', () => {
     logger.info('Connected to server');
-    // Send CONNECT message
+    // Send CONNECT message to request joining the game
     const connectMessage = MessageHandler.createMessage(MessageTypes.CONNECT, {});
     wsClient.send(connectMessage);
   });
@@ -74,9 +74,11 @@ export async function networkedMode() {
     try {
       const { clientId, playerId, playerName, gameState } = message.payload;
       
+      // Only process CONNECT messages that have playerId and gameState
+      // (these are the server's response to our CONNECT request)
+      // Ignore any other CONNECT messages
       if (!playerId || !gameState) {
-        logger.error('Invalid CONNECT response: missing playerId or gameState');
-        shutdown('Invalid server response');
+        logger.debug('Received CONNECT message without playerId/gameState, ignoring');
         return;
       }
       
