@@ -287,6 +287,8 @@ export async function networkedMode() {
   function validateWall(x, y, board) {
     if (!board || !board.getCell) return false;
     const cell = board.getCell(x, y);
+    // If cell is null (out of bounds), it's not a valid position
+    if (cell === null) return false;
     return cell !== '#';
   }
 
