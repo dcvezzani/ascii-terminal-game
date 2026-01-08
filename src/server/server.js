@@ -181,7 +181,7 @@ export class Server {
       if (message.type === MessageTypes.CONNECT) {
         this.handleConnect(clientId, message);
       } else if (message.type === MessageTypes.MOVE) {
-        logger.debug(`Received MOVE from ${clientId}:`, message.payload);
+        // logger.debug(`Received MOVE from ${clientId}:`, message.payload);
         this.handleMove(clientId, message);
       } else {
         logger.warn(`Unknown message type: ${message.type}`);

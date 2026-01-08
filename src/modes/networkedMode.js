@@ -154,7 +154,7 @@ export async function networkedMode() {
     try {
       const moveMessage = MessageHandler.createMessage(MessageTypes.MOVE, { dx, dy });
       wsClient.send(moveMessage);
-      logger.info(`Sent MOVE message: (${dx}, ${dy})`);
+      // logger.info(`Sent MOVE message: (${dx}, ${dy})`);
     } catch (error) {
       logger.error('Error sending MOVE message:', error);
     }
@@ -190,7 +190,11 @@ export async function networkedMode() {
     // Compare positions
     if (serverPos.x !== predictedPos.x || serverPos.y !== predictedPos.y) {
       // Mismatch detected - correct to server position
-      logger.debug(`Reconciliation: correcting position from (${predictedPos.x}, ${predictedPos.y}) to (${serverPos.x}, ${serverPos.y})`);
+      const distance = Math.abs(serverPos.x - predictedPos.x) + Math.abs(serverPos.y - predictedPos.y);
+      // Only log if the difference is significant (more than 1 tile)
+      if (distance > 1) {
+        logger.debug(`Reconciliation: correcting position from (${predictedPos.x}, ${predictedPos.y}) to (${serverPos.x}, ${serverPos.y}) [distance: ${distance}]`);
+      }
 
       // Create board adapter
       const board = {
@@ -427,9 +431,9 @@ export async function networkedMode() {
       
       // Log position comparison for debugging
       if (localPlayerPredictedPosition.x !== null && serverPosAfter) {
-        logger.debug(`STATE_UPDATE: predicted=(${localPlayerPredictedPosition.x},${localPlayerPredictedPosition.y}) server=(${serverPosAfter.x},${serverPosAfter.y})`);
+        // logger.debug(`STATE_UPDATE: predicted=(${localPlayerPredictedPosition.x},${localPlayerPredictedPosition.y}) server=(${serverPosAfter.x},${serverPosAfter.y})`);
         if (serverPosBefore && (serverPosBefore.x !== serverPosAfter.x || serverPosBefore.y !== serverPosAfter.y)) {
-          logger.debug(`STATE_UPDATE: server position changed from (${serverPosBefore.x},${serverPosBefore.y}) to (${serverPosAfter.x},${serverPosAfter.y})`);
+          // logger.debug(`STATE_UPDATE: server position changed from (${serverPosBefore.x},${serverPosBefore.y}) to (${serverPosAfter.x},${serverPosAfter.y})`);
         }
       }
       
@@ -439,8 +443,12 @@ export async function networkedMode() {
         if (localPlayer) {
           localPlayerPredictedPosition = { x: localPlayer.x, y: localPlayer.y };
           logger.debug(`Initialized prediction position from STATE_UPDATE: (${localPlayer.x}, ${localPlayer.y})`);
-          startReconciliationTimer(); // Start reconciliation timer
+          startReconciliationTimer(); // Start reconciliation timer (for periodic checks)
         }
+      } else if (localPlayerPredictedPosition.x !== null && localPlayerId && currentState.players) {
+        // Reconcile on every STATE_UPDATE to catch server rejections immediately
+        // This prevents large position drifts when server rejects moves
+        reconcilePosition();
       }
       
       render();
