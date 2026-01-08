@@ -41,19 +41,25 @@ export async function networkedMode() {
 
   wsClient.on('error', (error) => {
     logger.error('WebSocket error:', error);
-    shutdown('Connection error');
+    // Don't shutdown immediately on error - let close handler handle it
   });
 
   wsClient.on('close', () => {
-    logger.info('Disconnected from server');
-    shutdown('Disconnected from server');
+    if (running) {
+      logger.info('Disconnected from server');
+      shutdown('Disconnected from server');
+    }
   });
 
   // Set up input handlers
   inputHandler.onMove((dx, dy) => {
     if (wsClient.isConnected() && localPlayerId) {
-      const moveMessage = MessageHandler.createMessage(MessageTypes.MOVE, { dx, dy });
-      wsClient.send(moveMessage);
+      try {
+        const moveMessage = MessageHandler.createMessage(MessageTypes.MOVE, { dx, dy });
+        wsClient.send(moveMessage);
+      } catch (error) {
+        logger.error('Error sending MOVE message:', error);
+      }
     }
   });
 
@@ -65,22 +71,43 @@ export async function networkedMode() {
    * Handle CONNECT response
    */
   function handleConnect(message) {
-    const { clientId, playerId, playerName, gameState } = message.payload;
-    localPlayerId = playerId;
-    currentState = gameState;
-    
-    logger.info(`Joined as ${playerName} (${playerId})`);
-    
-    // Initial render
-    render();
+    try {
+      const { clientId, playerId, playerName, gameState } = message.payload;
+      
+      if (!playerId || !gameState) {
+        logger.error('Invalid CONNECT response: missing playerId or gameState');
+        shutdown('Invalid server response');
+        return;
+      }
+      
+      localPlayerId = playerId;
+      currentState = gameState;
+      
+      logger.info(`Joined as ${playerName} (${playerId})`);
+      
+      // Initial render
+      render();
+    } catch (error) {
+      logger.error('Error handling CONNECT:', error);
+      shutdown('Connection error');
+    }
   }
 
   /**
    * Handle STATE_UPDATE
    */
   function handleStateUpdate(message) {
-    currentState = message.payload;
-    render();
+    try {
+      if (!message.payload) {
+        logger.warn('Invalid STATE_UPDATE: missing payload');
+        return;
+      }
+      
+      currentState = message.payload;
+      render();
+    } catch (error) {
+      logger.error('Error handling STATE_UPDATE:', error);
+    }
   }
 
   /**
@@ -128,10 +155,14 @@ export async function networkedMode() {
     running = false;
     logger.info(`Shutting down: ${reason}`);
 
-    inputHandler.stop();
-    renderer.showCursor();
-    renderer.clearScreen();
-    wsClient.disconnect();
+    try {
+      inputHandler.stop();
+      renderer.showCursor();
+      renderer.clearScreen();
+      wsClient.disconnect();
+    } catch (error) {
+      logger.error('Error during shutdown:', error);
+    }
 
     process.exit(0);
   }
@@ -139,10 +170,15 @@ export async function networkedMode() {
   // Start
   try {
     // Check terminal size (minimum 25x25 for board + UI)
-    checkTerminalSize(25, 25);
+    const terminalOk = checkTerminalSize(25, 25);
+    if (!terminalOk) {
+      logger.warn('Terminal size warning - game may not display correctly');
+    }
     
     renderer.hideCursor();
     inputHandler.start();
+    
+    logger.info(`Connecting to ${clientConfig.websocket.url}...`);
     wsClient.connect();
 
     // Keep process alive
