@@ -13,7 +13,7 @@ import compareStates from '../utils/stateComparison.js';
  */
 export async function networkedMode() {
   const wsClient = new WebSocketClient(clientConfig.websocket.url);
-  const renderer = new Renderer();
+  const renderer = new Renderer(clientConfig.rendering);
   const inputHandler = new InputHandler();
 
   let currentState = null;
@@ -156,7 +156,7 @@ export async function networkedMode() {
         renderer.renderBoard(board, otherPlayers);
         // Render local player separately
         if (position) {
-          renderer.updateCell(position.x, position.y, '@', '00FF00');
+          renderer.updateCell(position.x, position.y, renderer.config.playerGlyph, renderer.config.playerColor);
         }
         renderer.renderStatusBar(currentState.score || 0, position, currentState.board.height);
         previousState = currentState;
@@ -177,7 +177,7 @@ export async function networkedMode() {
         renderer.renderBoard(board, otherPlayers);
         // Render local player separately
         if (position) {
-          renderer.updateCell(position.x, position.y, '@', '00FF00');
+          renderer.updateCell(position.x, position.y, renderer.config.playerGlyph, renderer.config.playerColor);
         }
         renderer.renderStatusBar(currentState.score || 0, position, currentState.board.height);
         previousState = currentState;
@@ -256,7 +256,7 @@ export async function networkedMode() {
         renderer.renderBoard(board, otherPlayersFallback);
         // Render local player separately
         if (position) {
-          renderer.updateCell(position.x, position.y, '@', '00FF00');
+          renderer.updateCell(position.x, position.y, renderer.config.playerGlyph, renderer.config.playerColor);
         }
         renderer.renderStatusBar(currentState.score || 0, position, currentState.board.height);
         previousState = currentState;

@@ -19,6 +19,10 @@ try {
     },
     logging: {
       level: 'info'
+    },
+    rendering: {
+      playerGlyph: '@',
+      playerColor: '00FF00'
     }
   };
 }

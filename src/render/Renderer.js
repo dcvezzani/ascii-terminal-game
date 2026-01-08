@@ -7,8 +7,13 @@ import process from 'process';
  * Renderer class for terminal rendering
  */
 export class Renderer {
-  constructor() {
+  constructor(config = null) {
     this.stdout = process.stdout;
+    // Default rendering config
+    this.config = config || {
+      playerGlyph: '@',
+      playerColor: '00FF00'
+    };
   }
 
   /**
@@ -91,8 +96,8 @@ export class Renderer {
     const player = players.find(p => p.x === x && p.y === y);
     if (player) {
       return {
-        character: '@',
-        color: '00FF00' // Green
+        character: this.config.playerGlyph,
+        color: this.config.playerColor
       };
     }
 
@@ -175,7 +180,7 @@ export class Renderer {
     // Check for other players at position
     const otherPlayer = players.find(p => p.x === x && p.y === y);
     if (otherPlayer) {
-      this.updateCell(x, y, '@', '00FF00'); // Green player
+      this.updateCell(x, y, this.config.playerGlyph, this.config.playerColor);
       return;
     }
 
@@ -202,9 +207,8 @@ export class Renderer {
    * @param {string} localPlayerId - ID of local player
    * @param {number} score - Current score
    * @param {object} position - Local player position {x, y}
-   * @param {number} boardHeight - Height of the board (for status bar positioning)
    */
-  renderIncremental(changes, board, players, entities, localPlayerId, score, position, boardHeight = 20) {
+  renderIncremental(changes, board, players, entities, localPlayerId, score, position) {
     // Process moved players
     for (const moved of changes.players.moved) {
       // Clear old position
@@ -220,8 +224,8 @@ export class Renderer {
       this.updateCell(
         moved.newPos.x,
         moved.newPos.y,
-        '@',
-        '00FF00' // Green
+        this.config.playerGlyph,
+        this.config.playerColor
       );
     }
 
@@ -230,8 +234,8 @@ export class Renderer {
       this.updateCell(
         joined.pos.x,
         joined.pos.y,
-        '@',
-        '00FF00' // Green
+        this.config.playerGlyph,
+        this.config.playerColor
       );
     }
 
@@ -248,7 +252,7 @@ export class Renderer {
 
     // Update status bar if score changed
     if (changes.scoreChanged) {
-      this.renderStatusBar(score, position, boardHeight);
+      this.renderStatusBar(score, position);
     }
   }
 }
