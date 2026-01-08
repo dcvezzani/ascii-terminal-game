@@ -211,11 +211,11 @@ export async function networkedMode() {
             otherPlayers,
             currentState.entities || []
           );
-          renderer.updateCell(position.x, position.y, '@', '00FF00');
+          renderer.updateCell(position.x, position.y, renderer.config.playerGlyph, renderer.config.playerColor);
         }
       } else if (position && !previousLocalPosition) {
         // Local player just joined - draw at position
-        renderer.updateCell(position.x, position.y, '@', '00FF00');
+        renderer.updateCell(position.x, position.y, renderer.config.playerGlyph, renderer.config.playerColor);
       }
 
       // Update status bar if score changed
