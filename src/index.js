@@ -1,5 +1,6 @@
 import clientConfig from '../config/clientConfig.js';
 import logger from './utils/logger.js';
+import networkedMode from './modes/networkedMode.js';
 
 // Set logger level from config
 logger.level = clientConfig.logging.level;
@@ -18,9 +19,7 @@ async function startClient() {
   process.on('SIGTERM', shutdown);
 
   try {
-    // TODO: Import and initialize networked mode in Phase 5
-    logger.info('Client entry point - networked mode coming in Phase 5');
-    logger.info(`Will connect to: ${clientConfig.websocket.url}`);
+    await networkedMode();
   } catch (error) {
     logger.error('Failed to start client:', error);
     process.exit(1);
