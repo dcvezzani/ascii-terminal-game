@@ -158,7 +158,7 @@ export async function networkedMode() {
         if (position) {
           renderer.updateCell(position.x, position.y, '@', '00FF00');
         }
-        renderer.renderStatusBar(currentState.score || 0, position);
+        renderer.renderStatusBar(currentState.score || 0, position, currentState.board.height);
         previousState = currentState;
         return;
       }
@@ -179,7 +179,7 @@ export async function networkedMode() {
         if (position) {
           renderer.updateCell(position.x, position.y, '@', '00FF00');
         }
-        renderer.renderStatusBar(currentState.score || 0, position);
+        renderer.renderStatusBar(currentState.score || 0, position, currentState.board.height);
         previousState = currentState;
         return;
       }
@@ -196,7 +196,8 @@ export async function networkedMode() {
         currentState.entities || [],
         localPlayerId,
         currentState.score || 0,
-        position
+        position,
+        currentState.board.height
       );
 
       // Handle local player movement separately
@@ -219,7 +220,7 @@ export async function networkedMode() {
 
       // Update status bar if score changed
       if (changes.scoreChanged) {
-        renderer.renderStatusBar(currentState.score || 0, position);
+        renderer.renderStatusBar(currentState.score || 0, position, currentState.board.height);
       }
 
       previousState = currentState;
@@ -257,7 +258,7 @@ export async function networkedMode() {
         if (position) {
           renderer.updateCell(position.x, position.y, '@', '00FF00');
         }
-        renderer.renderStatusBar(currentState.score || 0, position);
+        renderer.renderStatusBar(currentState.score || 0, position, currentState.board.height);
         previousState = currentState;
       } catch (fallbackError) {
         logger.error('Error during fallback render:', fallbackError);

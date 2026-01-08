@@ -50,11 +50,18 @@ export class Renderer {
    * Render status bar
    * @param {number} score - Current score
    * @param {object} position - Position object {x, y}
+   * @param {number} boardHeight - Height of the board (to position status bar below it)
    */
-  renderStatusBar(score, position) {
+  renderStatusBar(score, position, boardHeight = 20) {
+    // Position cursor below the board
+    // Title is 2 lines (title + blank), board is boardHeight lines
+    // So status bar should be at row: 2 (title) + boardHeight + 1 (1-indexed)
+    const statusBarRow = 2 + boardHeight + 1;
+    this.stdout.write(cursorTo(1, statusBarRow));
+    
     const posStr = position ? `Position: (${position.x}, ${position.y})` : 'Position: (?, ?)';
     const status = `Score: ${score} | ${posStr} | Arrow keys/WASD to move, Q/ESC to quit`;
-    this.stdout.write('\n' + chalk.gray(status) + '\n');
+    this.stdout.write(chalk.gray(status));
   }
 
   /**
@@ -195,8 +202,9 @@ export class Renderer {
    * @param {string} localPlayerId - ID of local player
    * @param {number} score - Current score
    * @param {object} position - Local player position {x, y}
+   * @param {number} boardHeight - Height of the board (for status bar positioning)
    */
-  renderIncremental(changes, board, players, entities, localPlayerId, score, position) {
+  renderIncremental(changes, board, players, entities, localPlayerId, score, position, boardHeight = 20) {
     // Process moved players
     for (const moved of changes.players.moved) {
       // Clear old position
@@ -240,7 +248,7 @@ export class Renderer {
 
     // Update status bar if score changed
     if (changes.scoreChanged) {
-      this.renderStatusBar(score, position);
+      this.renderStatusBar(score, position, boardHeight);
     }
   }
 }
