@@ -83,6 +83,104 @@ export async function networkedMode() {
   }
 
   /**
+   * Validate if position is within board bounds
+   * @param {number} x - X coordinate
+   * @param {number} y - Y coordinate
+   * @param {object} board - Board object with width and height
+   * @returns {boolean} True if within bounds
+   */
+  function validateBounds(x, y, board) {
+    if (!board) return false;
+    return x >= 0 && x < board.width && y >= 0 && y < board.height;
+  }
+
+  /**
+   * Validate if position is not a wall
+   * @param {number} x - X coordinate
+   * @param {number} y - Y coordinate
+   * @param {object} board - Board object with getCell method
+   * @returns {boolean} True if not a wall
+   */
+  function validateWall(x, y, board) {
+    if (!board || !board.getCell) return false;
+    const cell = board.getCell(x, y);
+    return cell !== '#';
+  }
+
+  /**
+   * Validate if no solid entity at position
+   * @param {number} x - X coordinate
+   * @param {number} y - Y coordinate
+   * @param {Array} entities - Array of entity objects
+   * @returns {boolean} True if no solid entity at position
+   */
+  function validateEntityCollision(x, y, entities) {
+    if (!entities || entities.length === 0) return true;
+    
+    // Check for solid entities at position
+    const solidEntity = entities.find(
+      e => e.x === x && e.y === y && e.solid === true
+    );
+    return !solidEntity;
+  }
+
+  /**
+   * Validate if no other player at position
+   * @param {number} x - X coordinate
+   * @param {number} y - Y coordinate
+   * @param {Array} players - Array of player objects
+   * @param {string} excludePlayerId - Player ID to exclude from check
+   * @returns {boolean} True if no other player at position
+   */
+  function validatePlayerCollision(x, y, players, excludePlayerId) {
+    if (!players || players.length === 0) return true;
+    
+    // Check for other players at position
+    const otherPlayer = players.find(
+      p => p.playerId !== excludePlayerId && p.x === x && p.y === y
+    );
+    return !otherPlayer;
+  }
+
+  /**
+   * Validate movement (all checks)
+   * @param {number} x - X coordinate
+   * @param {number} y - Y coordinate
+   * @param {object} currentState - Current game state
+   * @returns {boolean} True if movement is valid
+   */
+  function validateMovement(x, y, currentState) {
+    if (!currentState || !currentState.board) return false;
+
+    // Create board adapter
+    const board = {
+      width: currentState.board.width,
+      height: currentState.board.height,
+      getCell: (x, y) => {
+        if (y < 0 || y >= currentState.board.grid.length) return null;
+        if (x < 0 || x >= currentState.board.grid[y].length) return null;
+        return currentState.board.grid[y][x];
+      }
+    };
+
+    // Get other players (exclude local player)
+    const otherPlayers = (currentState.players || []).filter(
+      p => p.playerId !== localPlayerId
+    );
+
+    // Get entities
+    const entities = currentState.entities || [];
+
+    // Validate all checks
+    if (!validateBounds(x, y, board)) return false;
+    if (!validateWall(x, y, board)) return false;
+    if (!validateEntityCollision(x, y, entities)) return false;
+    if (!validatePlayerCollision(x, y, otherPlayers, localPlayerId)) return false;
+
+    return true;
+  }
+
+  /**
    * Handle CONNECT response
    */
   function handleConnect(message) {
