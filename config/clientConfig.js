@@ -22,7 +22,9 @@ try {
     },
     rendering: {
       playerGlyph: '@',
-      playerColor: '00FF00'
+      playerColor: '00FF00',
+      spaceGlyph: '.',
+      wallGlyph: '#'
     },
     prediction: {
       enabled: true,

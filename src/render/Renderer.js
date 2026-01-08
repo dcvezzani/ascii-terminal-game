@@ -12,7 +12,9 @@ export class Renderer {
     // Default rendering config
     this.config = config || {
       playerGlyph: '☻',
-      playerColor: '00FF00'
+      playerColor: '00FF00',
+      spaceGlyph: '.',
+      wallGlyph: '#'
     };
   }
 
@@ -103,14 +105,19 @@ export class Renderer {
 
     // Return board cell
     const cellChar = board.getCell(x, y);
+    let character = cellChar;
     let color = 'FFFFFF'; // White default
     
+    // Map server characters to configured glyphs
     if (cellChar === '#') {
+      character = this.config.wallGlyph || '#';
       color = '808080'; // Gray for walls
+    } else if (cellChar === '.') {
+      character = this.config.spaceGlyph || '.';
     }
 
     return {
-      character: cellChar,
+      character,
       color
     };
   }
@@ -190,12 +197,18 @@ export class Renderer {
       return; // Out of bounds
     }
 
+    let character = cellChar;
     let color = 'FFFFFF'; // White default
+    
+    // Map server characters to configured glyphs
     if (cellChar === '#') {
+      character = this.config.wallGlyph || '#';
       color = '808080'; // Gray for walls
+    } else if (cellChar === '.') {
+      character = this.config.spaceGlyph || '.';
     }
 
-    this.updateCell(x, y, cellChar, color);
+    this.updateCell(x, y, character, color);
   }
 
   /**

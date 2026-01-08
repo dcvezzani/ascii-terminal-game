@@ -6,8 +6,10 @@
     "level": "info"
   },
   "rendering": {
-    "playerGlyph": "@",
-    "playerColor": "00FF00"
+    "playerGlyph": "☻",
+    "playerColor": "00FF00",
+    "spaceGlyph": ".",
+    "wallGlyph": "#"
   },
   "prediction": {
     "enabled": true,
