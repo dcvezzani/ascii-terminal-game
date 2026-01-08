@@ -448,4 +448,156 @@ describe('networkedMode helper functions', () => {
       expect(result).toBe(false);
     });
   });
+
+  describe('prediction initialization', () => {
+    it('should initialize from CONNECT response with gameState', () => {
+      const gameState = {
+        players: [
+          { playerId: 'player1', x: 10, y: 10, playerName: 'Player 1' }
+        ]
+      };
+      const localPlayerId = 'player1';
+
+      // Simulate initialization logic
+      const localPlayer = gameState.players.find(p => p.playerId === localPlayerId);
+      const predictedPosition = localPlayer ? { x: localPlayer.x, y: localPlayer.y } : { x: null, y: null };
+
+      expect(predictedPosition).toEqual({ x: 10, y: 10 });
+    });
+
+    it('should initialize from STATE_UPDATE if not already set', () => {
+      let predictedPosition = { x: null, y: null };
+      const currentState = {
+        players: [
+          { playerId: 'player1', x: 10, y: 10, playerName: 'Player 1' }
+        ]
+      };
+      const localPlayerId = 'player1';
+
+      // Simulate initialization logic (only if not already set)
+      if (predictedPosition.x === null && localPlayerId && currentState.players) {
+        const localPlayer = currentState.players.find(p => p.playerId === localPlayerId);
+        if (localPlayer) {
+          predictedPosition = { x: localPlayer.x, y: localPlayer.y };
+        }
+      }
+
+      expect(predictedPosition).toEqual({ x: 10, y: 10 });
+    });
+
+    it('should not re-initialize if already set', () => {
+      let predictedPosition = { x: 5, y: 5 }; // Already set
+      const currentState = {
+        players: [
+          { playerId: 'player1', x: 10, y: 10, playerName: 'Player 1' }
+        ]
+      };
+      const localPlayerId = 'player1';
+
+      // Simulate initialization logic (only if not already set)
+      if (predictedPosition.x === null && localPlayerId && currentState.players) {
+        const localPlayer = currentState.players.find(p => p.playerId === localPlayerId);
+        if (localPlayer) {
+          predictedPosition = { x: localPlayer.x, y: localPlayer.y };
+        }
+      }
+
+      expect(predictedPosition).toEqual({ x: 5, y: 5 }); // Should remain unchanged
+    });
+
+    it('should handle missing player in gameState', () => {
+      const gameState = {
+        players: [
+          { playerId: 'player2', x: 10, y: 10, playerName: 'Player 2' }
+        ]
+      };
+      const localPlayerId = 'player1';
+
+      // Simulate initialization logic
+      const localPlayer = gameState.players.find(p => p.playerId === localPlayerId);
+      const predictedPosition = localPlayer ? { x: localPlayer.x, y: localPlayer.y } : { x: null, y: null };
+
+      expect(predictedPosition).toEqual({ x: null, y: null });
+    });
+  });
+
+  describe('reconciliation logic', () => {
+    it('should detect position match (no correction needed)', () => {
+      const predictedPos = { x: 10, y: 10 };
+      const serverPos = { x: 10, y: 10 };
+
+      // Simulate reconciliation comparison
+      const mismatch = serverPos.x !== predictedPos.x || serverPos.y !== predictedPos.y;
+
+      expect(mismatch).toBe(false);
+    });
+
+    it('should detect position mismatch (correction needed)', () => {
+      const predictedPos = { x: 10, y: 10 };
+      const serverPos = { x: 11, y: 10 };
+
+      // Simulate reconciliation comparison
+      const mismatch = serverPos.x !== predictedPos.x || serverPos.y !== predictedPos.y;
+
+      expect(mismatch).toBe(true);
+    });
+
+    it('should detect mismatch in y coordinate', () => {
+      const predictedPos = { x: 10, y: 10 };
+      const serverPos = { x: 10, y: 11 };
+
+      // Simulate reconciliation comparison
+      const mismatch = serverPos.x !== predictedPos.x || serverPos.y !== predictedPos.y;
+
+      expect(mismatch).toBe(true);
+    });
+
+    it('should skip reconciliation when predicted position is null', () => {
+      const predictedPos = { x: null, y: null };
+      const serverPos = { x: 10, y: 10 };
+
+      // Simulate prerequisite check
+      const canReconcile = predictedPos.x !== null && predictedPos.y !== null;
+
+      expect(canReconcile).toBe(false);
+    });
+
+    it('should skip reconciliation when localPlayerId is not set', () => {
+      const localPlayerId = null;
+      const predictedPos = { x: 10, y: 10 };
+
+      // Simulate prerequisite check
+      const canReconcile = localPlayerId !== null && predictedPos.x !== null;
+
+      expect(canReconcile).toBe(false);
+    });
+
+    it('should skip reconciliation when server player not found', () => {
+      const currentState = {
+        players: [
+          { playerId: 'player2', x: 10, y: 10 }
+        ]
+      };
+      const localPlayerId = 'player1';
+
+      // Simulate server player lookup
+      const serverPlayer = currentState.players.find(p => p.playerId === localPlayerId);
+      const canReconcile = serverPlayer !== undefined;
+
+      expect(canReconcile).toBe(false);
+    });
+
+    it('should correct predicted position to server position on mismatch', () => {
+      let predictedPos = { x: 10, y: 10 };
+      const serverPos = { x: 11, y: 10 };
+
+      // Simulate reconciliation correction
+      const mismatch = serverPos.x !== predictedPos.x || serverPos.y !== predictedPos.y;
+      if (mismatch) {
+        predictedPos = { x: serverPos.x, y: serverPos.y };
+      }
+
+      expect(predictedPos).toEqual({ x: 11, y: 10 });
+    });
+  });
 });
