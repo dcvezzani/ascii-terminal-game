@@ -20,6 +20,7 @@ export async function networkedMode() {
   let previousState = null; // Track previous state for change detection
   let localPlayerId = null;
   let localPlayerPredictedPosition = { x: null, y: null }; // Predicted position for client-side prediction
+  let reconciliationTimer = null; // Timer for periodic reconciliation
   let running = true;
 
   // Set up WebSocket event handlers
@@ -158,6 +159,113 @@ export async function networkedMode() {
   }
 
   /**
+   * Reconcile predicted position with server position
+   */
+  function reconcilePosition() {
+    // Check prerequisites
+    if (!localPlayerId) {
+      return; // Can't reconcile without player ID
+    }
+
+    if (localPlayerPredictedPosition.x === null || localPlayerPredictedPosition.y === null) {
+      return; // Can't reconcile without predicted position
+    }
+
+    if (!currentState || !currentState.players) {
+      return; // Can't reconcile without server state
+    }
+
+    // Get server position
+    const serverPlayer = currentState.players.find(p => p.playerId === localPlayerId);
+    if (!serverPlayer) {
+      logger.warn('Local player not found in server state, skipping reconciliation');
+      return;
+    }
+
+    const serverPos = { x: serverPlayer.x, y: serverPlayer.y };
+    const predictedPos = localPlayerPredictedPosition;
+
+    // Compare positions
+    if (serverPos.x !== predictedPos.x || serverPos.y !== predictedPos.y) {
+      // Mismatch detected - correct to server position
+      logger.debug(`Reconciliation: correcting position from (${predictedPos.x}, ${predictedPos.y}) to (${serverPos.x}, ${serverPos.y})`);
+
+      // Create board adapter
+      const board = {
+        width: currentState.board.width,
+        height: currentState.board.height,
+        grid: currentState.board.grid,
+        getCell: (x, y) => {
+          if (y < 0 || y >= currentState.board.grid.length) return null;
+          if (x < 0 || x >= currentState.board.grid[y].length) return null;
+          return currentState.board.grid[y][x];
+        },
+        isWall: (x, y) => {
+          const cell = board.getCell(x, y);
+          return cell === '#';
+        }
+      };
+
+      // Get other players
+      const otherPlayers = (currentState.players || []).filter(
+        p => p.playerId !== localPlayerId
+      );
+      const entities = currentState.entities || [];
+
+      // Clear old predicted position
+      renderer.restoreCellContent(
+        predictedPos.x,
+        predictedPos.y,
+        board,
+        otherPlayers,
+        entities
+      );
+
+      // Update predicted position to server position
+      localPlayerPredictedPosition = { x: serverPos.x, y: serverPos.y };
+
+      // Draw player at server position
+      renderer.updateCell(
+        serverPos.x,
+        serverPos.y,
+        renderer.config.playerGlyph,
+        renderer.config.playerColor
+      );
+
+      // Update status bar
+      renderer.renderStatusBar(
+        currentState.score || 0,
+        serverPos,
+        currentState.board.height
+      );
+    }
+  }
+
+  /**
+   * Start reconciliation timer
+   */
+  function startReconciliationTimer() {
+    if (reconciliationTimer) {
+      clearInterval(reconciliationTimer);
+    }
+
+    const interval = clientConfig.prediction?.reconciliationInterval || 5000;
+    reconciliationTimer = setInterval(() => {
+      reconcilePosition();
+    }, interval);
+  }
+
+  /**
+   * Stop reconciliation timer
+   */
+  function stopReconciliationTimer() {
+    if (reconciliationTimer) {
+      clearInterval(reconciliationTimer);
+      reconciliationTimer = null;
+    }
+  }
+
+  /**
    * Validate if position is within board bounds
    * @param {number} x - X coordinate
    * @param {number} y - Y coordinate
@@ -279,6 +387,7 @@ export async function networkedMode() {
         if (localPlayer) {
           localPlayerPredictedPosition = { x: localPlayer.x, y: localPlayer.y };
           logger.debug(`Initialized prediction position: (${localPlayer.x}, ${localPlayer.y})`);
+          startReconciliationTimer(); // Start reconciliation timer
         }
       }
       
@@ -310,6 +419,7 @@ export async function networkedMode() {
         if (localPlayer) {
           localPlayerPredictedPosition = { x: localPlayer.x, y: localPlayer.y };
           logger.debug(`Initialized prediction position from STATE_UPDATE: (${localPlayer.x}, ${localPlayer.y})`);
+          startReconciliationTimer(); // Start reconciliation timer
         }
       }
       
@@ -493,6 +603,12 @@ export async function networkedMode() {
 
     running = false;
     logger.info(`Shutting down: ${reason}`);
+
+    // Stop reconciliation timer
+    stopReconciliationTimer();
+    
+    // Reset prediction state
+    localPlayerPredictedPosition = { x: null, y: null };
 
     try {
       inputHandler.stop();
