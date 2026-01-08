@@ -10,6 +10,7 @@ export class WebSocketClient {
     this.ws = null;
     this.connected = false;
     this.eventHandlers = new Map();
+    this.messageQueue = []; // Queue for messages when socket is not ready
   }
 
   /**
@@ -26,6 +27,8 @@ export class WebSocketClient {
     this.ws.on('open', () => {
       this.connected = true;
       logger.info('Connected to server');
+      // Flush queued messages when connection opens
+      this.flushMessageQueue();
       this.emit('connect');
     });
 
@@ -56,12 +59,68 @@ export class WebSocketClient {
    * @param {object} message - Message object to send
    */
   send(message) {
-    if (!this.connected || !this.ws || this.ws.readyState !== WebSocket.OPEN) {
-      logger.warn('Cannot send message: not connected');
+    // WebSocket states: CONNECTING (0), OPEN (1), CLOSING (2), CLOSED (3)
+    // The ws library can queue messages when in CONNECTING state
+    // Only queue if socket is CLOSING, CLOSED, or not initialized
+    
+    if (!this.ws) {
+      // Socket not initialized - queue message
+      this.messageQueue.push(message);
+      logger.debug('Queued message (socket not initialized)');
       return;
     }
 
-    this.ws.send(JSON.stringify(message));
+    const readyState = this.ws.readyState;
+    
+    if (readyState === WebSocket.OPEN) {
+      // Socket is open - send immediately
+      try {
+        this.ws.send(JSON.stringify(message));
+      } catch (error) {
+        logger.error('Error sending message, queueing for retry:', error);
+        // If send fails, queue for retry
+        this.messageQueue.push(message);
+      }
+    } else if (readyState === WebSocket.CONNECTING) {
+      // Socket is connecting - ws library will queue automatically, but we'll also queue as backup
+      try {
+        this.ws.send(JSON.stringify(message));
+      } catch (error) {
+        // If send fails during connecting, queue it
+        this.messageQueue.push(message);
+        logger.debug('Queued message (socket connecting, send failed)');
+      }
+    } else {
+      // Socket is CLOSING or CLOSED - queue message
+      this.messageQueue.push(message);
+      logger.debug(`Queued message (socket state: ${readyState}, CLOSING/CLOSED)`);
+    }
+  }
+
+  /**
+   * Flush queued messages when socket becomes ready
+   */
+  flushMessageQueue() {
+    if (!this.connected || !this.ws || this.ws.readyState !== WebSocket.OPEN) {
+      return;
+    }
+
+    const queueLength = this.messageQueue.length;
+    if (queueLength > 0) {
+      logger.debug(`Flushing ${queueLength} queued message(s)`);
+      
+      while (this.messageQueue.length > 0) {
+        const message = this.messageQueue.shift();
+        try {
+          this.ws.send(JSON.stringify(message));
+        } catch (error) {
+          logger.error('Error sending queued message:', error);
+          // Re-queue if send fails
+          this.messageQueue.unshift(message);
+          break;
+        }
+      }
+    }
   }
 
   /**
