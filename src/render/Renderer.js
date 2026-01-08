@@ -149,7 +149,7 @@ export class Renderer {
     // Calculate screen coordinates
     // Title is 2 lines (title + blank line), so offset is 2
     // ANSI escape codes are 1-indexed
-    const screenX = x + 1;
+    const screenX = x;
     const screenY = y + 2 + 1; // +2 for title offset, +1 for 1-indexed
 
     // Position cursor
