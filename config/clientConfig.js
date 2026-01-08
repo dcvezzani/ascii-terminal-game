@@ -23,6 +23,10 @@ try {
     rendering: {
       playerGlyph: '@',
       playerColor: '00FF00'
+    },
+    prediction: {
+      enabled: true,
+      reconciliationInterval: 5000
     }
   };
 }
