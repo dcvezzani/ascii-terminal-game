@@ -45,7 +45,7 @@ describe('Renderer', () => {
       ];
 
       const content = renderer.getCellContent(10, 10, board, players);
-      expect(content.character).toBe('@');
+      expect(content.character).toBe('☻');
       expect(content.color).toBeDefined();
     });
 
@@ -69,7 +69,7 @@ describe('Renderer', () => {
       ];
 
       const content = renderer.getCellContent(5, 5, board, players);
-      expect(content.character).toBe('@');
+      expect(content.character).toBe('☻');
     });
   });
 

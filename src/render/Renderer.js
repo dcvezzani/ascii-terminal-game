@@ -11,7 +11,7 @@ export class Renderer {
     this.stdout = process.stdout;
     // Default rendering config
     this.config = config || {
-      playerGlyph: '@',
+      playerGlyph: '☻',
       playerColor: '00FF00'
     };
   }
