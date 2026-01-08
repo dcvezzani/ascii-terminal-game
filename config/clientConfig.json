@@ -7,6 +7,8 @@
   },
   "rendering": {
     "playerGlyph": "☻",
+    "spaceGlyph": " ",
+    "wallGlyph": "#",
     "playerColor": "00FF00"
   },
   "prediction": {
