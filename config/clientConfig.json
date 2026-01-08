@@ -11,6 +11,6 @@
   },
   "prediction": {
     "enabled": true,
-    "reconciliationInterval": 1000
+    "reconciliationInterval": 5000
   }
 }

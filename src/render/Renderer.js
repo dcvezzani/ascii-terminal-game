@@ -211,6 +211,11 @@ export class Renderer {
   renderIncremental(changes, board, players, entities, localPlayerId, score, position) {
     // Process moved players
     for (const moved of changes.players.moved) {
+      // Safeguard: Skip local player (should be filtered out, but double-check)
+      if (moved.playerId === localPlayerId) {
+        continue;
+      }
+      
       // Clear old position
       this.restoreCellContent(
         moved.oldPos.x,
@@ -231,6 +236,11 @@ export class Renderer {
 
     // Process joined players
     for (const joined of changes.players.joined) {
+      // Safeguard: Skip local player (should be filtered out, but double-check)
+      if (joined.playerId === localPlayerId) {
+        continue;
+      }
+      
       this.updateCell(
         joined.pos.x,
         joined.pos.y,
@@ -241,6 +251,11 @@ export class Renderer {
 
     // Process left players
     for (const left of changes.players.left) {
+      // Safeguard: Skip local player (should be filtered out, but double-check)
+      if (left.playerId === localPlayerId) {
+        continue;
+      }
+      
       this.restoreCellContent(
         left.pos.x,
         left.pos.y,

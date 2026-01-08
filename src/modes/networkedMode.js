@@ -514,8 +514,19 @@ export async function networkedMode() {
           ? { x: previousState.players.find(p => p.playerId === localPlayerId).x, y: previousState.players.find(p => p.playerId === localPlayerId).y }
           : null);
 
+      // Filter out local player from changes to prevent duplicate rendering
+      // The local player is rendered separately using predicted position
+      const filteredChanges = {
+        players: {
+          moved: changes.players.moved.filter(m => m.playerId !== localPlayerId),
+          joined: changes.players.joined.filter(j => j.playerId !== localPlayerId),
+          left: changes.players.left.filter(l => l.playerId !== localPlayerId)
+        },
+        scoreChanged: changes.scoreChanged
+      };
+
       renderer.renderIncremental(
-        changes,
+        filteredChanges,
         board,
         otherPlayers,
         currentState.entities || [],
