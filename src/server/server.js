@@ -1,6 +1,7 @@
 import { WebSocketServer } from 'ws';
 import { randomUUID } from 'crypto';
 import ConnectionManager from './ConnectionManager.js';
+import GameServer from './GameServer.js';
 import MessageHandler from '../network/MessageHandler.js';
 import MessageTypes from '../network/MessageTypes.js';
 import logger from '../utils/logger.js';
@@ -9,10 +10,13 @@ import logger from '../utils/logger.js';
  * WebSocket Server class
  */
 export class Server {
-  constructor(port) {
+  constructor(port, boardWidth = 20, boardHeight = 20) {
     this.port = port;
     this.wss = null;
     this.connectionManager = new ConnectionManager();
+    this.gameServer = new GameServer(boardWidth, boardHeight);
+    this.broadcastInterval = null;
+    this.broadcastIntervalMs = 250; // 250ms = 4 updates per second
   }
 
   /**
@@ -29,6 +33,7 @@ export class Server {
 
         this.wss.on('listening', () => {
           logger.info(`WebSocket server listening on port ${this.port}`);
+          this.startBroadcasting();
           resolve();
         });
 
@@ -48,6 +53,9 @@ export class Server {
    */
   async stop() {
     return new Promise((resolve) => {
+      // Stop broadcasting
+      this.stopBroadcasting();
+
       if (!this.wss) {
         resolve();
         return;
@@ -63,6 +71,60 @@ export class Server {
         logger.info('WebSocket server stopped');
         resolve();
       });
+    });
+  }
+
+  /**
+   * Start periodic state broadcasting
+   */
+  startBroadcasting() {
+    if (this.broadcastInterval) {
+      return; // Already broadcasting
+    }
+
+    this.broadcastInterval = setInterval(() => {
+      this.broadcastState();
+    }, this.broadcastIntervalMs);
+
+    logger.debug('Started periodic state broadcasting');
+  }
+
+  /**
+   * Stop periodic state broadcasting
+   */
+  stopBroadcasting() {
+    if (this.broadcastInterval) {
+      clearInterval(this.broadcastInterval);
+      this.broadcastInterval = null;
+      logger.debug('Stopped periodic state broadcasting');
+    }
+  }
+
+  /**
+   * Broadcast game state to all connected clients
+   */
+  broadcastState() {
+    const connections = this.connectionManager.getAllConnections();
+    if (connections.length === 0) {
+      return; // No clients connected
+    }
+
+    const gameState = this.gameServer.serializeState();
+    const stateUpdate = MessageHandler.createMessage(
+      MessageTypes.STATE_UPDATE,
+      gameState
+    );
+
+    const messageStr = JSON.stringify(stateUpdate);
+
+    connections.forEach(connection => {
+      if (connection.ws && connection.ws.readyState === 1) { // OPEN
+        try {
+          connection.ws.send(messageStr);
+        } catch (error) {
+          logger.error(`Error broadcasting to ${connection.clientId}:`, error);
+        }
+      }
     });
   }
 
@@ -120,10 +182,83 @@ export class Server {
       }
 
       // Route message to appropriate handler
-      // TODO: Implement message routing in Phase 4
+      if (message.type === MessageTypes.CONNECT) {
+        this.handleConnect(clientId, message);
+      } else if (message.type === MessageTypes.MOVE) {
+        this.handleMove(clientId, message);
+      } else {
+        logger.warn(`Unknown message type: ${message.type}`);
+      }
     } catch (error) {
       logger.error(`Error handling message from ${clientId}:`, error);
     }
+  }
+
+  /**
+   * Handle CONNECT message
+   * @param {string} clientId - Client identifier
+   * @param {object} message - CONNECT message
+   */
+  handleConnect(clientId, message) {
+    // Generate player ID
+    const playerId = randomUUID();
+    const playerName = `Player ${playerId.substring(0, 8)}`;
+
+    // Add player to game
+    this.gameServer.addPlayer(clientId, playerId, playerName);
+    this.gameServer.spawnPlayer(playerId, playerName);
+
+    // Map clientId to playerId
+    this.connectionManager.setPlayerId(clientId, playerId);
+
+    // Send CONNECT response with gameState
+    const gameState = this.gameServer.serializeState();
+    const response = MessageHandler.createMessage(
+      MessageTypes.CONNECT,
+      {
+        clientId,
+        playerId,
+        playerName,
+        gameState
+      }
+    );
+
+    const connection = this.connectionManager.getConnection(clientId);
+    if (connection && connection.ws) {
+      connection.ws.send(JSON.stringify(response));
+    }
+
+    logger.info(`Player joined: ${playerId} (${playerName})`);
+  }
+
+  /**
+   * Handle MOVE message
+   * @param {string} clientId - Client identifier
+   * @param {object} message - MOVE message
+   */
+  handleMove(clientId, message) {
+    const playerId = this.connectionManager.getPlayerId(clientId);
+    if (!playerId) {
+      logger.warn(`Cannot move: client ${clientId} has no playerId`);
+      return;
+    }
+
+    const { dx, dy } = message.payload;
+
+    // Validate dx, dy are numbers and in range
+    if (typeof dx !== 'number' || typeof dy !== 'number') {
+      logger.warn(`Invalid move: dx or dy is not a number`);
+      return;
+    }
+
+    if (dx < -1 || dx > 1 || dy < -1 || dy > 1) {
+      logger.warn(`Invalid move: dx or dy out of range`);
+      return;
+    }
+
+    // Attempt move
+    this.gameServer.movePlayer(playerId, dx, dy);
+    // State will be broadcast in next periodic update
   }
 
   /**
@@ -132,6 +267,13 @@ export class Server {
    */
   onDisconnect(clientId) {
     logger.info(`Client disconnected: ${clientId}`);
+    
+    // Remove player from game
+    const playerId = this.connectionManager.getPlayerId(clientId);
+    if (playerId) {
+      this.gameServer.removePlayer(playerId);
+    }
+    
     this.connectionManager.removeConnection(clientId);
   }
 }
