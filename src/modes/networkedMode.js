@@ -145,10 +145,15 @@ export async function networkedMode() {
       const position = localPlayer ? { x: localPlayer.x, y: localPlayer.y } : null;
 
       // First render: use full render
+      // Exclude local player from server state rendering
+      const otherPlayers = (currentState.players || []).filter(
+        p => p.playerId !== localPlayerId
+      );
+
       if (previousState === null) {
         renderer.clearScreen();
         renderer.renderTitle();
-        renderer.renderBoard(board, currentState.players || []);
+        renderer.renderBoard(board, otherPlayers);
         renderer.renderStatusBar(currentState.score || 0, position);
         previousState = currentState;
         return;
@@ -165,17 +170,13 @@ export async function networkedMode() {
       if (totalChanges > 10) {
         renderer.clearScreen();
         renderer.renderTitle();
-        renderer.renderBoard(board, currentState.players || []);
+        renderer.renderBoard(board, otherPlayers);
         renderer.renderStatusBar(currentState.score || 0, position);
         previousState = currentState;
         return;
       }
 
       // Incremental render
-      // Exclude local player from server state rendering
-      const otherPlayers = (currentState.players || []).filter(
-        p => p.playerId !== localPlayerId
-      );
 
       renderer.renderIncremental(
         changes,
@@ -215,9 +216,14 @@ export async function networkedMode() {
         const localPlayer = currentState.players?.find(p => p.playerId === localPlayerId);
         const position = localPlayer ? { x: localPlayer.x, y: localPlayer.y } : null;
         
+        // Exclude local player from server state rendering
+        const otherPlayersFallback = (currentState.players || []).filter(
+          p => p.playerId !== localPlayerId
+        );
+        
         renderer.clearScreen();
         renderer.renderTitle();
-        renderer.renderBoard(board, currentState.players || []);
+        renderer.renderBoard(board, otherPlayersFallback);
         renderer.renderStatusBar(currentState.score || 0, position);
         previousState = currentState;
       } catch (fallbackError) {
