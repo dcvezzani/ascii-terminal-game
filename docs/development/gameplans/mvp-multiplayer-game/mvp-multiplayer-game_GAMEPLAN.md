@@ -9,7 +9,7 @@ This gameplan breaks down the MVP multiplayer terminal game implementation into 
 ## Progress Summary
 
 - ✅ **Phase 1: Shared Infrastructure** - COMPLETE
-- ⏳ **Phase 2: Server Core** - NOT STARTED
+- ✅ **Phase 2: Server Core** - COMPLETE
 - ⏳ **Phase 3: Client Core** - NOT STARTED
 - ⏳ **Phase 4: Server Game Logic** - NOT STARTED
 - ⏳ **Phase 5: Client Game Logic** - NOT STARTED
@@ -155,10 +155,10 @@ This gameplan breaks down the MVP multiplayer terminal game implementation into 
 - Test setPlayerId/getPlayerId
 
 **Verification**:
-- [ ] ConnectionManager.js created
-- [ ] Test file created
-- [ ] Tests written
-- [ ] Tests pass
+- [x] ConnectionManager.js created
+- [x] Test file created
+- [x] Tests written
+- [x] Tests pass
 
 ### Step 2.2: Create WebSocket Server
 
@@ -186,10 +186,10 @@ This gameplan breaks down the MVP multiplayer terminal game implementation into 
 **Note**: Use `ws` library's test utilities or mock WebSocket connections
 
 **Verification**:
-- [ ] server.js created
-- [ ] Test file created
-- [ ] Tests written
-- [ ] Tests pass
+- [x] server.js created
+- [x] Test file created
+- [x] Tests written
+- [x] Tests pass
 
 ### Step 2.3: Create Server Entry Point
 
@@ -205,15 +205,15 @@ This gameplan breaks down the MVP multiplayer terminal game implementation into 
 **Test**: Manual test - start server, verify it listens on port
 
 **Verification**:
-- [ ] index.js created
-- [ ] Server can be started manually
-- [ ] Server listens on correct port
+- [x] index.js created
+- [x] Server can be started manually
+- [x] Server listens on correct port
 
 **Phase 2 Completion Checklist**:
-- [ ] All steps completed
-- [ ] All tests passing
-- [ ] Server can accept connections manually
-- [ ] Code committed
+- [x] All steps completed
+- [x] All tests passing
+- [x] Server can accept connections manually
+- [x] Code committed
 
 ---
 
