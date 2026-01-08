@@ -120,6 +120,129 @@ export class Renderer {
 
     return chalk.rgb(r, g, b);
   }
+
+  /**
+   * Update a single cell at the specified position
+   * @param {number} x - X coordinate (0-indexed)
+   * @param {number} y - Y coordinate (0-indexed)
+   * @param {string} character - Character to render
+   * @param {string} color - Hex color string (e.g., "FF0000")
+   */
+  updateCell(x, y, character, color) {
+    // Handle out-of-bounds gracefully
+    if (x < 0 || y < 0) {
+      return;
+    }
+
+    // Calculate screen coordinates
+    // Title is 2 lines (title + blank line), so offset is 2
+    // ANSI escape codes are 1-indexed
+    const screenX = x + 1;
+    const screenY = y + 2 + 1; // +2 for title offset, +1 for 1-indexed
+
+    // Position cursor
+    this.stdout.write(cursorTo(screenX, screenY));
+    
+    // Write character with color
+    const colorFn = this.getColorFunction(color);
+    this.stdout.write(colorFn(character));
+  }
+
+  /**
+   * Restore cell content at position (what was underneath)
+   * @param {number} x - X coordinate
+   * @param {number} y - Y coordinate
+   * @param {Board} board - Board instance
+   * @param {Array} players - Array of player objects
+   * @param {Array} entities - Array of entity objects (for future use)
+   */
+  restoreCellContent(x, y, board, players, entities) {
+    // Handle out-of-bounds gracefully
+    if (x < 0 || y < 0) {
+      return;
+    }
+
+    // Check for entities at position (future: top-most visible)
+    // For MVP, entities array is empty, so skip
+
+    // Check for other players at position
+    const otherPlayer = players.find(p => p.x === x && p.y === y);
+    if (otherPlayer) {
+      this.updateCell(x, y, '@', '00FF00'); // Green player
+      return;
+    }
+
+    // Fall back to board cell
+    const cellChar = board.getCell(x, y);
+    if (cellChar === null) {
+      return; // Out of bounds
+    }
+
+    let color = 'FFFFFF'; // White default
+    if (cellChar === '#') {
+      color = '808080'; // Gray for walls
+    }
+
+    this.updateCell(x, y, cellChar, color);
+  }
+
+  /**
+   * Render incremental updates based on state changes
+   * @param {object} changes - Change detection object from compareStates
+   * @param {Board} board - Board instance
+   * @param {Array} players - Array of player objects (excluding local player)
+   * @param {Array} entities - Array of entity objects (for future use)
+   * @param {string} localPlayerId - ID of local player
+   * @param {number} score - Current score
+   * @param {object} position - Local player position {x, y}
+   */
+  renderIncremental(changes, board, players, entities, localPlayerId, score, position) {
+    // Process moved players
+    for (const moved of changes.players.moved) {
+      // Clear old position
+      this.restoreCellContent(
+        moved.oldPos.x,
+        moved.oldPos.y,
+        board,
+        players,
+        entities
+      );
+      
+      // Draw at new position
+      this.updateCell(
+        moved.newPos.x,
+        moved.newPos.y,
+        '@',
+        '00FF00' // Green
+      );
+    }
+
+    // Process joined players
+    for (const joined of changes.players.joined) {
+      this.updateCell(
+        joined.pos.x,
+        joined.pos.y,
+        '@',
+        '00FF00' // Green
+      );
+    }
+
+    // Process left players
+    for (const left of changes.players.left) {
+      this.restoreCellContent(
+        left.pos.x,
+        left.pos.y,
+        board,
+        players,
+        entities
+      );
+    }
+
+    // Update status bar if score changed
+    if (changes.scoreChanged) {
+      this.renderStatusBar(score, position);
+    }
+  }
 }
 
 // Default export
