@@ -1,0 +1,8 @@
+{
+  "websocket": {
+    "url": "ws://localhost:3000"
+  },
+  "logging": {
+    "level": "info"
+  }
+}
