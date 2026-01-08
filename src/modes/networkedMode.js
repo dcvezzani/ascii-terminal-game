@@ -154,6 +154,10 @@ export async function networkedMode() {
         renderer.clearScreen();
         renderer.renderTitle();
         renderer.renderBoard(board, otherPlayers);
+        // Render local player separately
+        if (position) {
+          renderer.updateCell(position.x, position.y, '@', '00FF00');
+        }
         renderer.renderStatusBar(currentState.score || 0, position);
         previousState = currentState;
         return;
@@ -171,12 +175,19 @@ export async function networkedMode() {
         renderer.clearScreen();
         renderer.renderTitle();
         renderer.renderBoard(board, otherPlayers);
+        // Render local player separately
+        if (position) {
+          renderer.updateCell(position.x, position.y, '@', '00FF00');
+        }
         renderer.renderStatusBar(currentState.score || 0, position);
         previousState = currentState;
         return;
       }
 
       // Incremental render
+      // Track local player position changes
+      const previousLocalPlayer = previousState.players?.find(p => p.playerId === localPlayerId);
+      const previousLocalPosition = previousLocalPlayer ? { x: previousLocalPlayer.x, y: previousLocalPlayer.y } : null;
 
       renderer.renderIncremental(
         changes,
@@ -187,6 +198,24 @@ export async function networkedMode() {
         currentState.score || 0,
         position
       );
+
+      // Handle local player movement separately
+      if (position && previousLocalPosition) {
+        if (previousLocalPosition.x !== position.x || previousLocalPosition.y !== position.y) {
+          // Local player moved - clear old position and draw at new position
+          renderer.restoreCellContent(
+            previousLocalPosition.x,
+            previousLocalPosition.y,
+            board,
+            otherPlayers,
+            currentState.entities || []
+          );
+          renderer.updateCell(position.x, position.y, '@', '00FF00');
+        }
+      } else if (position && !previousLocalPosition) {
+        // Local player just joined - draw at position
+        renderer.updateCell(position.x, position.y, '@', '00FF00');
+      }
 
       // Update status bar if score changed
       if (changes.scoreChanged) {
@@ -224,6 +253,10 @@ export async function networkedMode() {
         renderer.clearScreen();
         renderer.renderTitle();
         renderer.renderBoard(board, otherPlayersFallback);
+        // Render local player separately
+        if (position) {
+          renderer.updateCell(position.x, position.y, '@', '00FF00');
+        }
         renderer.renderStatusBar(currentState.score || 0, position);
         previousState = currentState;
       } catch (fallbackError) {
