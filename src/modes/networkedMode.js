@@ -526,6 +526,7 @@ export async function networkedMode() {
       );
 
       // Handle local player movement separately (using predicted position)
+      let positionChanged = false;
       if (position && previousPredictedPosition) {
         if (previousPredictedPosition.x !== position.x || previousPredictedPosition.y !== position.y) {
           // Local player moved - clear old position and draw at new position
@@ -537,14 +538,16 @@ export async function networkedMode() {
             currentState.entities || []
           );
           renderer.updateCell(position.x, position.y, renderer.config.playerGlyph, renderer.config.playerColor);
+          positionChanged = true;
         }
       } else if (position && !previousPredictedPosition) {
         // Local player just joined - draw at position
         renderer.updateCell(position.x, position.y, renderer.config.playerGlyph, renderer.config.playerColor);
+        positionChanged = true;
       }
 
-      // Update status bar if score changed
-      if (changes.scoreChanged) {
+      // Update status bar if score changed or position changed
+      if (changes.scoreChanged || positionChanged) {
         renderer.renderStatusBar(currentState.score || 0, position, currentState.board.height);
       }
 
