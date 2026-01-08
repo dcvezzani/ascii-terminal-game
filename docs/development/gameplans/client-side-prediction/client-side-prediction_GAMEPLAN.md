@@ -1070,7 +1070,7 @@ inputHandler.onMove((dx, dy) => {
 - [x] Edge cases handled gracefully (code verified, ready for manual testing)
 - [x] Performance acceptable (ready for manual verification)
 - [x] Code committed
-- [ ] Enhancement card updated to COMPLETE
+- [x] Enhancement card updated to COMPLETE
 - [x] All acceptance criteria met (ready for manual verification)
 
 ## Notes
