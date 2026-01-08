@@ -20,6 +20,7 @@ export async function networkedMode() {
   let previousState = null; // Track previous state for change detection
   let localPlayerId = null;
   let localPlayerPredictedPosition = { x: null, y: null }; // Predicted position for client-side prediction
+  let previousPredictedPosition = null; // Track previous predicted position for rendering
   let reconciliationTimer = null; // Timer for periodic reconciliation
   let running = true;
 
@@ -414,7 +415,23 @@ export async function networkedMode() {
         return;
       }
       
+      // Get server position before updating state
+      const serverPlayerBefore = currentState?.players?.find(p => p.playerId === localPlayerId);
+      const serverPosBefore = serverPlayerBefore ? { x: serverPlayerBefore.x, y: serverPlayerBefore.y } : null;
+      
       currentState = message.payload;
+      
+      // Get server position after updating state
+      const serverPlayerAfter = currentState.players?.find(p => p.playerId === localPlayerId);
+      const serverPosAfter = serverPlayerAfter ? { x: serverPlayerAfter.x, y: serverPlayerAfter.y } : null;
+      
+      // Log position comparison for debugging
+      if (localPlayerPredictedPosition.x !== null && serverPosAfter) {
+        logger.debug(`STATE_UPDATE: predicted=(${localPlayerPredictedPosition.x},${localPlayerPredictedPosition.y}) server=(${serverPosAfter.x},${serverPosAfter.y})`);
+        if (serverPosBefore && (serverPosBefore.x !== serverPosAfter.x || serverPosBefore.y !== serverPosAfter.y)) {
+          logger.debug(`STATE_UPDATE: server position changed from (${serverPosBefore.x},${serverPosBefore.y}) to (${serverPosAfter.x},${serverPosAfter.y})`);
+        }
+      }
       
       // Initialize prediction if not already set
       if (localPlayerPredictedPosition.x === null && localPlayerId && currentState.players) {
@@ -483,6 +500,7 @@ export async function networkedMode() {
         }
         renderer.renderStatusBar(currentState.score || 0, position, currentState.board.height);
         previousState = currentState;
+        previousPredictedPosition = position ? { ...position } : null;
         return;
       }
 
@@ -504,16 +522,12 @@ export async function networkedMode() {
         }
         renderer.renderStatusBar(currentState.score || 0, position, currentState.board.height);
         previousState = currentState;
+        previousPredictedPosition = position ? { ...position } : null;
         return;
       }
 
       // Incremental render
-      // Track local player position changes (use predicted position for comparison)
-      const previousPredictedPosition = localPlayerPredictedPosition.x !== null
-        ? localPlayerPredictedPosition
-        : (previousState.players?.find(p => p.playerId === localPlayerId)
-          ? { x: previousState.players.find(p => p.playerId === localPlayerId).x, y: previousState.players.find(p => p.playerId === localPlayerId).y }
-          : null);
+      // Use stored previousPredictedPosition (will be updated after render)
 
       // Filter out local player from changes to prevent duplicate rendering
       // The local player is rendered separately using predicted position
@@ -563,7 +577,9 @@ export async function networkedMode() {
         renderer.renderStatusBar(currentState.score || 0, position, currentState.board.height);
       }
 
+      // Update previous state and predicted position for next render
       previousState = currentState;
+      previousPredictedPosition = position ? { ...position } : null;
     } catch (error) {
       logger.error('Error during incremental render, falling back to full render:', error);
       // Fallback to full render on error
@@ -604,6 +620,7 @@ export async function networkedMode() {
         }
         renderer.renderStatusBar(currentState.score || 0, position, currentState.board.height);
         previousState = currentState;
+        previousPredictedPosition = position ? { ...position } : null;
       } catch (fallbackError) {
         logger.error('Error during fallback render:', fallbackError);
       }
@@ -626,6 +643,7 @@ export async function networkedMode() {
     
     // Reset prediction state
     localPlayerPredictedPosition = { x: null, y: null };
+    previousPredictedPosition = null;
 
     try {
       inputHandler.stop();
