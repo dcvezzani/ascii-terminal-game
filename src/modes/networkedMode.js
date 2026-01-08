@@ -6,6 +6,7 @@ import MessageHandler from '../network/MessageHandler.js';
 import MessageTypes from '../network/MessageTypes.js';
 import logger from '../utils/logger.js';
 import { checkTerminalSize } from '../utils/terminal.js';
+import compareStates from '../utils/stateComparison.js';
 
 /**
  * Networked game mode - connects to server and plays multiplayer game
@@ -16,6 +17,7 @@ export async function networkedMode() {
   const inputHandler = new InputHandler();
 
   let currentState = null;
+  let previousState = null; // Track previous state for change detection
   let localPlayerId = null;
   let running = true;
 
@@ -121,28 +123,106 @@ export async function networkedMode() {
     }
 
     try {
-      renderer.clearScreen();
-      renderer.renderTitle();
-      
       // Create board adapter from state
       const board = {
         width: currentState.board.width,
         height: currentState.board.height,
         grid: currentState.board.grid,
-        getCell: (x, y) => currentState.board.grid[y][x],
-        isWall: (x, y) => currentState.board.grid[y][x] === '#',
+        getCell: (x, y) => {
+          if (y < 0 || y >= currentState.board.grid.length) return null;
+          if (x < 0 || x >= currentState.board.grid[y].length) return null;
+          return currentState.board.grid[y][x];
+        },
+        isWall: (x, y) => {
+          const cell = board.getCell(x, y);
+          return cell === '#';
+        },
         serialize: () => currentState.board.grid
       };
 
-      renderer.renderBoard(board, currentState.players || []);
-      
       // Find local player position
       const localPlayer = currentState.players?.find(p => p.playerId === localPlayerId);
       const position = localPlayer ? { x: localPlayer.x, y: localPlayer.y } : null;
-      
-      renderer.renderStatusBar(currentState.score || 0, position);
+
+      // First render: use full render
+      if (previousState === null) {
+        renderer.clearScreen();
+        renderer.renderTitle();
+        renderer.renderBoard(board, currentState.players || []);
+        renderer.renderStatusBar(currentState.score || 0, position);
+        previousState = currentState;
+        return;
+      }
+
+      // Compare states for incremental rendering
+      const changes = compareStates(previousState, currentState);
+      const totalChanges = 
+        changes.players.moved.length +
+        changes.players.joined.length +
+        changes.players.left.length;
+
+      // Fallback to full render if too many changes
+      if (totalChanges > 10) {
+        renderer.clearScreen();
+        renderer.renderTitle();
+        renderer.renderBoard(board, currentState.players || []);
+        renderer.renderStatusBar(currentState.score || 0, position);
+        previousState = currentState;
+        return;
+      }
+
+      // Incremental render
+      // Exclude local player from server state rendering
+      const otherPlayers = (currentState.players || []).filter(
+        p => p.playerId !== localPlayerId
+      );
+
+      renderer.renderIncremental(
+        changes,
+        board,
+        otherPlayers,
+        currentState.entities || [],
+        localPlayerId,
+        currentState.score || 0,
+        position
+      );
+
+      // Update status bar if score changed
+      if (changes.scoreChanged) {
+        renderer.renderStatusBar(currentState.score || 0, position);
+      }
+
+      previousState = currentState;
     } catch (error) {
-      logger.error('Error rendering:', error);
+      logger.error('Error during incremental render, falling back to full render:', error);
+      // Fallback to full render on error
+      try {
+        const board = {
+          width: currentState.board.width,
+          height: currentState.board.height,
+          grid: currentState.board.grid,
+          getCell: (x, y) => {
+            if (y < 0 || y >= currentState.board.grid.length) return null;
+            if (x < 0 || x >= currentState.board.grid[y].length) return null;
+            return currentState.board.grid[y][x];
+          },
+          isWall: (x, y) => {
+            const cell = board.getCell(x, y);
+            return cell === '#';
+          },
+          serialize: () => currentState.board.grid
+        };
+        const localPlayer = currentState.players?.find(p => p.playerId === localPlayerId);
+        const position = localPlayer ? { x: localPlayer.x, y: localPlayer.y } : null;
+        
+        renderer.clearScreen();
+        renderer.renderTitle();
+        renderer.renderBoard(board, currentState.players || []);
+        renderer.renderStatusBar(currentState.score || 0, position);
+        previousState = currentState;
+      } catch (fallbackError) {
+        logger.error('Error during fallback render:', fallbackError);
+      }
     }
   }
 
