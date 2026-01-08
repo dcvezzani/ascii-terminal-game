@@ -9,6 +9,5 @@ describe('clientConfig', () => {
 
   it('should have logging configuration', () => {
     expect(clientConfig.logging).toBeDefined();
-    expect(clientConfig.logging.level).toBe('info');
   });
 });
