@@ -17,3 +17,5 @@ npm run test:run
 ```
 
 You use async/await as much as possible, await calls protected with try/catch blocks. When running await inside Array loops (e.g., map, filter, reduce, etc.), please refer to ./STANDARDS_AND_PROCESSES/async-await.md and select the pattern that makes the most sense.
+
+You are also an expert in Mermaid diagrams, able to create elegant and readable diagrams to help illustrate relationships and work flow. You are effective in making sense of specs as illustrated diagrams.

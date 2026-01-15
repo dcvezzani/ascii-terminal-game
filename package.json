@@ -9,7 +9,17 @@
     "server": "node src/server/index.js",
     "client": "node src/index.js",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "diagrams:components": "mmdc -i docs/development/specs/server-architecture_SPECS/server-architecture_components.mmd -o docs/development/specs/server-architecture_SPECS/server-architecture_components.svg -b white",
+    "diagrams:interactions:init": "mmdc -i docs/development/specs/server-architecture_SPECS/server-architecture_interactions_1-initialization.mmd -o docs/development/specs/server-architecture_SPECS/server-architecture_interactions_1-initialization.svg -b white",
+    "diagrams:interactions:connection": "mmdc -i docs/development/specs/server-architecture_SPECS/server-architecture_interactions_2-connection.mmd -o docs/development/specs/server-architecture_SPECS/server-architecture_interactions_2-connection.svg -b white",
+    "diagrams:interactions:movement": "mmdc -i docs/development/specs/server-architecture_SPECS/server-architecture_interactions_3-movement.mmd -o docs/development/specs/server-architecture_SPECS/server-architecture_interactions_3-movement.svg -b white",
+    "diagrams:interactions:broadcast": "mmdc -i docs/development/specs/server-architecture_SPECS/server-architecture_interactions_4-broadcast.mmd -o docs/development/specs/server-architecture_SPECS/server-architecture_interactions_4-broadcast.svg -b white",
+    "diagrams:interactions:disconnect": "mmdc -i docs/development/specs/server-architecture_SPECS/server-architecture_interactions_5-disconnect.mmd -o docs/development/specs/server-architecture_SPECS/server-architecture_interactions_5-disconnect.svg -b white",
+    "diagrams:interactions": "npm run diagrams:interactions:init && npm run diagrams:interactions:connection && npm run diagrams:interactions:movement && npm run diagrams:interactions:broadcast && npm run diagrams:interactions:disconnect",
+    "diagrams:data-structures": "mmdc -i docs/development/specs/server-architecture_SPECS/server-architecture_data-structures.mmd -o docs/development/specs/server-architecture_SPECS/server-architecture_data-structures.svg -b white",
+    "diagrams:all": "npm run diagrams:components && npm run diagrams:interactions && npm run diagrams:data-structures",
+    "diagrams:generate": "node scripts/generate-diagrams.js"
   },
   "keywords": [
     "game",
@@ -26,6 +36,7 @@
     "winston": "^3.19.0"
   },
   "devDependencies": {
+    "@mermaid-js/mermaid-cli": "^10.9.1",
     "vitest": "^4.0.16"
   }
 }

@@ -1,0 +1,36 @@
+%% Server Architecture: Client Disconnection Flow
+%% Sequence diagram showing client disconnection and cleanup
+
+sequenceDiagram
+    participant Client as WebSocket Client
+    participant WSS as WebSocketServer
+    participant Server as Server
+    participant CM as ConnectionManager
+    participant GS as GameServer
+    
+    Note over Client,GS: Client Disconnection Sequence
+    
+    alt Client closes connection
+        Client->>WSS: Close WebSocket
+        WSS->>Server: 'close' event
+    else Connection error
+        WSS->>Server: 'error' event
+    end
+    
+    Server->>Server: onDisconnect(clientId)
+    
+    Server->>CM: getPlayerId(clientId)
+    CM-->>Server: playerId (or undefined)
+    
+    alt Player exists
+        Server->>GS: removePlayer(playerId)
+        GS->>GS: Delete from players Map
+        GS-->>Server: Player removed
+    end
+    
+    Server->>CM: removeConnection(clientId)
+    CM->>CM: Delete from connections Map
+    CM->>CM: Delete from playerIdMap
+    CM-->>Server: Connection removed
+    
+    Note over Server: Player and connection<br/>fully cleaned up

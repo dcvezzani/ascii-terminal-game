@@ -634,7 +634,7 @@ This implementation focuses on players only. Future enhancements can add:
   - Section: "Incremental Rendering" (lines 557-600)
   - Section: "Rendering System" (lines 367-419)
   - Section: "State Comparison" (lines 236-250)
-- **Server Architecture Spec**: `docs/development/specs/server-architecture_SPECS.md`
+- **Server Architecture Spec**: `docs/development/specs/server-architecture_SPECS/README.md`
   - Section: "State Update Flow" (lines 236-247)
 
 ## Summary

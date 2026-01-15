@@ -191,7 +191,7 @@ If any check fails, movement is rejected (no prediction, no server message sent)
   - Section: "Input Handling" (lines 421-465)
   - Section: "State Management" (lines 305-365)
 
-- **Server Architecture Spec**: `docs/development/specs/server-architecture_SPECS.md`
+- **Server Architecture Spec**: `docs/development/specs/server-architecture_SPECS/README.md`
   - Section: "Movement Validation" (for matching validation rules)
 
 ## Acceptance Criteria

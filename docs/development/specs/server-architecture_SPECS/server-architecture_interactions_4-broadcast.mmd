@@ -1,0 +1,56 @@
+%% Server Architecture: Periodic State Broadcasting
+%% Sequence diagram showing periodic game state broadcast to all clients
+
+sequenceDiagram
+    participant Server as Server
+    participant CM as ConnectionManager
+    participant GS as GameServer
+    participant Game as Game
+    participant Board as Board
+    participant MH as MessageHandler
+    participant MT as MessageTypes
+    participant Clients as All Connected Clients
+    
+    Note over Server,Clients: Periodic State Broadcast (every 250ms)
+    
+    loop Every 250ms
+        Server->>Server: broadcastState() triggered
+        
+        Server->>CM: getAllConnections()
+        CM-->>Server: Array of connections
+        
+        alt No connections
+            Server->>Server: Return early
+        else Has connections
+            Server->>GS: serializeState()
+            GS->>Game: Access game.board
+            Game->>Board: serialize()
+            Board-->>Game: Grid copy
+            Game-->>GS: Board data
+            
+            GS->>GS: getAllPlayers()
+            GS-->>GS: Player array
+            
+            GS->>Game: Access game.score
+            Game-->>GS: Score value
+            
+            GS-->>Server: Complete game state
+            
+            Server->>MH: createMessage(STATE_UPDATE, gameState)
+            MH->>MT: Reference message types
+            MT-->>MH: STATE_UPDATE constant
+            MH->>MH: Add timestamp
+            MH-->>Server: Message object
+            
+            Server->>Server: JSON.stringify(message)
+            
+            loop For each connection
+                Server->>Server: Check ws.readyState === OPEN
+                alt Connection is open
+                    Server->>Clients: Send STATE_UPDATE (JSON)
+                else Connection is closed
+                    Server->>Server: Skip connection
+                end
+            end
+        end
+    end

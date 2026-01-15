@@ -884,7 +884,7 @@ This implementation focuses on basic prediction. Future enhancements can add:
   - Section: "Reconciliation" (lines 516-554)
   - Section: "Input Handling" (lines 421-465)
   - Section: "State Management" (lines 305-365)
-- **Server Architecture Spec**: `docs/development/specs/server-architecture_SPECS.md`
+- **Server Architecture Spec**: `docs/development/specs/server-architecture_SPECS/README.md`
   - Section: "Movement Validation" (for matching validation rules)
 
 ## Summary

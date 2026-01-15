@@ -160,7 +160,7 @@ When clearing a position, determine what to render:
   - Section: "Rendering System" (lines 367-419)
   - Section: "State Comparison" (lines 236-250)
   
-- **Server Architecture Spec**: `docs/development/specs/server-architecture_SPECS.md`
+- **Server Architecture Spec**: `docs/development/specs/server-architecture_SPECS/README.md`
   - Section: "State Update Flow" (lines 236-247)
   - Section: "Broadcast Strategies" (lines 249-260)
 

@@ -430,7 +430,7 @@ function validateMove(player, dx, dy, board, players) {
 ## Migration Notes
 
 This MVP serves as the foundation for the full architecture described in:
-- `docs/development/specs/server-architecture_SPECS.md`
+- `docs/development/specs/server-architecture_SPECS/README.md`
 - `docs/development/specs/client-architecture_SPEC.md`
 
 Future enhancements will build upon this MVP without breaking existing functionality.

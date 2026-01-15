@@ -1,0 +1,43 @@
+%% Server Architecture: Player Movement Flow
+%% Sequence diagram showing player movement validation and execution
+
+sequenceDiagram
+    participant Client as WebSocket Client
+    participant Server as Server
+    participant CM as ConnectionManager
+    participant MH as MessageHandler
+    participant GS as GameServer
+    participant Game as Game
+    participant Board as Board
+    
+    Note over Client,Board: Player Movement Sequence
+    
+    Client->>Server: MOVE message {dx, dy}
+    Server->>MH: parseMessage(data)
+    MH-->>Server: Parsed message
+    
+    Server->>CM: getPlayerId(clientId)
+    CM-->>Server: playerId
+    
+    Server->>GS: movePlayer(playerId, dx, dy)
+    GS->>GS: validateMove(playerId, dx, dy)
+    GS->>GS: getPlayer(playerId)
+    GS->>GS: Calculate newX, newY
+    
+    GS->>Game: Access game.board
+    Game->>Board: Check bounds & walls
+    Board-->>Game: Validation result
+    Game-->>GS: Board validation
+    
+    GS->>GS: Check player collisions
+    GS->>GS: getAllPlayers()
+    GS->>GS: Check if position occupied
+    
+    alt Move is valid
+        GS->>GS: Update player.x, player.y
+        GS-->>Server: Move successful
+    else Move is invalid
+        GS-->>Server: Move rejected
+    end
+    
+    Note over Server: State will be broadcast<br/>in next periodic update
