@@ -1,895 +1,819 @@
-# Client Architecture Specification
+# Client Technologies, Core Concepts, and Patterns Specification
 
 ## Overview
 
-This document describes the client-side architecture, patterns, and implementation details for the terminal-based multiplayer game. The client is built with Node.js, uses WebSocket for real-time communication, implements client-side prediction for responsive gameplay, and uses incremental rendering for optimal performance.
+This document describes the technologies, core concepts, and design patterns used in the client-side implementation of the terminal-based multiplayer game. The client is built with Node.js and implements real-time multiplayer gameplay with client-side prediction, incremental rendering, and WebSocket communication.
+
+**Purpose**: Reference documentation for client-side technologies, architectural patterns, and implementation concepts.
 
 ## Table of Contents
 
-1. [Architecture Overview](#architecture-overview)
-2. [Core Components](#core-components)
-3. [Network Communication](#network-communication)
-4. [State Management](#state-management)
-5. [Rendering System](#rendering-system)
-6. [Input Handling](#input-handling)
-7. [Client-Side Prediction](#client-side-prediction)
-8. [Reconciliation](#reconciliation)
-9. [Incremental Rendering](#incremental-rendering)
-10. [Modal System](#modal-system)
-11. [Reconnection Handling](#reconnection-handling)
-12. [Client-Server Interaction](#client-server-interaction)
-13. [Client-Client Interaction](#client-client-interaction)
-14. [Patterns and Conventions](#patterns-and-conventions)
+1. [Technologies and Dependencies](#technologies-and-dependencies)
+2. [Core Concepts](#core-concepts)
+3. [Architectural Patterns](#architectural-patterns)
+4. [Design Patterns](#design-patterns)
+5. [State Management Patterns](#state-management-patterns)
+6. [Network Communication Patterns](#network-communication-patterns)
+7. [Rendering Patterns](#rendering-patterns)
+8. [Input Handling Patterns](#input-handling-patterns)
+9. [Error Handling and Resilience](#error-handling-and-resilience)
+10. [Configuration Management](#configuration-management)
+11. [Code Organization Patterns](#code-organization-patterns)
 
 ---
 
-## Architecture Overview
+## Technologies and Dependencies
 
-### High-Level Architecture
+### Runtime Environment
 
-The client follows a modular, event-driven architecture:
+**Node.js (ES Modules)**
+- **Usage**: JavaScript runtime environment
+- **Module System**: ES Modules (`import`/`export`)
+- **Features Used**:
+  - `process.stdin` for raw keyboard input
+  - `process.stdout` for terminal output
+  - `process.argv` for command-line arguments
+  - `import.meta.url` for module resolution
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                      Entry Point (index.js)                │
-│  - Detects mode (local vs networked)                        │
-│  - Initializes appropriate mode handler                     │
-└──────────────────────┬──────────────────────────────────────┘
-                       │
-        ┌──────────────┴──────────────┐
-        │                             │
-┌───────▼────────┐          ┌─────────▼──────────┐
-│  Local Mode    │          │  Networked Mode    │
-│  (localMode.js)│          │ (networkedMode.js) │
-└────────────────┘          └─────────┬──────────┘
-                                      │
-              ┌───────────────────────┼───────────────────────┐
-              │                       │                         │
-    ┌─────────▼────────┐    ┌─────────▼────────┐    ┌─────────▼────────┐
-    │ WebSocketClient  │    │  InputHandler    │    │    Renderer      │
-    │  (Network Layer) │    │  (Input Layer)   │    │  (Render Layer)  │
-    └─────────┬────────┘    └─────────┬────────┘    └─────────┬────────┘
-              │                      │                         │
-              │                      │                         │
-    ┌─────────▼──────────────────────▼────────────────────────▼────────┐
-    │                    Game State Management                          │
-    │  - currentState (server state)                                    │
-    │  - previousState (for change detection)                            │
-    │  - localPlayerPredictedPosition (client-side prediction)          │
-    └───────────────────────────────────────────────────────────────────┘
-```
+### Core Dependencies
 
-### Key Design Principles
+**`ws` (v8.18.3)**
+- **Purpose**: WebSocket client library
+- **Usage**: Real-time bidirectional communication with game server
+- **Key Features**:
+  - WebSocket connection management
+  - Event-driven message handling
+  - Connection state tracking (CONNECTING, OPEN, CLOSING, CLOSED)
+- **Pattern**: Used via wrapper class `WebSocketClient` for abstraction
 
-1. **Separation of Concerns**: Each component has a single, well-defined responsibility
-2. **Event-Driven**: Components communicate via callbacks and events
-3. **State Synchronization**: Server is source of truth, client predicts locally
-4. **Incremental Updates**: Only render what changed, not the entire screen
-5. **Error Recovery**: Graceful fallbacks when operations fail
+**`winston` (v3.19.0)**
+- **Purpose**: Structured logging framework
+- **Usage**: Client-side logging (file-based, no console output)
+- **Key Features**:
+  - Multiple transport support (file, console)
+  - Log levels (error, warn, info, debug)
+  - JSON format for structured logs
+  - Mode-based configuration (server vs client)
+- **Pattern**: Factory function `configureLogger(mode)` for mode-specific setup
+
+**`chalk` (v5.6.2)**
+- **Purpose**: Terminal string styling
+- **Usage**: Color rendering for game elements (players, walls, text)
+- **Key Features**:
+  - RGB color support (hex to RGB conversion)
+  - Text styling (bold, underline, etc.)
+  - Color functions for dynamic styling
+- **Pattern**: Color functions created from hex strings stored in config
+
+**`ansi-escapes` (v7.2.0)**
+- **Purpose**: ANSI escape code utilities
+- **Usage**: Terminal cursor control and screen manipulation
+- **Key Features**:
+  - `cursorTo(x, y)`: Position cursor
+  - `eraseScreen`: Clear entire screen
+  - `cursorHide`/`cursorShow`: Cursor visibility
+- **Pattern**: Used for precise terminal rendering control
+
+**`cli-cursor` (v5.0.0)**
+- **Purpose**: Terminal cursor visibility control
+- **Usage**: Hide/show cursor during gameplay
+- **Key Features**:
+  - Simple cursor hide/show API
+- **Pattern**: Used in `Renderer` class for cursor management
+
+### Development Dependencies
+
+**`vitest` (v4.0.16)**
+- **Purpose**: Unit testing framework
+- **Usage**: Client-side component testing
+- **Key Features**:
+  - ES Modules support
+  - Fast test execution
+  - Mocking capabilities
 
 ---
 
-## Core Components
+## Core Concepts
 
-### 1. Entry Point (`src/index.js`)
+### 1. Client-Side Prediction
 
-**Purpose**: Bootstrap the application and select the appropriate mode.
+**Concept**: Immediately update local player position on input without waiting for server confirmation, providing instant visual feedback.
 
-**Responsibilities**:
-- Load environment variables
-- Check server configuration to determine mode
-- Initialize and run either `localMode` or `networkedMode`
-- Handle process termination signals
+**Implementation**:
+- **Predicted State**: `localPlayerPredictedPosition` tracks local player's predicted position
+- **Validation**: Client validates movement before predicting (bounds, walls, collisions)
+- **Reconciliation**: Periodic comparison of predicted vs server position with correction
+- **Rendering**: Local player rendered from predicted position, other players from server state
 
-**Key Features**:
-- Mode selection based on `serverConfig.websocket.enabled`
-- Global logger attachment for debugging
-- Graceful error handling and cleanup
+**Benefits**:
+- Reduces perceived latency
+- Provides responsive gameplay
+- Maintains server authority (reconciliation corrects discrepancies)
 
-### 2. Networked Mode (`src/modes/networkedMode.js`)
+**Trade-offs**:
+- Potential for visual "snap back" if server rejects movement
+- Requires client-side validation logic (must match server rules)
+- Additional state management complexity
 
-**Purpose**: Main orchestrator for multiplayer game mode.
+### 2. Incremental Rendering
 
-**Responsibilities**:
-- Initialize all game components (Game, Renderer, InputHandler, WebSocketClient, ModalManager)
-- Set up WebSocket event handlers
-- Coordinate client-side prediction
-- Manage state synchronization
-- Handle reconnection logic
-- Coordinate rendering updates
+**Concept**: Update only changed cells instead of re-rendering the entire screen, reducing flicker and improving performance.
 
-**Key State Variables**:
-- `game`: Game instance (kept for compatibility, but state comes from server)
-- `renderer`: Renderer instance for terminal output
-- `inputHandler`: Handles keyboard input
-- `wsClient`: WebSocket client wrapper
-- `modalManager`: Manages modal dialogs
-- `currentState`: Current game state from server
-- `previousState`: Previous state for change detection
-- `localPlayerId`: ID of the local player
-- `localPlayerPredictedPosition`: Predicted position for client-side prediction
-- `queuedStateUpdate`: State updates received before `localPlayerId` is set
+**Implementation**:
+- **Change Detection**: `compareStates()` compares previous vs current state
+- **Change Types**: Detects moved players, joined players, left players, score changes
+- **Selective Updates**: Only updates cells that changed
+- **Fallback**: Full render if too many changes (>10) or on error
 
-### 3. WebSocket Client (`src/network/WebSocketClient.js`)
+**Benefits**:
+- Minimal screen flicker
+- Better performance (fewer terminal writes)
+- Smooth visual updates
 
-**Purpose**: Abstraction layer for WebSocket communication.
+**Trade-offs**:
+- Requires state comparison logic
+- More complex rendering pipeline
+- Must handle edge cases (too many changes, errors)
 
-**Responsibilities**:
-- Manage WebSocket connection lifecycle
-- Handle reconnection with exponential backoff
-- Parse and route incoming messages
-- Send outgoing messages
-- Maintain connection state (clientId, playerId, playerName)
+### 3. State Synchronization
 
-**Key Features**:
-- **Reconnection Logic**: Automatic reconnection with exponential backoff
-  - Configurable max attempts, retry delay, exponential backoff
-  - Detects manual vs automatic disconnects
-  - Preserves playerId on reconnection
-- **Message Routing**: Routes incoming messages to appropriate callbacks
-- **State Management**: Tracks connection state and player identity
+**Concept**: Maintain local copy of server state while allowing optimistic local updates (prediction).
 
-**Reconnection Flow**:
-1. Connection lost → `on('close')` triggered
-2. Check if manual disconnect → if yes, don't reconnect
-3. Check if reconnection enabled and attempts < max → if yes, attempt reconnect
-4. Calculate delay with exponential backoff
-5. Attempt connection after delay
-6. On success: send CONNECT with playerId (if reconnecting)
-7. On failure: retry up to max attempts
+**Implementation**:
+- **Server State**: `currentState` stores authoritative state from server
+- **Previous State**: `previousState` tracks last rendered state for change detection
+- **Predicted State**: `localPlayerPredictedPosition` tracks optimistic local player position
+- **Synchronization**: `STATE_UPDATE` messages update `currentState`, reconciliation syncs prediction
 
-### 4. Message Handler (`src/network/MessageHandler.js`)
+**State Flow**:
+```
+Server STATE_UPDATE → currentState → compareStates() → incremental render
+User Input → validateMovement() → update localPlayerPredictedPosition → immediate render
+Periodic/Event → reconcilePosition() → correct prediction → re-render
+```
 
-**Purpose**: Parse, validate, and create WebSocket messages.
+### 4. Message Queue Pattern
 
-**Responsibilities**:
-- Parse JSON messages from server
-- Validate message structure
-- Create properly formatted messages for sending
-- Handle parsing errors gracefully
+**Concept**: Buffer outgoing messages when WebSocket is not ready, preventing message loss during connection transitions.
+
+**Implementation**:
+- **Queue Storage**: `messageQueue` array in `WebSocketClient`
+- **Queue Conditions**: Queue when socket is CLOSING, CLOSED, or not initialized
+- **Flush Trigger**: Flush queue when socket transitions to OPEN state
+- **Error Handling**: Re-queue messages if send fails
+
+**Benefits**:
+- Prevents dropped keypresses during connection issues
+- Handles transient connection states gracefully
+- Ensures all user input reaches server
+
+### 5. Event-Driven Architecture
+
+**Concept**: Components communicate via events and callbacks rather than direct method calls.
+
+**Implementation**:
+- **WebSocket Events**: `connect`, `message`, `error`, `close`
+- **Input Events**: `onMove`, `onQuit` callbacks
+- **Custom Events**: `WebSocketClient` uses event emitter pattern internally
+
+**Benefits**:
+- Loose coupling between components
+- Easy to extend with new event handlers
+- Natural fit for asynchronous operations
+
+### 6. Configuration-Driven Behavior
+
+**Concept**: Client behavior controlled via configuration file, allowing customization without code changes.
+
+**Implementation**:
+- **Config File**: `config/clientConfig.json`
+- **Config Sections**:
+  - `websocket`: Server URL
+  - `logging`: Log level
+  - `rendering`: Glyphs and colors (player, space, wall)
+  - `prediction`: Enable/disable, reconciliation interval
+- **Defaults**: `clientConfig.js` provides defaults if file missing
+
+**Benefits**:
+- Easy customization for different environments
+- No code changes needed for configuration updates
+- Supports different visual styles per deployment
+
+---
+
+## Architectural Patterns
+
+### 1. Layered Architecture
+
+**Structure**:
+```
+┌─────────────────────────────────────┐
+│     Entry Point (index.js)          │
+│  - Mode selection                   │
+│  - Logger configuration             │
+└──────────────┬──────────────────────┘
+               │
+┌──────────────▼──────────────────────┐
+│   Networked Mode (networkedMode.js)  │
+│  - Orchestration                    │
+│  - State management                 │
+│  - Event coordination               │
+└──────┬───────────────┬───────────────┘
+       │               │
+┌──────▼──────┐  ┌─────▼──────┐  ┌──────▼──────┐
+│  Network    │  │  Render    │  │   Input     │
+│  Layer      │  │  Layer     │  │   Layer     │
+└─────────────┘  └────────────┘  └─────────────┘
+```
+
+**Layers**:
+1. **Entry Layer**: Bootstrap and configuration
+2. **Mode Layer**: Game mode orchestration
+3. **Service Layers**: Network, rendering, input handling
+
+**Benefits**:
+- Clear separation of concerns
+- Easy to test individual layers
+- Modular and maintainable
+
+### 2. Adapter Pattern
+
+**Usage**: Convert server state format to client rendering format.
+
+**Example**: Board adapter in `networkedMode.js`
+```javascript
+const board = {
+  width: currentState.board.width,
+  height: currentState.board.height,
+  grid: currentState.board.grid,
+  getCell: (x, y) => { /* adapt grid access */ },
+  isWall: (x, y) => { /* adapt wall check */ }
+};
+```
+
+**Benefits**:
+- Decouples server state format from rendering logic
+- Allows different state formats without changing renderer
+- Provides consistent interface for rendering
+
+### 3. Factory Pattern
+
+**Usage**: Create configured instances based on mode or configuration.
+
+**Examples**:
+- `configureLogger(mode)`: Creates logger with mode-specific transports
+- `Renderer` constructor: Creates renderer with config-based glyphs/colors
+- `MessageHandler.createMessage()`: Creates properly formatted messages
+
+**Benefits**:
+- Centralized object creation
+- Consistent initialization
+- Easy to extend with new configurations
+
+### 4. Observer Pattern
+
+**Usage**: Components subscribe to events and react to changes.
+
+**Examples**:
+- `WebSocketClient.on('connect', callback)`: Subscribe to connection events
+- `inputHandler.onMove(callback)`: Subscribe to movement input
+- `wsClient.on('message', handler)`: Subscribe to server messages
+
+**Benefits**:
+- Decoupled event producers and consumers
+- Multiple handlers can subscribe to same event
+- Easy to add/remove handlers dynamically
+
+---
+
+## Design Patterns
+
+### 1. Single Responsibility Principle
+
+**Application**: Each class/function has one clear purpose.
+
+**Examples**:
+- `WebSocketClient`: Only handles WebSocket communication
+- `Renderer`: Only handles terminal rendering
+- `InputHandler`: Only handles keyboard input
+- `MessageHandler`: Only handles message parsing/creation
+
+**Benefits**:
+- Easier to understand and maintain
+- Easier to test
+- Easier to modify without side effects
+
+### 2. Dependency Injection
+
+**Usage**: Dependencies passed as constructor parameters or function arguments.
+
+**Examples**:
+- `Renderer` receives config in constructor
+- `networkedMode` receives no parameters (uses imports)
+- Functions receive state/board as parameters rather than accessing globals
+
+**Benefits**:
+- Testable (can inject mocks)
+- Flexible (can swap implementations)
+- Clear dependencies
+
+### 3. Strategy Pattern
+
+**Usage**: Different behaviors selected based on configuration or state.
+
+**Examples**:
+- Prediction enabled/disabled via `clientConfig.prediction.enabled`
+- Full render vs incremental render based on change count
+- Logger transports based on mode (server vs client)
+
+**Benefits**:
+- Runtime behavior selection
+- Easy to add new strategies
+- Configuration-driven behavior
+
+### 4. Guard Clauses
+
+**Usage**: Early returns for invalid conditions, reducing nesting.
+
+**Examples**:
+```javascript
+function reconcilePosition() {
+  if (!localPlayerId) return;
+  if (localPlayerPredictedPosition.x === null) return;
+  if (!currentState) return;
+  // ... main logic
+}
+```
+
+**Benefits**:
+- Clearer code flow
+- Reduced nesting
+- Easier to read
+
+### 5. Defensive Programming
+
+**Usage**: Validate inputs and handle edge cases gracefully.
+
+**Examples**:
+- Null checks before accessing properties
+- Bounds checking before array access
+- Fallback to full render on error
+- Default values for missing config
+
+**Benefits**:
+- Prevents crashes
+- Graceful degradation
+- Better user experience
+
+---
+
+## State Management Patterns
+
+### 1. Immutable State Updates
+
+**Concept**: Create new state objects rather than mutating existing ones.
+
+**Implementation**:
+- `currentState` replaced entirely on `STATE_UPDATE`
+- `localPlayerPredictedPosition` replaced with new object
+- `previousState` stores copy of previous state
+
+**Benefits**:
+- Easier to compare states (reference equality)
+- Prevents accidental mutations
+- Clear state transitions
+
+### 2. State Comparison Pattern
+
+**Concept**: Compare previous and current state to detect changes.
+
+**Implementation**:
+- `compareStates(previousState, currentState)` returns structured changes
+- Uses `Map` for O(1) player lookups
+- Returns arrays of changes (moved, joined, left)
+
+**Change Detection Algorithm**:
+1. Create map of previous players (O(n))
+2. Iterate current players (O(n))
+   - If in map: check if moved
+   - If not in map: marked as joined
+   - Remove from map
+3. Remaining in map: marked as left
+
+**Complexity**: O(n) where n is number of players
+
+### 3. Optimistic Updates
+
+**Concept**: Update UI immediately, correct later if server disagrees.
+
+**Implementation**:
+- User input → validate → update prediction → render immediately
+- Server response → reconcile → correct if needed → re-render
+
+**Benefits**:
+- Instant feedback
+- Better perceived performance
+- Server remains authoritative
+
+### 4. State Reconciliation
+
+**Concept**: Periodically sync optimistic state with authoritative state.
+
+**Implementation**:
+- Timer-based: Every N milliseconds (configurable, default 5000ms)
+- Event-based: On every `STATE_UPDATE` (immediate correction)
+- Comparison: Predicted position vs server position
+- Correction: Update prediction to match server, re-render
+
+**Reconciliation Flow**:
+```
+Timer/Event → reconcilePosition() → 
+  Compare predicted vs server → 
+  If mismatch → Update prediction → 
+  Clear old position → Draw at server position → 
+  Update status bar
+```
+
+---
+
+## Network Communication Patterns
+
+### 1. Message-Based Communication
+
+**Concept**: All communication via structured JSON messages.
 
 **Message Structure**:
 ```javascript
 {
-  type: string,        // Message type (from MessageTypes)
-  payload: object,    // Message-specific data
-  timestamp: number,   // Message timestamp
-  clientId: string    // Client ID (optional)
+  type: string,        // MessageTypes constant
+  payload: object,     // Message-specific data
+  timestamp: number,   // Unix timestamp
+  clientId: string     // Optional client ID
 }
 ```
 
-### 5. Message Types (`src/network/MessageTypes.js`)
+**Benefits**:
+- Type-safe message handling
+- Easy to extend with new message types
+- Consistent format
 
-**Purpose**: Define all message types used in client-server communication.
+### 2. Request-Response Pattern
 
-**Message Types**:
-- `CONNECT`: Initial connection or reconnection
-- `DISCONNECT`: Client disconnection
-- `MOVE`: Player movement command
-- `SET_PLAYER_NAME`: Set player name
-- `RESTART`: Request game restart
-- `STATE_UPDATE`: Server state update
-- `PLAYER_JOINED`: Player joined notification
-- `PLAYER_LEFT`: Player left notification
-- `ERROR`: Error message
-- `PING`/`PONG`: Keep-alive messages
-- `TEST`: Development/testing messages
+**Concept**: Client sends request, server responds.
 
-### 6. Renderer (`src/render/Renderer.js`)
+**Examples**:
+- `CONNECT` → Server responds with `CONNECT` (acknowledgment + state)
+- `MOVE` → Server processes and broadcasts `STATE_UPDATE`
 
-**Purpose**: Handle all terminal rendering operations.
+**Note**: Not all messages are request-response (e.g., `STATE_UPDATE` is push-only)
 
-**Responsibilities**:
-- Render game board, title, status bar
-- Render modals
-- Incremental cell updates
-- Color management
-- Cursor positioning
+### 3. Push Pattern
 
-**Key Features**:
-- **Full Render**: Complete screen render (initial render, fallback)
-- **Incremental Render**: Update only changed cells
-- **Cell Content Resolution**: Determines what to render at each position (player > entity > board cell)
-- **Color Functions**: Converts hex colors to chalk color functions
-- **Modal Support**: Renders modals with background dimming
+**Concept**: Server pushes updates to clients without explicit request.
 
-**Rendering Priority** (for `getCellContent`):
-1. Player at position (highest priority)
-2. Top-most visible entity at position
-3. Board cell base character (lowest priority)
+**Examples**:
+- `STATE_UPDATE`: Periodic state broadcasts
+- `PLAYER_JOINED`: Notification of new player
+- `PLAYER_LEFT`: Notification of player leaving
 
-### 7. Input Handler (`src/input/InputHandler.js`)
+**Benefits**:
+- Real-time updates
+- Efficient (no polling)
+- Server controls update frequency
 
-**Purpose**: Capture and route keyboard input.
+### 4. Connection State Management
 
-**Responsibilities**:
-- Capture raw keyboard input
-- Parse keypress events
-- Route input to game callbacks or modal input handler
-- Handle modal vs game input routing
+**Concept**: Track and handle WebSocket connection states.
 
-**Key Features**:
-- **Raw Mode**: Uses Node.js raw mode for immediate keypress capture
-- **Modal Routing**: When modal is open, all input goes to modal handler
-- **Input Buffer Clearing**: Prevents input accumulation
-- **Key Mapping**: Maps arrow keys and WASD to movement callbacks
+**States**:
+- `CONNECTING` (0): Initial connection attempt
+- `OPEN` (1): Connected and ready
+- `CLOSING` (2): Closing connection
+- `CLOSED` (3): Connection closed
 
-**Input Routing Logic**:
-1. If modal is open → route to `ModalInputHandler`
-2. Otherwise → route to game callbacks (movement, quit, restart, help)
-
-### 8. Modal System
-
-**Components**:
-- `Modal` (`src/ui/Modal.js`): Modal data structure with content and selection
-- `ModalManager` (`src/ui/ModalManager.js`): Manages modal stack and state
-- `ModalInputHandler` (`src/ui/ModalInputHandler.js`): Handles modal-specific input
-- `ModalRenderer` (`src/render/ModalRenderer.js`): Renders modals with scrolling
-
-**Key Features**:
-- **Modal Stacking**: Supports nested modals with scroll position preservation
-- **Scrolling**: Long content can be scrolled within viewport
-- **Selection**: Highlighted option selection with keyboard navigation
-- **Actions**: Options can have actions that execute when selected
-- **Auto-close**: Modals can auto-close after action execution
-
-### 9. State Comparison (`src/utils/stateComparison.js`)
-
-**Purpose**: Detect changes between game states for incremental rendering.
-
-**Responsibilities**:
-- Compare player arrays (moved, joined, left)
-- Compare entity arrays (moved, spawned, despawned, animated)
-- Compare scores
-- Return structured change detection results
-
-**Change Detection Algorithm**:
-- Uses `Map` for O(1) lookups
-- Compares previous vs current state
-- Returns arrays of changes (moved, joined, left, spawned, etc.)
+**Handling**:
+- Queue messages when not `OPEN`
+- Flush queue when `OPEN`
+- Handle reconnection on `CLOSE`
 
 ---
 
-## Network Communication
+## Rendering Patterns
 
-### Connection Lifecycle
+### 1. Full Render Pattern
 
-1. **Initial Connection**:
-   - Client creates `WebSocketClient` instance
-   - Calls `connect()` with server URL
-   - On connection, sends `CONNECT` message (without playerId)
-   - Server responds with `CONNECT` containing `clientId` and optional `gameState`
-   - Server sends `PLAYER_JOINED` with `playerId`
-   - Client stores `localPlayerId` and initializes prediction
+**Usage**: Clear screen and render everything from scratch.
 
-2. **Reconnection**:
-   - Client detects connection loss
-   - Attempts reconnection with exponential backoff
-   - On successful reconnect, sends `CONNECT` with `playerId`
-   - Server restores player state if playerId is valid
-   - Client receives `CONNECT` response with restored state
+**When Used**:
+- Initial render (`previousState === null`)
+- Too many changes (>10)
+- Error during incremental render
+- Modal state changes
 
-3. **Disconnection**:
-   - Manual: Client sends `DISCONNECT` and closes connection
-   - Automatic: Connection lost, triggers reconnection logic
-
-### Message Flow
-
-**Client → Server**:
-- `CONNECT`: Join game or reconnect
-- `MOVE`: Player movement command (dx, dy)
-- `DISCONNECT`: Leave game
-- `RESTART`: Request game restart
-- `SET_PLAYER_NAME`: Change player name
-- `PING`: Keep-alive
-
-**Server → Client**:
-- `CONNECT`: Connection acknowledgment with clientId and gameState
-- `STATE_UPDATE`: Periodic game state updates
-- `PLAYER_JOINED`: Notification that player joined (includes local playerId)
-- `PLAYER_LEFT`: Notification that player left
-- `ERROR`: Error message
-- `PONG`: Keep-alive response
-
-### Message Handling Pattern
-
-All messages follow this pattern:
-1. Server sends message as JSON string
-2. `WebSocketClient.handleMessage()` receives raw data
-3. `MessageHandler.parseMessage()` parses and validates
-4. Message type determines which callback to invoke
-5. Callback processes message and updates client state
-
----
-
-## State Management
-
-### State Structure
-
-**Server State** (received via `STATE_UPDATE`):
+**Implementation**:
 ```javascript
-{
-  board: {
-    width: number,
-    height: number,
-    grid: string[][]  // 2D array of base characters
-  },
-  players: [
-    {
-      playerId: string,
-      x: number,
-      y: number,
-      playerName: string
-    }
-  ],
-  entities: [
-    {
-      entityId: string,
-      x: number,
-      y: number,
-      glyph: string,
-      color: string,
-      solid: boolean,
-      zOrder: number,
-      entityType: string
-    }
-  ],
-  score: number
+renderer.clearScreen();
+renderer.renderTitle();
+renderer.renderBoard(board, players);
+renderer.renderStatusBar(score, position, height);
+```
+
+### 2. Incremental Render Pattern
+
+**Usage**: Update only changed cells.
+
+**When Used**:
+- Normal state updates
+- Small number of changes (≤10)
+
+**Implementation**:
+1. Compare states → get changes
+2. Filter local player from changes
+3. For each change:
+   - Clear old position (restore cell content)
+   - Draw at new position
+4. Update status bar if needed
+
+### 3. Cell Content Resolution
+
+**Concept**: Determine what to render at each position based on priority.
+
+**Priority Order**:
+1. **Player** (highest priority)
+2. **Entity** (if present, top-most visible)
+3. **Board Cell** (base character, lowest priority)
+
+**Implementation**: `getCellContent(x, y, board, players)`
+
+### 4. Cell Restoration Pattern
+
+**Concept**: When clearing a position, restore what was underneath.
+
+**Restoration Priority**:
+1. Check for entities at position
+2. Check for other players at position
+3. Fall back to board cell base character
+
+**Implementation**: `restoreCellContent(x, y, board, players, entities)`
+
+### 5. Cursor Positioning
+
+**Concept**: Use ANSI escape codes for precise terminal cursor control.
+
+**Usage**:
+- `cursorTo(x, y)`: Position cursor for cell updates
+- Calculate screen coordinates: `screenY = boardY + titleOffset + 1` (1-indexed)
+
+**Benefits**:
+- Efficient (only update changed cells)
+- No flicker
+- Precise control
+
+---
+
+## Input Handling Patterns
+
+### 1. Raw Mode Input
+
+**Concept**: Capture keyboard input immediately without line buffering.
+
+**Implementation**:
+- `process.stdin.setRawMode(true)`: Enable raw mode
+- `process.stdin.on('data', handler)`: Capture keypress events
+- Parse escape sequences for arrow keys
+
+**Benefits**:
+- Immediate response
+- No Enter key required
+- Supports special keys (arrows, ESC)
+
+### 2. Key Mapping Pattern
+
+**Concept**: Map keyboard input to game actions.
+
+**Mappings**:
+- Arrow keys: Movement (↑↓←→)
+- WASD: Movement (W/A/S/D)
+- Q/ESC: Quit
+
+**Implementation**: `InputHandler.handleInput(data)` parses key sequences
+
+### 3. Callback Registration Pattern
+
+**Concept**: Register callbacks for different input types.
+
+**Usage**:
+- `inputHandler.onMove(callback)`: Register movement handler
+- `inputHandler.onQuit(callback)`: Register quit handler
+
+**Benefits**:
+- Flexible (can change handlers)
+- Testable (can mock callbacks)
+- Decoupled (input handler doesn't know game logic)
+
+---
+
+## Error Handling and Resilience
+
+### 1. Try-Catch Blocks
+
+**Usage**: Wrap operations that might fail.
+
+**Examples**:
+- Message parsing
+- Rendering operations
+- Network operations
+
+**Pattern**:
+```javascript
+try {
+  // Operation
+} catch (error) {
+  logger.error('Operation failed:', error);
+  // Fallback or graceful degradation
 }
 ```
 
-### Client State Variables
+### 2. Graceful Degradation
 
-1. **`currentState`**: Latest state from server (source of truth)
-2. **`previousState`**: Previous state for change detection
-3. **`localPlayerPredictedPosition`**: Predicted position for local player (client-side prediction)
-4. **`localPlayerId`**: ID of the local player (set when `PLAYER_JOINED` received)
+**Concept**: Fall back to simpler behavior on error.
 
-### State Synchronization Flow
-
-1. **Server sends `STATE_UPDATE`**
-2. **Client receives and stores in `currentState`**
-3. **If `localPlayerId` not set**: Queue state update
-4. **If modal open**: Skip rendering, still update state
-5. **Compare `previousState` vs `currentState`**:
-   - If `previousState === null`: Full render
-   - Otherwise: Incremental render based on changes
-6. **Update `previousState`** after successful render
-
-### Edge Cases
-
-- **State update before `localPlayerId` set**: Queue state update, process when `localPlayerId` arrives
-- **Local player missing from state**: Likely server restart, reset state and rejoin
-- **Too many changes**: Fallback to full render (threshold: 10 changes)
-
----
-
-## Rendering System
-
-### Rendering Modes
-
-1. **Full Render** (`renderFull()`):
-   - Clears entire screen
-   - Renders title, board, status bar, modals
-   - Used for: initial render, fallback, error recovery
-
-2. **Incremental Render**:
-   - Updates only changed cells
-   - Used for: player movement, entity movement, entity spawn/despawn
-
-### Rendering Pipeline
-
-1. **Initial Render**:
-   - `previousState === null` → trigger full render
-   - Store state as `previousState`
-
-2. **Subsequent Renders**:
-   - Compare `previousState` vs `currentState`
-   - Calculate changes (players, entities)
-   - Apply incremental updates:
-     - Update moved players (excluding local player)
-     - Update moved/spawned/despawned entities
-     - Update status bar if changed
-   - Store new state as `previousState`
-
-3. **Fallback Conditions**:
-   - Too many changes (>10 changes) → full render
-   - Error during incremental update → full render
-   - Modal state change → full render
-
-### Cell Content Resolution
-
-The `getCellContent()` method determines what to render at each position:
-
-1. **Check for player** at position → render player character
-2. **Check for top-most visible entity** at position → render entity
-3. **Fall back to board cell** → render base character
-
-**Entity Visibility Rules**:
-- Players always render on top of entities
-- Entities with higher `zOrder` render on top
-- If same `zOrder`, stable sort by `entityId`
-
-### Color Management
-
-- Colors stored as hex strings (e.g., "FF0000" for red)
-- `getColorFunction()` converts hex to chalk color function
-- Default color: white (if hex is null/undefined)
-
----
-
-## Input Handling
-
-### Input Flow
-
-1. **Keypress Event**:
-   - `InputHandler` captures raw keypress
-   - Parses key name/sequence
-
-2. **Modal Check**:
-   - If modal open → route to `ModalInputHandler`
-   - Otherwise → route to game callbacks
-
-3. **Game Input Processing**:
-   - Movement keys (arrow/WASD) → movement callbacks
-   - Special keys (Q/ESC, R, H/?) → action callbacks
-
-### Movement Input Processing (Networked Mode)
-
-When movement key pressed:
-
-1. **Client-Side Prediction** (if enabled):
-   - Validate predicted position (not null/undefined)
-   - Check bounds
-   - Check wall collision
-   - Check entity collision
-   - Check other player collision
-   - If valid: update `localPlayerPredictedPosition`
-   - Render immediately at new position
-   - Clear old position
-
-2. **Send to Server**:
-   - Always send `MOVE` message to server
-   - Server validates and updates state
-   - Server sends `STATE_UPDATE` with authoritative position
-
-3. **Reconciliation**:
-   - Periodic reconciliation compares predicted vs server position
-   - If mismatch: correct to server position and re-render
-
-### Input Buffer Management
-
-- `clearInputBuffer()` drains stdin to prevent accumulation
-- Called after every keypress to prevent lag
-
----
-
-## Client-Side Prediction
-
-### Purpose
-
-Provide immediate visual feedback for local player movement without waiting for server round-trip.
-
-### Implementation
-
-**Prediction State**:
-- `localPlayerPredictedPosition`: `{ x, y }` or `{ x: null, y: null }`
-- Initialized from server position on first `STATE_UPDATE`
-- Updated immediately on movement input
-- Used for rendering local player
-
-**Prediction Flow**:
-
-1. **Movement Input**:
-   - Calculate new position (oldX + dx, oldY + dy)
-   - Validate bounds, walls, collisions
-   - If valid: update `localPlayerPredictedPosition`
-   - Render immediately
-
-2. **Server Response**:
-   - Server processes movement
-   - Server sends `STATE_UPDATE` with authoritative position
-   - Reconciliation compares predicted vs server
-
-3. **Reconciliation**:
-   - If mismatch: correct to server position
-   - Re-render at corrected position
-
-### Collision Detection (Client-Side)
-
-Before predicting movement, client checks:
-1. **Bounds**: New position within board bounds
-2. **Walls**: Cell at new position is not a wall
-3. **Solid Entities**: No solid entity at new position
-4. **Other Players**: No other player at new position
-
-If any check fails, movement is rejected (no prediction, no server message).
-
-### Edge Cases
-
-- **Null/Undefined Position**: Don't predict if position is null/undefined
-- **Out of Bounds**: Correct to server position immediately
-- **Server Rejection**: Server position doesn't change → reconciliation corrects
-
----
-
-## Reconciliation
-
-### Purpose
-
-Periodically synchronize predicted position with server authoritative position.
-
-### Implementation
-
-**Reconciliation Timer**:
-- Configurable interval (default: 5000ms)
-- Runs continuously while prediction enabled
-- Compares `localPlayerPredictedPosition` vs server position
-
-**Reconciliation Process**:
-
-1. **Check Prerequisites**:
-   - `localPlayerId` must be set
-   - Predicted position must not be null/undefined
-   - Server player must exist in state
-
-2. **Compare Positions**:
-   - If predicted !== server → discrepancy detected
-
-3. **Correction**:
-   - Update `localPlayerPredictedPosition` to server position
-   - Clear old predicted position (restore cell content)
-   - Draw player at server position
-   - Update status bar
-
-**Reconciliation Triggers**:
-- Timer-based: Every N milliseconds (configurable)
-- State update: On every `STATE_UPDATE` (optional, additional check)
-
-### Edge Cases
-
-- **Invalid Server Position**: Log warning, skip reconciliation
-- **Out of Bounds Predicted Position**: Correct immediately to server position
-- **Server Rejection**: Position doesn't change on server → reconciliation corrects
-
----
-
-## Incremental Rendering
-
-### Purpose
-
-Update only changed cells instead of re-rendering entire screen, reducing flicker and improving performance.
-
-### Change Detection
-
-Uses `compareStates()` to detect:
-- **Players**: moved, joined, left
-- **Entities**: moved, spawned, despawned, animated
-- **Score**: changed
-
-### Incremental Update Process
-
-1. **Compare States**:
-   - `compareStates(previousState, currentState)`
-   - Returns structured change object
-
-2. **Filter Local Player**:
-   - Exclude local player from server state rendering
-   - Local player uses predicted position (rendered separately)
-
-3. **Apply Updates**:
-   - **Moved Players**: Clear old position, draw at new position
-   - **Joined Players**: Draw at spawn position
-   - **Left Players**: Clear position, restore cell content
-   - **Moved Entities**: Clear old, draw at new
-   - **Spawned Entities**: Draw at spawn position
-   - **Despawned Entities**: Clear position, restore cell content
-   - **Animated Entities**: Update glyph at same position
-   - **Status Bar**: Update if score or position changed
-
-4. **Fallback Conditions**:
-   - Too many changes (>10) → full render
-   - Error during update → full render
-
-### Cell Content Restoration
-
-When clearing a position, must restore what was underneath:
-- Check for entities at position
-- Check for other players at position
-- Fall back to board cell base character
-
----
-
-## Modal System
-
-### Architecture
-
-**Components**:
-- `Modal`: Data structure (title, content, selection, scroll)
-- `ModalManager`: Manages modal stack and state
-- `ModalInputHandler`: Handles modal-specific input (arrow keys, Enter, Escape)
-- `ModalRenderer`: Renders modal with scrolling and selection highlighting
-
-### Modal Stack
-
-- Supports nested modals
-- When new modal opens, current modal pushed to stack
-- When modal closes, previous modal restored from stack
-- Scroll positions preserved in modal instances
-
-### Modal Rendering
-
-- **Background Dimming**: Optional dimming overlay over game board
-- **Modal Box**: Centered box with title and content
-- **Scrolling**: Long content scrolls within viewport
-- **Selection**: Highlighted option with configurable colors
-- **Shadow**: Optional shadow effect for depth
-
-### Modal Input
-
-When modal is open:
-- All input routed to `ModalInputHandler`
-- Arrow keys: Navigate options or scroll content
-- Enter: Execute selected option action
-- Escape: Close modal
-- Game input blocked while modal open
-
-### Modal Actions
-
-- Options can have `action` functions
-- Actions receive `{ modal }` parameter
-- Actions can close modal automatically (configurable `autoClose` flag)
-- Modal-level actions also supported
-
----
-
-## Reconnection Handling
-
-### Reconnection Strategy
-
-**Automatic Reconnection**:
-- Enabled by default (configurable)
-- Exponential backoff for retry delays
-- Maximum retry attempts (default: 5)
-- Preserves `playerId` across reconnections
-
-**Reconnection Flow**:
-
-1. **Connection Lost**:
-   - `WebSocketClient` detects close event
-   - Checks if manual disconnect → if yes, don't reconnect
-   - Checks reconnection config → if enabled, attempt reconnect
-
-2. **Reconnection Attempt**:
-   - Calculate delay (exponential backoff)
-   - Wait for delay
-   - Attempt connection
-   - On success: send `CONNECT` with `playerId`
-   - On failure: retry up to max attempts
-
-3. **State Restoration**:
-   - Server receives `CONNECT` with `playerId`
-   - Server checks if player exists → if yes, restore state
-   - Server sends `CONNECT` response with `gameState`
-   - Client receives state and reinitializes prediction
-
-### Reconnection State Management
-
-**On Disconnect**:
-- Reset `localPlayerPredictedPosition` to null
-- Clear reconciliation timer
-- Clear queued state update
-- Set `running = false`
-
-**On Reconnect**:
-- Send `CONNECT` with `playerId` (if reconnecting)
-- Receive `CONNECT` response with `gameState`
-- Reinitialize `localPlayerPredictedPosition` from server
-- Restart reconciliation timer
-- Resume game loop
-
-### Server Restart Detection
-
-- Server sends `CONNECT` with `isReconnection: false` even if client had `playerId`
-- Client detects this and triggers `onServerRestart` callback
-- Client resets all state:
-  - `previousState = null`
-  - `localPlayerPredictedPosition = { x: null, y: null }`
-  - `localPlayerId = null`
-  - Clear reconciliation timer
-  - Reset modal manager
-- Client sends new `CONNECT` (without playerId) to rejoin as new player
-
----
-
-## Client-Server Interaction
-
-### Connection Establishment
-
-1. **Client Initiates**:
-   - Creates `WebSocketClient` instance
-   - Calls `connect()` with server URL
-   - Waits for connection
-
-2. **Server Responds**:
-   - Accepts connection
-   - Assigns `clientId`
-   - Sends `CONNECT` with `clientId` and optional `gameState`
-
-3. **Client Joins Game**:
-   - Client sends `CONNECT` (without playerId for new player)
-   - Server creates player, assigns `playerId`
-   - Server sends `PLAYER_JOINED` with `playerId`
-   - Client stores `localPlayerId`
-
-### Movement Synchronization
-
-1. **Client Input**:
-   - User presses movement key
-   - Client predicts movement (if enabled)
-   - Client sends `MOVE` message to server
-
-2. **Server Processing**:
-   - Server validates movement
-   - Server updates player position
-   - Server broadcasts `STATE_UPDATE` to all clients
-
-3. **Client Receives Update**:
-   - Client receives `STATE_UPDATE`
-   - Client updates `currentState`
-   - Client reconciles predicted position
-   - Client renders changes (incremental or full)
-
-### State Updates
-
-**Update Frequency**:
-- Server sends `STATE_UPDATE` periodically
-- Client processes updates asynchronously
-- Client queues updates if `localPlayerId` not set
-
-**Update Processing**:
-1. Store in `currentState`
-2. Check if modal open → if yes, skip rendering
-3. Compare with `previousState`
-4. Apply incremental updates or full render
-5. Update `previousState`
-
-### Error Handling
-
-**Network Errors**:
-- Connection lost → trigger reconnection
+**Examples**:
+- Incremental render error → fall back to full render
 - Message parse error → log and ignore
-- Invalid message → log error
+- Network error → queue message for retry
 
-**State Errors**:
-- Invalid position → log warning, skip update
-- Missing player → trigger rejoin
-- Too many changes → fallback to full render
+### 3. Validation Before Action
 
----
+**Concept**: Validate inputs/state before performing operations.
 
-## Client-Client Interaction
+**Examples**:
+- `validateMovement()` before predicting
+- Check `localPlayerId` before reconciliation
+- Check `currentState` before rendering
 
-### Indirect Communication
+**Benefits**:
+- Prevents invalid operations
+- Clear error messages
+- Better debugging
 
-Clients do **not** communicate directly with each other. All communication goes through the server:
+### 4. Logging for Debugging
 
-```
-Client A → Server → Client B
-Client A → Server → Client C
-Client B → Server → Client A
-```
+**Concept**: Log important events and errors for troubleshooting.
 
-### Player Visibility
+**Usage**:
+- Debug logs for prediction/reconciliation
+- Error logs for failures
+- Info logs for connection events
 
-**Other Players**:
-- Clients receive all players in `STATE_UPDATE`
-- Clients render other players at positions from server state
-- Local player excluded from server state rendering (uses prediction)
-
-**Player Identification**:
-- Each player has unique `playerId`
-- Clients identify local player via `localPlayerId`
-- Other players rendered with same character/color (future: different colors per player)
-
-### Synchronization
-
-**State Consistency**:
-- All clients receive same `STATE_UPDATE` messages
-- All clients render same board state
-- All clients see same entity positions
-- Local player position may differ temporarily (prediction) but reconciles
-
-**Collision Detection**:
-- Server is authoritative for collisions
-- Client predicts collisions (optimistic)
-- Server may reject movement → reconciliation corrects
+**Pattern**: Use appropriate log levels (debug, info, warn, error)
 
 ---
 
-## Patterns and Conventions
+## Configuration Management
 
-### Code Organization
+### 1. JSON Configuration File
 
-**File Structure**:
-- `src/modes/`: Mode handlers (local, networked)
-- `src/network/`: Network communication (WebSocket, messages)
-- `src/render/`: Rendering components
-- `src/input/`: Input handling
-- `src/ui/`: UI components (modals)
-- `src/game/`: Game logic (Board, Game, Cell)
-- `src/utils/`: Utility functions
-- `src/config/`: Configuration files
+**Concept**: Store configuration in JSON file.
 
-### Naming Conventions
+**File**: `config/clientConfig.json`
 
-- **Classes**: PascalCase (e.g., `WebSocketClient`, `InputHandler`)
-- **Functions**: camelCase (e.g., `renderFull`, `compareStates`)
-- **Constants**: UPPER_SNAKE_CASE (e.g., `PLAYER_CHAR`, `WALL_CHAR`)
-- **Files**: Match class/export name (e.g., `WebSocketClient.js`)
+**Structure**:
+```json
+{
+  "websocket": { "url": "ws://localhost:3000" },
+  "logging": { "level": "debug" },
+  "rendering": {
+    "playerGlyph": "☻",
+    "spaceGlyph": " ",
+    "wallGlyph": "#",
+    "playerColor": "00FF00"
+  },
+  "prediction": {
+    "enabled": true,
+    "reconciliationInterval": 5000
+  }
+}
+```
 
-### Error Handling
+### 2. Default Values Pattern
 
-- **Try-Catch Blocks**: Wrap async operations and rendering
-- **Graceful Degradation**: Fallback to full render on error
-- **Logging**: Use `clientLogger` for all errors and warnings
-- **State Recovery**: Reset state on unrecoverable errors
+**Concept**: Provide defaults if config file missing or incomplete.
 
-### Async/Await Patterns
+**Implementation**: `clientConfig.js` loads JSON or returns defaults
 
-- Use `async/await` with `try/catch` blocks
-- Follow patterns in `STANDARDS_AND_PROCESSES/async-await.md` for Array loops
-- Avoid blocking operations in main loop
+**Benefits**:
+- Works out of the box
+- Graceful handling of missing config
+- Easy to override
 
-### Configuration
+### 3. Configuration Access Pattern
 
-- **Client Config** (`src/config/clientConfig.js`):
-  - Logging settings
-  - Prediction settings
-  - WebSocket URL
-  - Reconnection settings
+**Concept**: Access config via imported module.
 
-- **Game Config** (`src/config/gameConfig.js`):
-  - Board dimensions
-  - Player initial position
-  - Renderer offsets
-  - Modal configuration
+**Usage**: `import clientConfig from '../config/clientConfig.js'`
 
-### Testing Patterns
+**Benefits**:
+- Single source of truth
+- Easy to mock in tests
+- Type-safe access (if using TypeScript)
 
-- Unit tests for individual components
-- Integration tests for full workflows
-- Mock WebSocket for network tests
-- Test both local and networked modes
+---
 
-### Performance Considerations
+## Code Organization Patterns
 
-- **Incremental Rendering**: Only update changed cells
-- **Change Detection**: O(n) complexity with Map lookups
-- **Prediction**: Immediate feedback without server round-trip
-- **Reconciliation**: Periodic, not on every update
-- **Fallback Threshold**: Full render if >10 changes
+### 1. Module-Based Organization
 
-### Future Enhancements
+**Structure**:
+```
+src/
+  index.js              # Entry point
+  modes/                # Game modes
+    networkedMode.js
+  network/              # Network layer
+    WebSocketClient.js
+    MessageHandler.js
+    MessageTypes.js
+  render/               # Rendering
+    Renderer.js
+  input/                # Input handling
+    InputHandler.js
+  game/                 # Game logic (shared)
+    Board.js
+    Game.js
+  utils/                # Utilities
+    logger.js
+    stateComparison.js
+    terminal.js
+  config/               # Configuration
+    clientConfig.js
+```
 
-Potential areas for improvement:
-- Different colors per player
-- Player name display
-- Entity animations
-- Board mutations (destructible walls)
-- More sophisticated prediction (interpolation, lag compensation)
-- Client-side entity prediction
-- Optimistic entity updates
+**Benefits**:
+- Clear separation by concern
+- Easy to find code
+- Scalable structure
+
+### 2. Naming Conventions
+
+**Classes**: PascalCase (`WebSocketClient`, `InputHandler`)
+**Functions**: camelCase (`renderFull`, `compareStates`)
+**Constants**: UPPER_SNAKE_CASE (in `MessageTypes.js`)
+**Files**: Match class/export name (`WebSocketClient.js`)
+
+**Benefits**:
+- Consistent codebase
+- Easy to understand
+- Follows JavaScript conventions
+
+### 3. Export Patterns
+
+**Default Exports**: Main class/function
+```javascript
+export default WebSocketClient;
+```
+
+**Named Exports**: Multiple exports from utility modules
+```javascript
+export { compareStates };
+export default compareStates;
+```
+
+**Benefits**:
+- Clear API
+- Flexible imports
+- Tree-shakeable
+
+### 4. Import Organization
+
+**Pattern**: Group imports by type
+```javascript
+// External dependencies
+import { WebSocket } from 'ws';
+import chalk from 'chalk';
+
+// Internal modules
+import WebSocketClient from '../network/WebSocketClient.js';
+import logger from '../utils/logger.js';
+```
+
+**Benefits**:
+- Easy to see dependencies
+- Clear organization
+- Easy to maintain
 
 ---
 
 ## Summary
 
-The client architecture is designed for:
-- **Responsiveness**: Client-side prediction provides immediate feedback
-- **Efficiency**: Incremental rendering minimizes screen updates
-- **Reliability**: Reconnection and error recovery ensure stability
-- **Modularity**: Clear separation of concerns for maintainability
-- **Extensibility**: Patterns support future enhancements
+The client architecture employs:
 
-The client maintains a local predicted state while synchronizing with the server's authoritative state, providing a smooth multiplayer experience with minimal latency perception.
+- **Modern JavaScript**: ES Modules, async/await, modern patterns
+- **Event-Driven Design**: WebSocket events, input callbacks, custom events
+- **Optimistic Updates**: Client-side prediction with reconciliation
+- **Efficient Rendering**: Incremental updates with full render fallback
+- **Resilient Communication**: Message queue, error handling, graceful degradation
+- **Configuration-Driven**: JSON config with sensible defaults
+- **Modular Structure**: Clear separation of concerns, testable components
+
+These patterns and technologies work together to provide a responsive, maintainable, and extensible client implementation for the multiplayer terminal game.
