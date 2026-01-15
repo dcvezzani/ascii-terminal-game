@@ -19,6 +19,15 @@
     "diagrams:interactions": "npm run diagrams:interactions:init && npm run diagrams:interactions:connection && npm run diagrams:interactions:movement && npm run diagrams:interactions:broadcast && npm run diagrams:interactions:disconnect",
     "diagrams:data-structures": "mmdc -i docs/development/specs/server-architecture_SPECS/server-architecture_data-structures.mmd -o docs/development/specs/server-architecture_SPECS/server-architecture_data-structures.svg -b white",
     "diagrams:all": "npm run diagrams:components && npm run diagrams:interactions && npm run diagrams:data-structures",
+    "diagrams:client:components": "mmdc -i docs/development/specs/client-architecture_SPECS/client-architecture_components.mmd -o docs/development/specs/client-architecture_SPECS/client-architecture_components.svg -b white",
+    "diagrams:client:init": "mmdc -i docs/development/specs/client-architecture_SPECS/client-architecture_interactions_1-initialization.mmd -o docs/development/specs/client-architecture_SPECS/client-architecture_interactions_1-initialization.svg -b white",
+    "diagrams:client:connection": "mmdc -i docs/development/specs/client-architecture_SPECS/client-architecture_interactions_2-connection.mmd -o docs/development/specs/client-architecture_SPECS/client-architecture_interactions_2-connection.svg -b white",
+    "diagrams:client:movement": "mmdc -i docs/development/specs/client-architecture_SPECS/client-architecture_interactions_3-movement-prediction.mmd -o docs/development/specs/client-architecture_SPECS/client-architecture_interactions_3-movement-prediction.svg -b white",
+    "diagrams:client:state": "mmdc -i docs/development/specs/client-architecture_SPECS/client-architecture_interactions_4-state-update.mmd -o docs/development/specs/client-architecture_SPECS/client-architecture_interactions_4-state-update.svg -b white",
+    "diagrams:client:rendering": "mmdc -i docs/development/specs/client-architecture_SPECS/client-architecture_interactions_5-rendering.mmd -o docs/development/specs/client-architecture_SPECS/client-architecture_interactions_5-rendering.svg -b white",
+    "diagrams:client:data": "mmdc -i docs/development/specs/client-architecture_SPECS/client-architecture_data-structures.mmd -o docs/development/specs/client-architecture_SPECS/client-architecture_data-structures.svg -b white",
+    "diagrams:client:interactions": "npm run diagrams:client:init && npm run diagrams:client:connection && npm run diagrams:client:movement && npm run diagrams:client:state && npm run diagrams:client:rendering",
+    "diagrams:client:all": "npm run diagrams:client:components && npm run diagrams:client:interactions && npm run diagrams:client:data",
     "diagrams:generate": "node scripts/generate-diagrams.js"
   },
   "keywords": [

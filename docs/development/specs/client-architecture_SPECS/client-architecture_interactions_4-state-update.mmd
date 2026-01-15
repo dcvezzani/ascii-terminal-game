@@ -1,0 +1,60 @@
+%% Client Architecture: State Update and Reconciliation Flow
+%% Sequence diagram showing server state update and reconciliation
+
+sequenceDiagram
+    participant Server as Game Server
+    participant WSClient as WebSocketClient
+    participant NetworkedMode as Networked Mode
+    participant MessageHandler as MessageHandler
+    participant StateComparison as StateComparison
+    participant Renderer as Renderer
+    
+    Note over Server,Renderer: State Update and Reconciliation Sequence
+    
+    loop Every 250ms (server broadcast)
+        Server->>WSClient: STATE_UPDATE message (JSON)
+        WSClient->>WSClient: Emit 'message' event
+        WSClient->>NetworkedMode: 'message' event (data)
+        
+        NetworkedMode->>MessageHandler: parseMessage(data)
+        MessageHandler-->>NetworkedMode: Parsed message object
+        
+        NetworkedMode->>NetworkedMode: previousState = currentState
+        NetworkedMode->>NetworkedMode: currentState = message.payload
+        
+        NetworkedMode->>NetworkedMode: reconcilePosition()
+        NetworkedMode->>NetworkedMode: Get server position for local player
+        NetworkedMode->>NetworkedMode: Compare with predicted position
+        
+        alt Positions match
+            Note over NetworkedMode: Prediction correct, no correction needed
+        else Positions differ
+            NetworkedMode->>NetworkedMode: Update prediction to match server
+            NetworkedMode->>NetworkedMode: localPlayerPredictedPosition = server position
+            Note over NetworkedMode: Correction applied
+        end
+        
+        NetworkedMode->>StateComparison: compareStates(previousState, currentState)
+        StateComparison->>StateComparison: Detect moved players
+        StateComparison->>StateComparison: Detect joined players
+        StateComparison->>StateComparison: Detect left players
+        StateComparison->>StateComparison: Detect score changes
+        StateComparison-->>NetworkedMode: Changes object
+        
+        NetworkedMode->>NetworkedMode: Filter local player from changes
+        
+        alt Too many changes (>10) or previousState is null
+            NetworkedMode->>Renderer: renderFull(board, players, score)
+            Renderer->>Renderer: Clear screen and render all
+        else Incremental render
+            NetworkedMode->>Renderer: renderIncremental(changes, board, players)
+            Renderer->>Renderer: Update only changed cells
+            loop For each changed player
+                Renderer->>Renderer: Clear old position
+                Renderer->>Renderer: Draw at new position
+            end
+        end
+        
+        NetworkedMode->>Renderer: renderStatusBar(score, position)
+        Renderer-->>NetworkedMode: Render complete
+    end

@@ -1,0 +1,106 @@
+%% Client Architecture Component Structure Diagram
+%% Generated from client-architecture_SPECS.md
+
+graph TB
+    %% Entry Point
+    EntryPoint["Entry Point\nsrc/index.js\n\nPurpose: Bootstrap and\nmode selection\n\nResponsibilities:\n• Mode selection\n• Logger configuration\n• Application startup"]
+    
+    %% Networked Mode
+    NetworkedMode["Networked Mode\nsrc/modes/networkedMode.js\n\nPurpose: Game mode\norchestration\n\nResponsibilities:\n• State management\n• Event coordination\n• Component orchestration\n• Prediction/reconciliation"]
+    
+    %% Network Layer
+    WebSocketClient["WebSocketClient\nsrc/network/WebSocketClient.js\n\nPurpose: WebSocket\ncommunication\n\nResponsibilities:\n• Connection management\n• Message queue\n• Event handling\n• Reconnection logic"]
+    
+    MessageHandler["MessageHandler\nsrc/network/MessageHandler.js\n\nPurpose: Message parsing\nand creation\n\nPattern: Utility/Helper\n\nFunctions:\n• parseMessage()\n• createMessage()"]
+    
+    MessageTypes["MessageTypes\nsrc/network/MessageTypes.js\n\nPurpose: Message type\nconstants\n\nTypes:\n• CONNECT\n• MOVE\n• STATE_UPDATE"]
+    
+    %% Render Layer
+    Renderer["Renderer\nsrc/render/Renderer.js\n\nPurpose: Terminal rendering\n\nResponsibilities:\n• Full render\n• Incremental render\n• Cell content resolution\n• Cursor positioning\n• Status bar rendering"]
+    
+    %% Input Layer
+    InputHandler["InputHandler\nsrc/input/InputHandler.js\n\nPurpose: Keyboard input\nhandling\n\nResponsibilities:\n• Raw mode input\n• Key mapping\n• Callback registration\n• Escape sequence parsing"]
+    
+    %% Game Logic (Shared)
+    Game["Game\nsrc/game/Game.js\n\nPurpose: Core game state\ncontainer\n\nShared with server"]
+    
+    Board["Board\nsrc/game/Board.js\n\nPurpose: Board representation\n\nShared with server"]
+    
+    %% Utilities
+    StateComparison["StateComparison\nsrc/utils/stateComparison.js\n\nPurpose: State change\ndetection\n\nFunctions:\n• compareStates()\n• detectChanges()"]
+    
+    Logger["Logger\nsrc/utils/logger.js\n\nPurpose: Structured logging\n\nPattern: Factory\n\nMode-based configuration"]
+    
+    Terminal["Terminal\nsrc/utils/terminal.js\n\nPurpose: Terminal utilities\n\nANSI escape code helpers"]
+    
+    %% Configuration
+    ClientConfig["ClientConfig\nconfig/clientConfig.js\n\nPurpose: Configuration\nmanagement\n\nSections:\n• websocket\n• logging\n• rendering\n• prediction"]
+    
+    %% External Dependencies
+    WS["WebSocket\n(ws library)\n\nExternal dependency"]
+    
+    Chalk["Chalk\n(chalk library)\n\nExternal dependency"]
+    
+    ANSIEscapes["ANSI Escapes\n(ansi-escapes library)\n\nExternal dependency"]
+    
+    Cursor["CLI Cursor\n(cli-cursor library)\n\nExternal dependency"]
+    
+    %% Relationships - Entry to Mode
+    EntryPoint -->|creates & starts| NetworkedMode
+    
+    %% Relationships - Networked Mode to Layers
+    NetworkedMode -->|uses| WebSocketClient
+    NetworkedMode -->|uses| Renderer
+    NetworkedMode -->|uses| InputHandler
+    NetworkedMode -->|uses| StateComparison
+    
+    %% Relationships - Network Layer
+    WebSocketClient -->|uses| MessageHandler
+    WebSocketClient -->|uses| MessageTypes
+    WebSocketClient -->|uses| WS
+    MessageHandler -->|uses| MessageTypes
+    
+    %% Relationships - Render Layer
+    Renderer -->|uses| Chalk
+    Renderer -->|uses| ANSIEscapes
+    Renderer -->|uses| Cursor
+    Renderer -->|uses| Terminal
+    
+    %% Relationships - Input Layer
+    InputHandler -->|uses| Terminal
+    
+    %% Relationships - Utilities
+    NetworkedMode -->|uses| Logger
+    WebSocketClient -->|uses| Logger
+    Renderer -->|uses| Logger
+    
+    %% Relationships - Configuration
+    EntryPoint -->|uses| ClientConfig
+    NetworkedMode -->|uses| ClientConfig
+    Renderer -->|uses| ClientConfig
+    WebSocketClient -->|uses| ClientConfig
+    
+    %% Relationships - Game Logic (Shared)
+    NetworkedMode -->|uses| Board
+    NetworkedMode -->|uses| Game
+    
+    %% Styling
+    classDef entryPoint fill:#e1f5ff,stroke:#01579b,stroke-width:3px
+    classDef mode fill:#fff3e0,stroke:#e65100,stroke-width:3px
+    classDef network fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
+    classDef render fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px
+    classDef input fill:#fce4ec,stroke:#880e4f,stroke-width:2px
+    classDef utility fill:#fff9c4,stroke:#f57f17,stroke-width:2px
+    classDef config fill:#e0f2f1,stroke:#00695c,stroke-width:2px
+    classDef external fill:#f5f5f5,stroke:#616161,stroke-width:2px,stroke-dasharray: 5 5
+    classDef shared fill:#e3f2fd,stroke:#0277bd,stroke-width:2px,stroke-dasharray: 3 3
+    
+    class EntryPoint entryPoint
+    class NetworkedMode mode
+    class WebSocketClient,MessageHandler,MessageTypes network
+    class Renderer render
+    class InputHandler input
+    class StateComparison,Logger,Terminal utility
+    class ClientConfig config
+    class WS,Chalk,ANSIEscapes,Cursor external
+    class Game,Board shared

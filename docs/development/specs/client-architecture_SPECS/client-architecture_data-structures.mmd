@@ -1,0 +1,167 @@
+%% Client Architecture Data Structures Diagram
+%% Shows internal data organization and relationships
+
+classDiagram
+    %% Networked Mode
+    class NetworkedMode {
+        -currentState: GameState
+        -previousState: GameState | null
+        -localPlayerId: string | null
+        -localPlayerPredictedPosition: Position
+        -wsClient: WebSocketClient
+        -renderer: Renderer
+        -inputHandler: InputHandler
+        -reconciliationTimer: Timer | null
+        +start() Promise
+        -handleConnect(message)
+        -handleStateUpdate(message)
+        -handleMove(dx, dy)
+        -validateMovement(dx, dy) boolean
+        -reconcilePosition()
+        -render()
+    }
+    
+    class GameState {
+        +board: BoardState
+        +players: Player[]
+        +score: number
+    }
+    
+    class BoardState {
+        +width: number
+        +height: number
+        +grid: string[][]
+    }
+    
+    class Player {
+        +playerId: string
+        +x: number
+        +y: number
+        +playerName: string
+    }
+    
+    class Position {
+        +x: number | null
+        +y: number | null
+    }
+    
+    %% WebSocket Client
+    class WebSocketClient {
+        -url: string
+        -ws: WebSocket | null
+        -messageQueue: Message[]
+        -reconnectAttempts: number
+        +connect() Promise
+        +send(message) boolean
+        +close()
+        -flushQueue()
+        -queueMessage(message)
+        +on(event, callback)
+    }
+    
+    class Message {
+        +type: string
+        +payload: object
+        +timestamp: number
+        +clientId?: string
+    }
+    
+    %% Renderer
+    class Renderer {
+        -playerGlyph: string
+        -spaceGlyph: string
+        -wallGlyph: string
+        -playerColor: Function
+        +renderFull(board, players, score)
+        +renderIncremental(changes, board, players)
+        +renderStatusBar(score, position, height)
+        +clearScreen()
+        -getCellContent(x, y, board, players) string
+        -restoreCellContent(x, y, board, players) string
+    }
+    
+    %% Input Handler
+    class InputHandler {
+        -moveCallbacks: Function[]
+        -quitCallbacks: Function[]
+        +onMove(callback)
+        +onQuit(callback)
+        +start()
+        +stop()
+        -handleInput(data)
+        -parseKeySequence(data) object
+    }
+    
+    %% State Comparison
+    class StateComparison {
+        +compareStates(previous, current) Changes
+        -detectPlayerChanges(previous, current) Changes
+        -detectScoreChange(previous, current) boolean
+    }
+    
+    class Changes {
+        +moved: PlayerChange[]
+        +joined: Player[]
+        +left: Player[]
+        +scoreChanged: boolean
+    }
+    
+    class PlayerChange {
+        +player: Player
+        +oldX: number
+        +oldY: number
+        +newX: number
+        +newY: number
+    }
+    
+    %% Configuration
+    class ClientConfig {
+        +websocket: WebSocketConfig
+        +logging: LoggingConfig
+        +rendering: RenderingConfig
+        +prediction: PredictionConfig
+    }
+    
+    class WebSocketConfig {
+        +url: string
+    }
+    
+    class RenderingConfig {
+        +playerGlyph: string
+        +spaceGlyph: string
+        +wallGlyph: string
+        +playerColor: string
+    }
+    
+    class PredictionConfig {
+        +enabled: boolean
+        +reconciliationInterval: number
+    }
+    
+    %% Relationships
+    NetworkedMode "1" *-- "1" GameState : currentState
+    NetworkedMode "1" *-- "0..1" GameState : previousState
+    NetworkedMode "1" *-- "1" Position : localPlayerPredictedPosition
+    NetworkedMode *-- WebSocketClient : uses
+    NetworkedMode *-- Renderer : uses
+    NetworkedMode *-- InputHandler : uses
+    NetworkedMode *-- StateComparison : uses
+    
+    GameState "1" *-- "1" BoardState : contains
+    GameState "1" *-- "*" Player : contains
+    
+    WebSocketClient "1" *-- "*" Message : queues
+    
+    StateComparison --> Changes : creates
+    Changes "1" *-- "*" PlayerChange : contains
+    
+    NetworkedMode --> ClientConfig : uses
+    ClientConfig "1" *-- "1" WebSocketConfig : contains
+    ClientConfig "1" *-- "1" RenderingConfig : contains
+    ClientConfig "1" *-- "1" PredictionConfig : contains
+    
+    %% Notes
+    note for NetworkedMode "Manages game state and\ncoordinates all components"
+    note for WebSocketClient "Handles connection and\nmessage queueing"
+    note for Renderer "Terminal rendering with\nfull and incremental modes"
+    note for StateComparison "Detects changes between\nstate snapshots"

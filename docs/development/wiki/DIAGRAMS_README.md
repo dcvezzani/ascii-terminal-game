@@ -1,12 +1,32 @@
 # Mermaid Diagram Generation
 
-This directory contains Mermaid (`.mmd`) diagram files that document the server architecture. These diagrams can be converted to SVG format for viewing in documentation or embedding in markdown files.
+This document describes the Mermaid (`.mmd`) diagram files that document the server and client architecture. These diagrams can be converted to SVG format for viewing in documentation or embedding in markdown files.
 
 ## Available Diagrams
 
+### Server Architecture Diagrams
+
+Located in `docs/development/specs/server-architecture_SPECS/`:
+
 1. **`server-architecture_components.mmd`** - Component structure diagram showing all 8 server components and their relationships
-2. **`server-architecture_interactions.mmd`** - Sequence diagrams showing component interactions (5 different flows)
-3. **`server-architecture_data-structures.mmd`** - Class diagram showing data structures and internal organization
+2. **`server-architecture_interactions_1-initialization.mmd`** - Server initialization sequence
+3. **`server-architecture_interactions_2-connection.mmd`** - Client connection flow
+4. **`server-architecture_interactions_3-movement.mmd`** - Player movement validation and execution
+5. **`server-architecture_interactions_4-broadcast.mmd`** - Periodic state broadcasting flow
+6. **`server-architecture_interactions_5-disconnect.mmd`** - Client disconnection and cleanup
+7. **`server-architecture_data-structures.mmd`** - Class diagram showing data structures and internal organization
+
+### Client Architecture Diagrams
+
+Located in `docs/development/specs/client-architecture_SPECS/`:
+
+1. **`client-architecture_components.mmd`** - Component structure diagram showing all client components and their relationships
+2. **`client-architecture_interactions_1-initialization.mmd`** - Client initialization and component setup
+3. **`client-architecture_interactions_2-connection.mmd`** - WebSocket connection and initial state flow
+4. **`client-architecture_interactions_3-movement-prediction.mmd`** - Movement input with client-side prediction
+5. **`client-architecture_interactions_4-state-update.mmd`** - State update and reconciliation flow
+6. **`client-architecture_interactions_5-rendering.mmd`** - Rendering flow (full vs incremental decision)
+7. **`client-architecture_data-structures.mmd`** - Class diagram showing state management and data structures
 
 ## Generating SVG Files
 
@@ -20,27 +40,81 @@ npm run diagrams:generate
 
 This script automatically finds all `.mmd` files in the project and converts them to `.svg` files.
 
-### Option 2: Generate Individual Diagrams
+**Generate specific directories:**
+```bash
+# Generate only server diagrams
+node scripts/generate-diagrams.js docs/development/specs/server-architecture_SPECS
 
-Generate specific diagrams:
+# Generate only client diagrams
+node scripts/generate-diagrams.js docs/development/specs/client-architecture_SPECS
+
+# Generate both server and client
+node scripts/generate-diagrams.js docs/development/specs/server-architecture_SPECS docs/development/specs/client-architecture_SPECS
+```
+
+### Option 2: Generate Server Diagrams
+
+Generate server architecture diagrams:
 
 ```bash
 # Component structure diagram
 npm run diagrams:components
 
-# Interaction sequence diagrams
+# All interaction sequence diagrams
 npm run diagrams:interactions
+
+# Individual interaction diagrams
+npm run diagrams:interactions:init
+npm run diagrams:interactions:connection
+npm run diagrams:interactions:movement
+npm run diagrams:interactions:broadcast
+npm run diagrams:interactions:disconnect
 
 # Data structures diagram
 npm run diagrams:data-structures
+
+# All server diagrams
+npm run diagrams:all
 ```
 
-### Option 3: Generate All Known Diagrams
+### Option 3: Generate Client Diagrams
 
-Generate all three known diagrams:
+Generate client architecture diagrams:
 
 ```bash
-npm run diagrams:all
+# Component structure diagram
+npm run diagrams:client:components
+
+# All interaction sequence diagrams
+npm run diagrams:client:interactions
+
+# Individual interaction diagrams
+npm run diagrams:client:init
+npm run diagrams:client:connection
+npm run diagrams:client:movement
+npm run diagrams:client:state
+npm run diagrams:client:rendering
+
+# Data structures diagram
+npm run diagrams:client:data
+
+# All client diagrams
+npm run diagrams:client:all
+```
+
+### Option 4: Generate Specific Directories
+
+Use the enhanced script to target specific directories:
+
+```bash
+# Show help
+node scripts/generate-diagrams.js --help
+
+# Generate diagrams in specific directory
+node scripts/generate-diagrams.js docs/development/specs/server-architecture_SPECS
+
+# Generate diagrams in multiple directories
+node scripts/generate-diagrams.js docs/development/specs/server-architecture_SPECS docs/development/specs/client-architecture_SPECS
 ```
 
 ## Manual Conversion
@@ -78,9 +152,13 @@ mmdc -i input.mmd -o output.svg -b white
 
 ## Adding New Diagrams
 
-1. Create a new `.mmd` file in this directory (or any directory)
+1. Create a new `.mmd` file in the appropriate directory:
+   - Server diagrams: `docs/development/specs/server-architecture_SPECS/`
+   - Client diagrams: `docs/development/specs/client-architecture_SPECS/`
+   - Or any other directory in the project
 2. Run `npm run diagrams:generate` to automatically convert it
-3. Or add a specific script to `package.json` if you want a named command
+3. Or use the directory-specific script: `node scripts/generate-diagrams.js <directory>`
+4. Optionally add a specific script to `package.json` if you want a named command
 
 ## Requirements
 
@@ -104,15 +182,35 @@ The Mermaid CLI uses Puppeteer internally, which requires Chromium. This is auto
 - Ensure output directory exists
 - Check file permissions
 
+### Directory Not Found
+- Ensure directory paths are relative to project root
+- Use `node scripts/generate-diagrams.js --help` to see usage
+- Check that directories exist before running
+
 ## Diagram Types Supported
 
 The Mermaid CLI supports all Mermaid diagram types:
-- Flowcharts
-- Sequence diagrams
-- Class diagrams
+- Flowcharts (component structure)
+- Sequence diagrams (interactions)
+- Class diagrams (data structures)
 - State diagrams
 - Entity relationship diagrams
 - Gantt charts
 - And more...
 
 See [Mermaid Documentation](https://mermaid.js.org/) for syntax reference.
+
+## Diagram Organization
+
+Diagrams are organized by architecture:
+
+- **Server Architecture**: `docs/development/specs/server-architecture_SPECS/`
+  - Components, interactions, and data structures for the game server
+  
+- **Client Architecture**: `docs/development/specs/client-architecture_SPECS/`
+  - Components, interactions, and data structures for the game client
+
+Each directory contains:
+- `.mmd` files (Mermaid source)
+- `.svg` files (generated diagrams)
+- `README.md` (architecture specification)

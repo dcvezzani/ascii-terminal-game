@@ -6,8 +6,8 @@
  */
 
 import { execSync } from 'child_process';
-import { readdirSync, statSync } from 'fs';
-import { join, dirname, extname, basename } from 'path';
+import { readdirSync, statSync, existsSync } from 'fs';
+import { join, dirname, extname, resolve } from 'path';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -63,12 +63,92 @@ function convertToSvg(mmdPath) {
 }
 
 /**
+ * Show usage information
+ */
+function showUsage() {
+  console.log('Usage: node generate-diagrams.js [directories...]');
+  console.log('');
+  console.log('Generate SVG files from Mermaid (.mmd) files.');
+  console.log('');
+  console.log('Arguments:');
+  console.log('  directories...  One or more directories to search (optional)');
+  console.log('                  If not provided, searches entire project');
+  console.log('');
+  console.log('Examples:');
+  console.log('  node generate-diagrams.js');
+  console.log('    # Search entire project');
+  console.log('');
+  console.log('  node generate-diagrams.js docs/development/specs/server-architecture_SPECS');
+  console.log('    # Search only in server architecture specs directory');
+  console.log('');
+  console.log('  node generate-diagrams.js docs/development/specs/server-architecture_SPECS docs/development/specs/client-architecture_SPECS');
+  console.log('    # Search in multiple directories');
+}
+
+/**
+ * Parse command-line arguments for directories
+ * @returns {string[]} Array of directory paths to search (empty = search all)
+ */
+function parseDirectories() {
+  const args = process.argv.slice(2);
+  
+  // Show help if requested
+  if (args.includes('--help') || args.includes('-h')) {
+    showUsage();
+    process.exit(0);
+  }
+  
+  if (args.length === 0) {
+    return []; // Empty array means search entire project
+  }
+  
+  return args.map(arg => {
+    // Resolve path relative to project root
+    const resolvedPath = resolve(projectRoot, arg);
+    
+    // Check if directory exists
+    if (!existsSync(resolvedPath)) {
+      console.error(`❌ Error: Directory does not exist: ${arg}`);
+      process.exit(1);
+    }
+    
+    const stat = statSync(resolvedPath);
+    if (!stat.isDirectory()) {
+      console.error(`❌ Error: Path is not a directory: ${arg}`);
+      process.exit(1);
+    }
+    
+    return resolvedPath;
+  });
+}
+
+/**
  * Main function
  */
 function main() {
-  console.log('🔍 Finding all Mermaid (.mmd) files...\n');
+  const searchDirectories = parseDirectories();
   
-  const mermaidFiles = findMermaidFiles(projectRoot);
+  if (searchDirectories.length === 0) {
+    console.log('🔍 Finding all Mermaid (.mmd) files in project...\n');
+  } else {
+    console.log('🔍 Finding Mermaid (.mmd) files in specified directories...\n');
+    searchDirectories.forEach(dir => {
+      const relativePath = dir.replace(projectRoot + '/', '');
+      console.log(`  📁 ${relativePath}`);
+    });
+    console.log();
+  }
+  
+  // Collect files from all search directories (or project root if none specified)
+  const searchPaths = searchDirectories.length > 0 
+    ? searchDirectories 
+    : [projectRoot];
+  
+  const mermaidFiles = [];
+  searchPaths.forEach(searchPath => {
+    const files = findMermaidFiles(searchPath);
+    mermaidFiles.push(...files);
+  });
 
   if (mermaidFiles.length === 0) {
     console.log('No .mmd files found.');
