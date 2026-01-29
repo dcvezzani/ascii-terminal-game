@@ -9,6 +9,15 @@ export class Board {
   }
 
   /**
+   * Initialize the board from a pre-decoded 2D grid (e.g. from JSON loader).
+   * Caller must ensure grid dimensions match this.width and this.height.
+   * @param {string[][]} grid - 2D array of characters (grid[y][x])
+   */
+  initializeFromGrid(grid) {
+    this.grid = grid.map(row => [...row]);
+  }
+
+  /**
    * Initialize the board with walls on perimeter and empty interior
    */
   initialize() {

@@ -134,4 +134,39 @@ describe('Board', () => {
       expect(serialized[19][19]).toBe('#'); // Bottom-right corner
     });
   });
+
+  describe('initializeFromGrid', () => {
+    it('sets grid so getCell returns character at each position', () => {
+      const board = new Board(2, 2);
+      const grid = [['#', ' '], [' ', '#']];
+      board.initializeFromGrid(grid);
+
+      expect(board.getCell(0, 0)).toBe('#');
+      expect(board.getCell(1, 0)).toBe(' ');
+      expect(board.getCell(0, 1)).toBe(' ');
+      expect(board.getCell(1, 1)).toBe('#');
+    });
+
+    it('isWall returns true only where grid has #', () => {
+      const board = new Board(2, 2);
+      const grid = [['#', ' '], [' ', '#']];
+      board.initializeFromGrid(grid);
+
+      expect(board.isWall(0, 0)).toBe(true);
+      expect(board.isWall(1, 0)).toBe(false);
+      expect(board.isWall(0, 1)).toBe(false);
+      expect(board.isWall(1, 1)).toBe(true);
+    });
+
+    it('serialize returns a copy of the grid with same dimensions and contents', () => {
+      const board = new Board(2, 2);
+      const grid = [['#', ' '], [' ', '#']];
+      board.initializeFromGrid(grid);
+
+      const serialized = board.serialize();
+      expect(serialized).toEqual([['#', ' '], [' ', '#']]);
+      expect(serialized).not.toBe(board.grid);
+      expect(serialized[0]).not.toBe(board.grid[0]);
+    });
+  });
 });
