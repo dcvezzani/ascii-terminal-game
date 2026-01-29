@@ -317,8 +317,8 @@ This gameplan breaks down the load-board-from-JSON enhancement into logical phas
 - [x] Phase 5: Default board and integration verification – complete
 - [x] All tests passing (`npm test`)
 - [x] No fallback to hard-coded board on load failure
-- [ ] Enhancement card status updated; card file renamed with `X_` prefix when done
-- [ ] Gameplan directory renamed with `X_` prefix when done (e.g. `X_load-board-from-json`)
+- [x] Enhancement card status updated; card file renamed with `X_` prefix
+- [x] Gameplan directory renamed with `X_` prefix (e.g. `X_load-board-from-json`)
 
 ---
 

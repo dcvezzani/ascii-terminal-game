@@ -228,6 +228,6 @@ export function loadBoardFromFiles(boardFilePath, dimensionsFilePath?) { ... }
 
 ## Related Documents
 
-- **Enhancement card:** `docs/development/cards/enhancements/ENHANCEMENT_load_board_from_json.md`
+- **Enhancement card:** `docs/development/cards/enhancements/X_ENHANCEMENT_load_board_from_json.md`
 - **Board implementation:** `src/game/Board.js`
 - **Example board:** `boards/my-board.json` (run-length encoded cells; dimensions from `boards/dimensions.json`)

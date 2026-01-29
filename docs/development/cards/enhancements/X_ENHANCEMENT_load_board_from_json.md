@@ -1,7 +1,7 @@
 # Enhancement Card: Load Game Board from JSON
 
 ## Status
-**READY FOR IMPLEMENTATION**
+**COMPLETE**
 
 ## Context
 
@@ -107,7 +107,7 @@ Rendering and game logic consume the board produced from JSON only; the hard-cod
 ## Documentation
 
 - **SPECS**: `docs/development/specs/load-board-from-json/load-board-from-json_SPECS.md` ✅ Created
-- **GAMEPLAN**: `docs/development/gameplans/load-board-from-json/load-board-from-json_GAMEPLAN.md` ✅ Created
+- **GAMEPLAN**: `docs/development/gameplans/X_load-board-from-json/load-board-from-json_GAMEPLAN.md` ✅ Complete
 
 ### Notes for SPECS (addressed in SPECS)
 
