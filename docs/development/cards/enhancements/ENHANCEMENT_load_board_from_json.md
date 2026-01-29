@@ -38,7 +38,7 @@ Rendering and game logic consume the board produced from JSON only; the hard-cod
 
 1. **JSON board format**: A defined schema for board JSON (run-length encoded cells; dimensions in separate config file, not in board JSON).
 2. **Board initialization**: Board can be created from a provided JSON input (object or parsed from file).
-3. **Backward compatibility**: The default/classic 20×20 perimeter-walls board is expressible and loadable via JSON.
+3. **Backward compatibility**: The default/classic board is expressible and loadable via JSON (dimensions from config; project default 60×25 for now).
 4. **No fallback to hard-coded board**: If the board file is missing or invalid (or no path/default under `./boards`), throw, report error, and stop the server — do not use hard-coded initialization.
 5. **Validation**: Validate JSON (structure, dimensions from config, allowed symbols). Handle errors by throwing, reporting, and stopping — no fallback (see Q5).
 6. **Compatibility**: Works with existing rendering and game logic (single-player and networked modes, as applicable).

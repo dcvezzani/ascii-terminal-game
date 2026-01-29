@@ -18,9 +18,9 @@ This specification defines loading the game board from JSON files instead of har
 ## Solution Summary
 
 1. **Board JSON:** Run-length encoded array of cell entries under `./boards`. Each entry: `{ "entity": 0|1|2 }` or `{ "entity": n, "repeat": m }` when run-length > 1 (omit `repeat` for a single cell). Row-major order.
-2. **Dimensions config:** Separate JSON file per board with `width` and `height`. Same base path as board file with `.config.json` suffix (e.g. `boards/my-board.json` → `boards/my-board.config.json`).
-3. **Loader:** Synchronous load of board file + config file, decode RLE to a 2D grid of characters, validate, then build a `Board` instance via `initializeFromGrid(grid)`.
-4. **Server:** Parse `--board path` (or use default `./boards/classic.json`). Load board and config; on any error, throw, log, and exit. Pass loaded `Board` into `Game` / `GameServer`. Existing `serializeState()` continues to send `board.width`, `board.height`, and `board.serialize()` to clients—no new message type.
+2. **Dimensions config:** A **single shared** JSON file, `boards/dimensions.json`, with `width` and `height`. All boards use these dimensions; every board layout must decode to exactly `width × height` cells.
+3. **Loader:** Synchronous load of board file + dimensions file, decode RLE to a 2D grid of characters, validate, then build a `Board` instance via `initializeFromGrid(grid)`.
+4. **Server:** Parse `--board path` (or use default `./boards/classic.json`). Dimensions are read from `boards/dimensions.json` (60×25 by default). Load board and dimensions; on any error, throw, log, and exit. Pass loaded `Board` into `Game` / `GameServer`. Existing `serializeState()` continues to send `board.width`, `board.height`, and `board.serialize()` to clients—no new message type.
 5. **Client:** In multiplayer, client only receives board layout via existing `STATE_UPDATE`; it does not load board files. Single-player/standalone mode is out of scope for this enhancement.
 6. **Rendering:** Entity `0` → space `' '`, `1` → `'#'`, `2` → `' '` (spawn, nothing visible). Board’s `getCell`/`serialize` and renderer stay compatible.
 7. **Errors:** No fallback to hard-coded board. Missing file, invalid JSON, invalid entity, or cell-count mismatch → throw, report error, stop server.
@@ -56,11 +56,9 @@ This specification defines loading the game board from JSON files instead of har
 ]
 ```
 
-### 2. Dimensions config JSON
+### 2. Dimensions config JSON (shared)
 
-- **Location:** Same directory as board file, same base name with `.config.json` suffix.
-  - Board file: `boards/my-board.json` → config file: `boards/my-board.config.json`.
-  - Board file: `boards/level1.json` → config file: `boards/level1.config.json`.
+- **Location:** Single file `boards/dimensions.json`. All boards use this file; there is no per-board dimensions file.
 - **Structure:** Single JSON object with `width` and `height`.
 
 **Schema:**
@@ -105,7 +103,7 @@ This specification defines loading the game board from JSON files instead of har
 - Validate total cell count: after decoding, number of cells must equal `width × height`; otherwise throw with a clear message.
 - Return an object suitable for building a Board, e.g. `{ width, height, grid }` where `grid` is `string[][]`.
 
-**Config file resolution:** Given board file path `boardPath` (e.g. `boards/my-board.json`), config path is the same path with extension replaced by `.config.json` (e.g. `boards/my-board.config.json`). No other naming convention is required for MVP.
+**Dimensions file:** Default path is `boards/dimensions.json`. The loader may accept an optional second parameter for the dimensions file path (e.g. for tests). At runtime the server uses the default.
 
 **Signature (example):**
 
@@ -113,10 +111,11 @@ This specification defines loading the game board from JSON files instead of har
 /**
  * Load and decode board from JSON files.
  * @param {string} boardFilePath - Path to board JSON (run-length encoded cells).
+ * @param {string} [dimensionsFilePath] - Path to dimensions JSON; defaults to boards/dimensions.json.
  * @returns {{ width: number, height: number, grid: string[][] }}
  * @throws {Error} If file missing, invalid JSON, invalid entity, or cell count mismatch.
  */
-export function loadBoardFromFiles(boardFilePath) { ... }
+export function loadBoardFromFiles(boardFilePath, dimensionsFilePath?) { ... }
 ```
 
 ### 2. Board class changes
@@ -145,7 +144,7 @@ export function loadBoardFromFiles(boardFilePath) { ... }
 **CLI:**
 - Parse `process.argv` for `--board <path>`.
 - If `--board` is provided, use that path as the board file path (relative to process cwd or resolve as appropriate).
-- If `--board` is not provided, use default path `./boards/classic.json`.
+- If `--board` is not provided, use default path `./boards/classic.json`. Dimensions for all boards come from `boards/dimensions.json` (60×25 by default).
 - No other board-selection mechanism (e.g. config file) is required for MVP.
 
 **Startup sequence:**
@@ -157,7 +156,7 @@ export function loadBoardFromFiles(boardFilePath) { ... }
 
 **Error handling:** Any of the following must cause throw + log + exit (no fallback):
 - Board file not found or unreadable.
-- Dimensions config file not found or unreadable.
+- Dimensions file not found or unreadable (default `boards/dimensions.json`).
 - Invalid JSON in either file.
 - Dimensions config missing `width` or `height`, or not numbers, or &lt; 1.
 - Invalid entity value (not 0, 1, or 2) in board JSON.
@@ -197,14 +196,14 @@ export function loadBoardFromFiles(boardFilePath) { ... }
 ## Testing Requirements
 
 - **Board loader:**
-  - Valid board + config: decoded grid has correct dimensions and character mapping (0→space, 1→#, 2→space).
+  - Valid board + dimensions: decoded grid has correct dimensions and character mapping (0→space, 1→#, 2→space).
   - Missing board file: throws (or exits); no fallback.
-  - Missing config file: throws (or exits).
+  - Missing dimensions file: throws (or exits).
   - Invalid JSON (syntax) in either file: throws with clear message.
   - Invalid entity value (e.g. 3, -1, "1"): throws and reports the invalid value.
   - Cell count mismatch (RLE decodes to more or fewer than width×height): throws with clear message.
   - Dimensions config missing width or height: throws.
-  - Config path resolution: correct .config.json path from board path.
+  - Default dimensions path: `boards/dimensions.json`; optional second parameter for tests.
 - **Board:**
   - `initializeFromGrid(grid)` sets grid correctly; `getCell`, `serialize`, `isWall` behave as before for the new grid.
 - **Server (integration):**
@@ -217,8 +216,8 @@ export function loadBoardFromFiles(boardFilePath) { ... }
 
 ## Success Criteria
 
-- Board layout and dimensions are read from JSON files under `./boards` (cells file + `.config.json` dimensions).
-- Server accepts `--board <path>` and uses default `./boards/classic.json` when omitted; fails to start if board or config is missing/invalid (no fallback to hard-coded board).
+- Board layout is read from JSON under `./boards`; dimensions are read from a single shared file `boards/dimensions.json`.
+- Server accepts `--board <path>` and uses default `./boards/classic.json` when omitted; dimensions come from `boards/dimensions.json` (60×25 by default). Fails to start if board or dimensions file is missing/invalid (no fallback to hard-coded board).
 - Only entity values 0, 1, 2 are allowed; invalid values cause throw and reported error.
 - Decoded grid is rectangular; total cells = width × height; otherwise loader throws.
 - Board API (`getCell`, `isWall`, `serialize`, dimensions) unchanged; existing rendering and `serializeState()` work with loaded boards.
@@ -231,4 +230,4 @@ export function loadBoardFromFiles(boardFilePath) { ... }
 
 - **Enhancement card:** `docs/development/cards/enhancements/ENHANCEMENT_load_board_from_json.md`
 - **Board implementation:** `src/game/Board.js`
-- **Example board:** `boards/my-board.json` (run-length encoded cells; dimensions in separate config per above)
+- **Example board:** `boards/my-board.json` (run-length encoded cells; dimensions from `boards/dimensions.json`)

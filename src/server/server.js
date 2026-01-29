@@ -6,19 +6,34 @@ import Game from '../game/Game.js';
 import MessageHandler from '../network/MessageHandler.js';
 import MessageTypes from '../network/MessageTypes.js';
 import logger from '../utils/logger.js';
+import { loadDimensionsFromFile } from '../board/boardLoader.js';
 
 /**
  * WebSocket Server class
  */
 export class Server {
-  constructor(port, boardWidthOrGame = 20, boardHeight = 20) {
+  constructor(port, boardWidthOrGame, boardHeight) {
     this.port = port;
     this.wss = null;
     this.connectionManager = new ConnectionManager();
+
+    // if the game is provided, use it
     if (boardWidthOrGame != null && typeof boardWidthOrGame.board !== 'undefined') {
       this.gameServer = new GameServer(boardWidthOrGame);
     } else {
-      this.gameServer = new GameServer(boardWidthOrGame, boardHeight);
+
+      // if the board width and height are provided, use them
+      let width = boardWidthOrGame;
+      let height = boardHeight;
+      if (width === undefined && height === undefined) {
+        const dims = loadDimensionsFromFile();
+        width = dims.width;
+        height = dims.height;
+      } else {
+        width = width ?? 60;
+        height = height ?? 25;
+      }
+      this.gameServer = new GameServer(width, height);
     }
     this.broadcastInterval = null;
     this.broadcastIntervalMs = 250; // 250ms = 4 updates per second

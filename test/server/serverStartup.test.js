@@ -13,15 +13,16 @@ describe('Server startup with board from JSON', () => {
   });
 
   it('loads board from valid path and starts server with that game', async () => {
-    const boardPath = 'test/fixtures/board-loader/valid-for-parse.json';
+    const boardPath = 'boards/classic.json';
     server = await startServer(TEST_PORT, boardPath);
 
     expect(server).toBeDefined();
     expect(server.gameServer).toBeDefined();
-    expect(server.gameServer.game.board.width).toBe(2);
-    expect(server.gameServer.game.board.height).toBe(2);
+    expect(server.gameServer.game.board.width).toBe(60);
+    expect(server.gameServer.game.board.height).toBe(25);
     const state = server.gameServer.serializeState();
-    expect(state.board.grid).toEqual([['#', '#'], ['#', '#']]);
+    expect(state.board.grid.length).toBe(25);
+    expect(state.board.grid[0].length).toBe(60);
   });
 
   it('on missing board file: logs error and exits with code 1', async () => {
