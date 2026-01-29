@@ -12,8 +12,8 @@ This gameplan breaks down the load-board-from-JSON enhancement into logical phas
 
 - ✅ **Phase 1: Board Loader Module** - COMPLETE
 - ✅ **Phase 2: Board.initializeFromGrid** - COMPLETE
-- ⏳ **Phase 3: Game / GameServer Accept Pre-built Board** - NOT STARTED
-- ⏳ **Phase 4: Server CLI and Startup Integration** - NOT STARTED
+- ✅ **Phase 3: Game / GameServer Accept Pre-built Board** - COMPLETE
+- ✅ **Phase 4: Server CLI and Startup Integration** - COMPLETE
 - ⏳ **Phase 5: Default Board and Integration Verification** - NOT STARTED
 
 ## Prerequisites
@@ -163,9 +163,9 @@ This gameplan breaks down the load-board-from-JSON enhancement into logical phas
 3. **Run tests** — pass.
 
 **Verification:**
-- [ ] Game constructor accepts optional third argument (Board)
-- [ ] Existing Game(dimensions) behavior unchanged
-- [ ] `npm test` passes
+- [x] Game constructor accepts optional third argument (Board)
+- [x] Existing Game(dimensions) behavior unchanged
+- [x] `npm test` passes
 
 **Commit:** e.g. `Enhancement: Game constructor accepts optional pre-built Board`
 
@@ -186,18 +186,18 @@ This gameplan breaks down the load-board-from-JSON enhancement into logical phas
 3. **Run tests** — pass.
 
 **Verification:**
-- [ ] GameServer and Server accept optional Game
-- [ ] Backward compat for (width, height) and (port, width, height)
-- [ ] `npm test` passes
+- [x] GameServer and Server accept optional Game
+- [x] Backward compat for (width, height) and (port, width, height)
+- [x] `npm test` passes
 
 **Commit:** e.g. `Enhancement: GameServer and Server accept optional Game instance`
 
 ---
 
 **Phase 3 Completion Checklist:**
-- [ ] Steps 3.1–3.2 completed
-- [ ] All game/server tests passing
-- [ ] No regressions
+- [x] Steps 3.1–3.2 completed
+- [x] All game/server tests passing
+- [x] No regressions
 
 ---
 
@@ -217,8 +217,8 @@ This gameplan breaks down the load-board-from-JSON enhancement into logical phas
 3. **Run tests** — pass.
 
 **Verification:**
-- [ ] CLI parsing returns correct path (explicit or default)
-- [ ] `npm test` passes
+- [x] CLI parsing returns correct path (explicit or default)
+- [x] `npm test` passes
 
 **Commit:** e.g. `Enhancement: Parse --board from server argv, default boards/classic.json`
 
@@ -241,19 +241,19 @@ This gameplan breaks down the load-board-from-JSON enhancement into logical phas
 3. **Run tests** — pass.
 
 **Verification:**
-- [ ] Server startup uses loader; on success creates Board + Game and starts with that Game
-- [ ] On loader throw: log and exit(1); no fallback to hard-coded board
-- [ ] `npm test` passes
+- [x] Server startup uses loader; on success creates Board + Game and starts with that Game
+- [x] On loader throw: log and exit(1); no fallback to hard-coded board
+- [x] `npm test` passes
 
 **Commit:** e.g. `Enhancement: Server startup loads board from JSON, exits on error`
 
 ---
 
 **Phase 4 Completion Checklist:**
-- [ ] Steps 4.1–4.2 completed
-- [ ] Server starts with loaded board when valid path given
-- [ ] Server exits on missing/invalid board (no fallback)
-- [ ] No regressions
+- [x] Steps 4.1–4.2 completed
+- [x] Server starts with loaded board when valid path given
+- [x] Server exits on missing/invalid board (no fallback)
+- [x] No regressions
 
 ---
 
