@@ -67,5 +67,42 @@ export function loadBoardFromFiles(boardFilePath) {
     throw new Error('Config width and height must be at least 1');
   }
 
-  return { width, height, boardArray };
+  const ENTITY_TO_CHAR = { 0: ' ', 1: '#', 2: ' ' };
+  const cells = [];
+
+  for (let i = 0; i < boardArray.length; i++) {
+    const entry = boardArray[i];
+    if (entry === null || typeof entry !== 'object') {
+      throw new Error(`Invalid board entry at index ${i}: must be object with entity`);
+    }
+    const entity = entry.entity;
+    if (entity !== 0 && entity !== 1 && entity !== 2) {
+      throw new Error(`Unsupported entity value: ${entity}. Only 0, 1, 2 are valid.`);
+    }
+    let repeat = 1;
+    if (entry.repeat !== undefined) {
+      repeat = entry.repeat;
+      if (typeof repeat !== 'number' || repeat < 1) {
+        throw new Error(`Invalid repeat value: ${repeat}. Must be at least 1.`);
+      }
+    }
+    const char = ENTITY_TO_CHAR[entity];
+    for (let r = 0; r < repeat; r++) {
+      cells.push(char);
+    }
+  }
+
+  const expectedCells = width * height;
+  if (cells.length !== expectedCells) {
+    throw new Error(
+      `Cell count mismatch: decoded ${cells.length} cells, but width×height is ${expectedCells}.`
+    );
+  }
+
+  const grid = [];
+  for (let y = 0; y < height; y++) {
+    grid.push(cells.slice(y * width, (y + 1) * width));
+  }
+
+  return { width, height, grid };
 }

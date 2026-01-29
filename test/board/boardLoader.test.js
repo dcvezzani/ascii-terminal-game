@@ -97,13 +97,78 @@ describe('boardLoader', () => {
       }
     });
 
-    it('returns object with width and height when board and config are valid', () => {
+    it('returns object with width, height and grid when board and config are valid', () => {
       const boardPath = 'test/fixtures/board-loader/valid-for-parse.json';
       const result = loadBoardFromFiles(boardPath);
       expect(result).toHaveProperty('width', 2);
       expect(result).toHaveProperty('height', 2);
-      expect(result).toHaveProperty('boardArray');
-      expect(Array.isArray(result.boardArray)).toBe(true);
+      expect(result).toHaveProperty('grid');
+      expect(result.grid).toEqual([['#', '#'], ['#', '#']]);
+    });
+  });
+
+  describe('loadBoardFromFiles - RLE decode and entity/cell count validation', () => {
+    it('returns { width, height, grid } with correct character mapping (0→space, 1→#, 2→space)', () => {
+      const boardPath = 'test/fixtures/board-loader/valid-mapping.json';
+      const result = loadBoardFromFiles(boardPath);
+      expect(result).toHaveProperty('width', 2);
+      expect(result).toHaveProperty('height', 2);
+      expect(result).toHaveProperty('grid');
+      expect(Array.isArray(result.grid)).toBe(true);
+      expect(result.grid.length).toBe(2);
+      expect(result.grid[0].length).toBe(2);
+      expect(result.grid[0][0]).toBe('#');  // entity 1
+      expect(result.grid[0][1]).toBe(' ');  // entity 0
+      expect(result.grid[1][0]).toBe(' '); // entity 2 (spawn)
+      expect(result.grid[1][1]).toBe(' ');  // entity 0
+    });
+
+    it('throws and reports invalid entity value (e.g. 3, -1)', () => {
+      const boardPath = 'test/fixtures/board-loader/invalid-entity.json';
+      expect(() => loadBoardFromFiles(boardPath)).toThrow();
+      try {
+        loadBoardFromFiles(boardPath);
+      } catch (err) {
+        expect(err.message).toMatch(/entity|invalid|3|unsupported/i);
+      }
+    });
+
+    it('throws when repeat is 0 or negative', () => {
+      const boardPath = 'test/fixtures/board-loader/invalid-repeat.json';
+      expect(() => loadBoardFromFiles(boardPath)).toThrow();
+      try {
+        loadBoardFromFiles(boardPath);
+      } catch (err) {
+        expect(err.message).toMatch(/repeat|cell|count/i);
+      }
+    });
+
+    it('throws when decoded cell count is less than width×height', () => {
+      const boardPath = 'test/fixtures/board-loader/cell-count-less.json';
+      expect(() => loadBoardFromFiles(boardPath)).toThrow();
+      try {
+        loadBoardFromFiles(boardPath);
+      } catch (err) {
+        expect(err.message).toMatch(/cell|count|dimension/i);
+      }
+    });
+
+    it('throws when decoded cell count is more than width×height', () => {
+      const boardPath = 'test/fixtures/board-loader/cell-count-more.json';
+      expect(() => loadBoardFromFiles(boardPath)).toThrow();
+      try {
+        loadBoardFromFiles(boardPath);
+      } catch (err) {
+        expect(err.message).toMatch(/cell|count|dimension/i);
+      }
+    });
+
+    it('decodes single-cell entry without repeat correctly', () => {
+      const boardPath = 'test/fixtures/board-loader/single-cell-no-repeat.json';
+      const result = loadBoardFromFiles(boardPath);
+      expect(result.grid).toEqual([[' ', '#']]);
+      expect(result.width).toBe(2);
+      expect(result.height).toBe(1);
     });
   });
 });
