@@ -10,7 +10,7 @@ This gameplan breaks down the load-board-from-JSON enhancement into logical phas
 
 ## Progress Summary
 
-- ⏳ **Phase 1: Board Loader Module** - NOT STARTED
+- ✅ **Phase 1: Board Loader Module** - COMPLETE
 - ⏳ **Phase 2: Board.initializeFromGrid** - NOT STARTED
 - ⏳ **Phase 3: Game / GameServer Accept Pre-built Board** - NOT STARTED
 - ⏳ **Phase 4: Server CLI and Startup Integration** - NOT STARTED
@@ -45,9 +45,9 @@ This gameplan breaks down the load-board-from-JSON enhancement into logical phas
 4. **Run tests** — expect pass for config path and missing-file cases.
 
 **Verification:**
-- [ ] `boardLoader.js` created with `getConfigPath` and `loadBoardFromFiles`
-- [ ] Test file created; tests for config path and missing files
-- [ ] `npm test` passes
+- [x] `boardLoader.js` created with `getConfigPath` and `loadBoardFromFiles`
+- [x] Test file created; tests for config path and missing files
+- [x] `npm test` passes
 
 **Commit:** e.g. `Enhancement: Add board loader module (config path, file read, missing file throws)`
 
@@ -70,9 +70,9 @@ This gameplan breaks down the load-board-from-JSON enhancement into logical phas
 3. **Run tests** — pass.
 
 **Verification:**
-- [ ] JSON parse and config validation in loader
-- [ ] Tests for invalid JSON and invalid/missing width/height
-- [ ] `npm test` passes
+- [x] JSON parse and config validation in loader
+- [x] Tests for invalid JSON and invalid/missing width/height
+- [x] `npm test` passes
 
 **Commit:** e.g. `Enhancement: Board loader parse JSON and validate dimensions config`
 
@@ -99,18 +99,18 @@ This gameplan breaks down the load-board-from-JSON enhancement into logical phas
 3. **Run tests** — pass.
 
 **Verification:**
-- [ ] RLE decode and entity/cell-count validation in loader
-- [ ] Tests cover valid decode, invalid entity, invalid repeat, cell count mismatch
-- [ ] `npm test` passes
+- [x] RLE decode and entity/cell-count validation in loader
+- [x] Tests cover valid decode, invalid entity, invalid repeat, cell count mismatch
+- [x] `npm test` passes
 
 **Commit:** e.g. `Enhancement: Board loader RLE decode and validation (entity 0/1/2, cell count)`
 
 ---
 
 **Phase 1 Completion Checklist:**
-- [ ] All steps 1.1–1.3 completed
-- [ ] All loader tests passing
-- [ ] No regressions in existing tests
+- [x] All steps 1.1–1.3 completed
+- [x] All loader tests passing
+- [x] No regressions in existing tests
 
 ---
 
