@@ -1,6 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { WebSocketServer } from 'ws';
 import Server from '../../src/server/server.js';
+import Game from '../../src/game/Game.js';
+import Board from '../../src/game/Board.js';
 import MessageTypes from '../../src/network/MessageTypes.js';
 
 describe('Server', () => {
@@ -24,6 +26,18 @@ describe('Server', () => {
 
     it('should have connectionManager', () => {
       expect(server.connectionManager).toBeDefined();
+    });
+
+    it('should accept optional Game instance and pass to GameServer', () => {
+      const board = new Board(4, 4);
+      board.initializeFromGrid([['#', '#', '#', '#'], ['#', ' ', ' ', '#'], ['#', ' ', ' ', '#'], ['#', '#', '#', '#']]);
+      const game = new Game(4, 4, board);
+      const s = new Server(TEST_PORT + 100, game);
+
+      expect(s.gameServer.game).toBe(game);
+      expect(s.gameServer.game.board.width).toBe(4);
+      expect(s.gameServer.serializeState().board.width).toBe(4);
+      expect(s.gameServer.serializeState().board.height).toBe(4);
     });
   });
 

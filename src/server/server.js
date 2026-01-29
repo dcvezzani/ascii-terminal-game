@@ -2,6 +2,7 @@ import { WebSocketServer } from 'ws';
 import { randomUUID } from 'crypto';
 import ConnectionManager from './ConnectionManager.js';
 import GameServer from './GameServer.js';
+import Game from '../game/Game.js';
 import MessageHandler from '../network/MessageHandler.js';
 import MessageTypes from '../network/MessageTypes.js';
 import logger from '../utils/logger.js';
@@ -10,11 +11,15 @@ import logger from '../utils/logger.js';
  * WebSocket Server class
  */
 export class Server {
-  constructor(port, boardWidth = 20, boardHeight = 20) {
+  constructor(port, boardWidthOrGame = 20, boardHeight = 20) {
     this.port = port;
     this.wss = null;
     this.connectionManager = new ConnectionManager();
-    this.gameServer = new GameServer(boardWidth, boardHeight);
+    if (boardWidthOrGame != null && typeof boardWidthOrGame.board !== 'undefined') {
+      this.gameServer = new GameServer(boardWidthOrGame);
+    } else {
+      this.gameServer = new GameServer(boardWidthOrGame, boardHeight);
+    }
     this.broadcastInterval = null;
     this.broadcastIntervalMs = 250; // 250ms = 4 updates per second
   }

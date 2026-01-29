@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import GameServer from '../../src/server/GameServer.js';
 import Game from '../../src/game/Game.js';
+import Board from '../../src/game/Board.js';
 
 describe('GameServer', () => {
   let gameServer;
@@ -20,6 +21,18 @@ describe('GameServer', () => {
     it('should initialize players map', () => {
       expect(gameServer.players).toBeDefined();
       expect(gameServer.players instanceof Map).toBe(true);
+    });
+
+    it('should accept optional Game instance and use that game', () => {
+      const board = new Board(5, 5);
+      board.initializeFromGrid([['#', '#', '#', '#', '#'], ['#', ' ', ' ', ' ', '#'], ['#', ' ', ' ', ' ', '#'], ['#', ' ', ' ', ' ', '#'], ['#', '#', '#', '#', '#']]);
+      const game = new Game(5, 5, board);
+      const gs = new GameServer(game);
+
+      expect(gs.game).toBe(game);
+      expect(gs.game.board.width).toBe(5);
+      expect(gs.game.board.height).toBe(5);
+      expect(gs.game.board.getCell(0, 0)).toBe('#');
     });
   });
 

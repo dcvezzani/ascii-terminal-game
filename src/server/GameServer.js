@@ -5,8 +5,14 @@ import logger from '../utils/logger.js';
  * GameServer class for managing game state and players
  */
 export class GameServer {
-  constructor(boardWidth, boardHeight) {
-    this.game = new Game(boardWidth, boardHeight);
+  constructor(boardWidthOrGame, boardHeight) {
+
+    // if the game is provided, use it
+    if (arguments.length === 1 && boardWidthOrGame != null && typeof boardWidthOrGame.board !== 'undefined') {
+      this.game = boardWidthOrGame;
+    } else {
+      this.game = new Game(boardWidthOrGame, boardHeight);
+    }
     this.players = new Map(); // playerId -> player object
   }
 
