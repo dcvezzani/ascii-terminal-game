@@ -11,7 +11,7 @@ This gameplan breaks down the load-board-from-JSON enhancement into logical phas
 ## Progress Summary
 
 - ✅ **Phase 1: Board Loader Module** - COMPLETE
-- ⏳ **Phase 2: Board.initializeFromGrid** - NOT STARTED
+- ✅ **Phase 2: Board.initializeFromGrid** - COMPLETE
 - ⏳ **Phase 3: Game / GameServer Accept Pre-built Board** - NOT STARTED
 - ⏳ **Phase 4: Server CLI and Startup Integration** - NOT STARTED
 - ⏳ **Phase 5: Default Board and Integration Verification** - NOT STARTED
@@ -132,18 +132,18 @@ This gameplan breaks down the load-board-from-JSON enhancement into logical phas
 3. **Run tests** — pass.
 
 **Verification:**
-- [ ] `Board.initializeFromGrid(grid)` implemented
-- [ ] Tests for getCell, isWall, serialize after initializeFromGrid
-- [ ] `npm test` passes
+- [x] `Board.initializeFromGrid(grid)` implemented
+- [x] Tests for getCell, isWall, serialize after initializeFromGrid
+- [x] `npm test` passes
 
 **Commit:** e.g. `Enhancement: Board.initializeFromGrid(grid) for JSON-loaded boards`
 
 ---
 
 **Phase 2 Completion Checklist:**
-- [ ] Step 2.1 completed
-- [ ] All Board tests passing
-- [ ] No regressions
+- [x] Step 2.1 completed
+- [x] All Board tests passing
+- [x] No regressions
 
 ---
 
