@@ -29,6 +29,43 @@ export function loadBoardFromFiles(boardFilePath) {
     throw new Error(`Config file not found: ${getConfigPath(boardFilePath)}`);
   }
 
-  readFileSync(resolvedBoardPath, 'utf-8');
-  readFileSync(configPath, 'utf-8');
+  const boardContent = readFileSync(resolvedBoardPath, 'utf-8');
+  const configContent = readFileSync(configPath, 'utf-8');
+
+  let boardArray;
+  try {
+    boardArray = JSON.parse(boardContent);
+  } catch (err) {
+    throw new Error(`Invalid JSON in board file: ${err.message}`);
+  }
+  if (!Array.isArray(boardArray)) {
+    throw new Error('Board file must contain a JSON array');
+  }
+
+  let config;
+  try {
+    config = JSON.parse(configContent);
+  } catch (err) {
+    throw new Error(`Invalid JSON in config file: ${err.message}`);
+  }
+  if (config === null || typeof config !== 'object') {
+    throw new Error('Config file must contain a JSON object');
+  }
+
+  const width = config.width;
+  const height = config.height;
+  if (width === undefined) {
+    throw new Error('Config is missing width');
+  }
+  if (height === undefined) {
+    throw new Error('Config is missing height');
+  }
+  if (typeof width !== 'number' || typeof height !== 'number') {
+    throw new Error('Config width and height must be numbers');
+  }
+  if (width < 1 || height < 1) {
+    throw new Error('Config width and height must be at least 1');
+  }
+
+  return { width, height, boardArray };
 }
