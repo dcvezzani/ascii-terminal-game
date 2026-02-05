@@ -423,7 +423,7 @@ export async function networkedMode() {
       const serverPlayerBefore = currentState?.players?.find(p => p.playerId === localPlayerId);
       const serverPosBefore = serverPlayerBefore ? { x: serverPlayerBefore.x, y: serverPlayerBefore.y } : null;
       
-      currentState = message.payload;
+      currentState = message.payload; //dcv
       
       // Get server position after updating state
       const serverPlayerAfter = currentState.players?.find(p => p.playerId === localPlayerId);

@@ -7,6 +7,7 @@ import MessageHandler from '../network/MessageHandler.js';
 import MessageTypes from '../network/MessageTypes.js';
 import logger from '../utils/logger.js';
 import { loadDimensionsFromFile } from '../board/boardLoader.js';
+import createClientLogger from '../utils/clientLogger.js';
 
 /**
  * WebSocket Server class
@@ -142,7 +143,8 @@ export class Server {
         try {
           connection.ws.send(messageStr);
         } catch (error) {
-          logger.error(`Error broadcasting to ${connection.clientId}:`, error);
+          const log = connection.logger ?? logger;
+          log.error('Error broadcasting to client', error);
         }
       }
     });
@@ -156,8 +158,11 @@ export class Server {
     // Generate unique client ID
     const clientId = randomUUID();
 
-    // Add to connection manager
-    this.connectionManager.addConnection(clientId, ws);
+    // Create a dedicated logger for this client (writes to logs/clients/{clientId}.log)
+    const clientLogger = createClientLogger(clientId);
+
+    // Add to connection manager (store logger on connection for use in handlers)
+    this.connectionManager.addConnection(clientId, ws, { logger: clientLogger });
 
     // Don't send initial CONNECT message - wait for client to send CONNECT first
     // The client will send CONNECT, and we'll respond with full game state
@@ -174,11 +179,11 @@ export class Server {
 
     // Set up error handler
     ws.on('error', (error) => {
-      logger.error(`WebSocket error for client ${clientId}:`, error);
+      clientLogger.error('WebSocket error', error);
       this.onDisconnect(clientId);
     });
 
-    logger.info(`Client connected: ${clientId}`);
+    clientLogger.info('Client connected');
   }
 
   /**
@@ -187,12 +192,14 @@ export class Server {
    * @param {Buffer|string} data - Raw message data
    */
   handleMessage(clientId, data) {
+    const connection = this.connectionManager.getConnection(clientId);
+    const log = connection?.logger ?? logger;
+
     try {
       const message = MessageHandler.parseMessage(data.toString());
-      logger.debug(`Message from ${clientId}:`, message.type);
-      
+      log.debug('Message received', { type: message.type });
+
       // Update last activity
-      const connection = this.connectionManager.getConnection(clientId);
       if (connection) {
         connection.lastActivity = Date.now();
       }
@@ -201,13 +208,12 @@ export class Server {
       if (message.type === MessageTypes.CONNECT) {
         this.handleConnect(clientId, message);
       } else if (message.type === MessageTypes.MOVE) {
-        // logger.debug(`Received MOVE from ${clientId}:`, message.payload);
         this.handleMove(clientId, message);
       } else {
-        logger.warn(`Unknown message type: ${message.type}`);
+        log.warn('Unknown message type', { type: message.type });
       }
     } catch (error) {
-      logger.error(`Error handling message from ${clientId}:`, error);
+      log.error('Error handling message', error);
     }
   }
 
@@ -245,7 +251,8 @@ export class Server {
       connection.ws.send(JSON.stringify(response));
     }
 
-    logger.info(`Player joined: ${playerId} (${playerName})`);
+    const log = connection?.logger ?? logger;
+    log.info('Player joined', { playerId, playerName });
   }
 
   /**
@@ -254,9 +261,12 @@ export class Server {
    * @param {object} message - MOVE message
    */
   handleMove(clientId, message) {
+    const connection = this.connectionManager.getConnection(clientId);
+    const log = connection?.logger ?? logger;
+
     const playerId = this.connectionManager.getPlayerId(clientId);
     if (!playerId) {
-      logger.warn(`Cannot move: client ${clientId} has no playerId`);
+      log.warn('Cannot move: client has no playerId');
       return;
     }
 
@@ -264,12 +274,12 @@ export class Server {
 
     // Validate dx, dy are numbers and in range
     if (typeof dx !== 'number' || typeof dy !== 'number') {
-      logger.warn(`Invalid move: dx or dy is not a number`);
+      log.warn('Invalid move: dx or dy is not a number');
       return;
     }
 
     if (dx < -1 || dx > 1 || dy < -1 || dy > 1) {
-      logger.warn(`Invalid move: dx or dy out of range`);
+      log.warn('Invalid move: dx or dy out of range');
       return;
     }
 
@@ -283,14 +293,16 @@ export class Server {
    * @param {string} clientId - Client identifier
    */
   onDisconnect(clientId) {
-    logger.info(`Client disconnected: ${clientId}`);
-    
+    const connection = this.connectionManager.getConnection(clientId);
+    const log = connection?.logger ?? logger;
+    log.info('Client disconnected');
+
     // Remove player from game
     const playerId = this.connectionManager.getPlayerId(clientId);
     if (playerId) {
       this.gameServer.removePlayer(playerId);
     }
-    
+
     this.connectionManager.removeConnection(clientId);
   }
 }

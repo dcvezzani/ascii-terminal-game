@@ -11,11 +11,13 @@ export class ConnectionManager {
    * Add a connection
    * @param {string} clientId - Unique client identifier
    * @param {WebSocket} ws - WebSocket connection
+   * @param {object} [options] - Optional: logger (winston logger for this client)
    */
-  addConnection(clientId, ws) {
+  addConnection(clientId, ws, options = {}) {
     this.connections.set(clientId, {
       clientId,
       ws,
+      logger: options.logger ?? null,
       connectedAt: Date.now(),
       lastActivity: Date.now()
     });
