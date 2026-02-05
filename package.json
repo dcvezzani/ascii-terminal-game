@@ -7,6 +7,7 @@
   "scripts": {
     "start": "node src/index.js",
     "server": "node src/server/index.js",
+    "server:debug": "node --inspect-brk src/server/index.js",
     "client": "node src/index.js",
     "test": "vitest run",
     "test:watch": "vitest",
