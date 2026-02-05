@@ -40,6 +40,31 @@ export class Server {
     this.broadcastIntervalMs = 250; // 250ms = 4 updates per second
   }
 
+  log(clientId) {
+    const connectionLog = logger;
+    const connection = this.connectionManager.getConnection(clientId);
+    const clientLog = connection?.logger;
+
+    return {
+      info: (message, ...args) => {
+        connectionLog.info(message, ...args);
+        clientLog.info(message, ...args);
+      },
+      error: (message, ...args) => {
+        connectionLog.error(message, ...args);
+        clientLog.error(message, ...args);
+      },
+      warn: (message, ...args) => {
+        connectionLog.warn(message, ...args);
+        clientLog.warn(message, ...args);
+      },
+      debug: (message, ...args) => {
+        connectionLog.debug(message, ...args);
+        clientLog.debug(message, ...args);
+      }
+    }
+  }
+
   /**
    * Start the WebSocket server
    */
@@ -143,7 +168,7 @@ export class Server {
         try {
           connection.ws.send(messageStr);
         } catch (error) {
-          const log = connection.logger ?? logger;
+          const log = this.log(connection.clientId);
           log.error('Error broadcasting to client', error);
         }
       }
@@ -159,7 +184,7 @@ export class Server {
     const clientId = randomUUID();
 
     // Create a dedicated logger for this client (writes to logs/clients/{clientId}.log)
-    const clientLogger = createClientLogger(clientId);
+    const clientLogger = createClientLogger(clientId, { level: 'debug' });
 
     // Add to connection manager (store logger on connection for use in handlers)
     this.connectionManager.addConnection(clientId, ws, { logger: clientLogger });
@@ -179,11 +204,11 @@ export class Server {
 
     // Set up error handler
     ws.on('error', (error) => {
-      clientLogger.error('WebSocket error', error);
+      this.log.error('WebSocket error', error);
       this.onDisconnect(clientId);
     });
 
-    clientLogger.info('Client connected');
+    this.log(clientId).info('Client connected');
   }
 
   /**
@@ -193,7 +218,7 @@ export class Server {
    */
   handleMessage(clientId, data) {
     const connection = this.connectionManager.getConnection(clientId);
-    const log = connection?.logger ?? logger;
+    const log = this.log(clientId);
 
     try {
       const message = MessageHandler.parseMessage(data.toString());
@@ -251,8 +276,7 @@ export class Server {
       connection.ws.send(JSON.stringify(response));
     }
 
-    const log = connection?.logger ?? logger;
-    log.info('Player joined', { playerId, playerName });
+    this.log(clientId).info('Player joined', { playerId, playerName });
   }
 
   /**
@@ -261,8 +285,7 @@ export class Server {
    * @param {object} message - MOVE message
    */
   handleMove(clientId, message) {
-    const connection = this.connectionManager.getConnection(clientId);
-    const log = connection?.logger ?? logger;
+    const log = this.log(clientId);
 
     const playerId = this.connectionManager.getPlayerId(clientId);
     if (!playerId) {
@@ -293,8 +316,7 @@ export class Server {
    * @param {string} clientId - Client identifier
    */
   onDisconnect(clientId) {
-    const connection = this.connectionManager.getConnection(clientId);
-    const log = connection?.logger ?? logger;
+    const log = this.log(clientId);
     log.info('Client disconnected');
 
     // Remove player from game
