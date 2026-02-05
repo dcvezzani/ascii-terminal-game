@@ -9,6 +9,7 @@
     "server": "node src/server/index.js",
     "server:debug": "node --inspect-brk src/server/index.js",
     "client": "node src/index.js",
+    "map:deserialize": "node scripts/deserializeBoard.js",
     "test": "vitest run",
     "test:watch": "vitest",
     "diagrams:components": "mmdc -i docs/development/specs/server-architecture_SPECS/server-architecture_components.mmd -o docs/development/specs/server-architecture_SPECS/server-architecture_components.svg -b white",
