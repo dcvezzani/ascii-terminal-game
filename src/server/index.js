@@ -49,6 +49,8 @@ async function startServer(port, boardPath) {
   try {
     await server.start();
     logger.info(`Server started on port ${serverPort}`);
+    
+    // Returning the server so that it may be mocked for tests
     return server;
   } catch (error) {
     logger.error('Failed to start server:', error);
