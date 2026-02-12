@@ -21,7 +21,7 @@ logger.level = serverConfig.logging.level;
  */
 async function startServer(port, boardPath) {
   const serverPort = port || serverConfig.websocket.port;
-  const path = boardPath ?? parseBoardPath(process.argv);
+  const path = boardPath ?? parseBoardPath(process.argv, serverConfig.board?.defaultPath);
 
   let boardData;
   try {
@@ -32,9 +32,8 @@ async function startServer(port, boardPath) {
     return null;
   }
 
-  const board = new Board(boardData.width, boardData.height);
-  board.initializeFromGrid(boardData.grid);
-  const game = new Game(boardData.width, boardData.height, board);
+  const board = new Board(boardData);
+  const game = new Game(board);
   const server = new Server(serverPort, game);
 
   // Set up graceful shutdown

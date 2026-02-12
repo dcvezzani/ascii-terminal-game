@@ -29,9 +29,9 @@ describe('Server', () => {
     });
 
     it('should accept optional Game instance and pass to GameServer', () => {
-      const board = new Board(4, 4);
+      const board = new Board({ width: 4, height: 4 });
       board.initializeFromGrid([['#', '#', '#', '#'], ['#', ' ', ' ', '#'], ['#', ' ', ' ', '#'], ['#', '#', '#', '#']]);
-      const game = new Game(4, 4, board);
+      const game = new Game(board);
       const s = new Server(TEST_PORT + 100, game);
 
       expect(s.gameServer.game).toBe(game);

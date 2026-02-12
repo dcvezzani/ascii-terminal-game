@@ -4,6 +4,9 @@ import { resolve } from 'path';
 /** Default path to the shared board dimensions config (used by all boards). */
 export const DEFAULT_DIMENSIONS_PATH = 'boards/dimensions.json';
 
+/** Default board layout file when no board is provided (e.g. to Game constructor). */
+export const DEFAULT_BOARD_PATH = 'boards/classic.json';
+
 /**
  * Load width and height from the dimensions JSON file (no board layout).
  * @param {string} [dimensionsFilePath] - Path to dimensions JSON; defaults to DEFAULT_DIMENSIONS_PATH

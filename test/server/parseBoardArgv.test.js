@@ -9,7 +9,12 @@ describe('parseBoardPath', () => {
 
   it('returns default when --board is not provided', () => {
     const argv = ['node', 'index.js'];
-    expect(parseBoardPath(argv)).toBe('./boards/classic.json');
+    expect(parseBoardPath(argv)).toBe('boards/classic.json');
+  });
+
+  it('returns config default when --board is not provided and second arg given', () => {
+    const argv = ['node', 'index.js'];
+    expect(parseBoardPath(argv, 'boards/custom.json')).toBe('boards/custom.json');
   });
 
   it('returns path for --board with nested path', () => {

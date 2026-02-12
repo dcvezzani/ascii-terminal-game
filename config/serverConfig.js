@@ -21,6 +21,9 @@ try {
     },
     logging: {
       level: 'info'
+    },
+    board: {
+      defaultPath: 'boards/classic.json'
     }
   };
 }

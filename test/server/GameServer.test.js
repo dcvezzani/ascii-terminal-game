@@ -7,11 +7,21 @@ describe('GameServer', () => {
   let gameServer;
 
   beforeEach(() => {
-    gameServer = new GameServer(20, 20);
+    const board = new Board({ width: 20, height: 20 });
+    board.initialize();
+    gameServer = new GameServer(new Game(board));
   });
 
   describe('constructor', () => {
-    it('should create GameServer with board dimensions', () => {
+    it('should create GameServer with game (default board when no game provided)', () => {
+      const gs = new GameServer();
+      expect(gs.game).toBeDefined();
+      expect(gs.game instanceof Game).toBe(true);
+      expect(gs.game.board.width).toBe(60);
+      expect(gs.game.board.height).toBe(25);
+    });
+
+    it('should create GameServer with explicit game and board dimensions', () => {
       expect(gameServer.game).toBeDefined();
       expect(gameServer.game instanceof Game).toBe(true);
       expect(gameServer.game.board.width).toBe(20);
@@ -24,9 +34,9 @@ describe('GameServer', () => {
     });
 
     it('should accept optional Game instance and use that game', () => {
-      const board = new Board(5, 5);
+      const board = new Board({ width: 5, height: 5 });
       board.initializeFromGrid([['#', '#', '#', '#', '#'], ['#', ' ', ' ', ' ', '#'], ['#', ' ', ' ', ' ', '#'], ['#', ' ', ' ', ' ', '#'], ['#', '#', '#', '#', '#']]);
-      const game = new Game(5, 5, board);
+      const game = new Game(board);
       const gs = new GameServer(game);
 
       expect(gs.game).toBe(game);
