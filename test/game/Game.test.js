@@ -4,48 +4,48 @@ import Board from '../../src/game/Board.js';
 
 describe('Game', () => {
   describe('initialization', () => {
-    it('should create game with specified board dimensions', () => {
-      const game = new Game(20, 20);
+    it('should create game with default board when no board provided', () => {
+      const game = new Game();
 
       expect(game.board).toBeDefined();
-      expect(game.board.width).toBe(20);
-      expect(game.board.height).toBe(20);
+      expect(game.board.width).toBe(60);
+      expect(game.board.height).toBe(25);
     });
 
-    it('should initialize board', () => {
-      const game = new Game(20, 20);
+    it('should initialize default board with grid', () => {
+      const game = new Game();
 
       expect(game.board.grid).toBeDefined();
-      expect(game.board.grid.length).toBe(20);
+      expect(game.board.grid.length).toBe(25);
     });
 
     it('should have score default to 0', () => {
-      const game = new Game(20, 20);
+      const game = new Game();
 
       expect(game.score).toBe(0);
     });
 
     it('should have running default to true', () => {
-      const game = new Game(20, 20);
+      const game = new Game();
 
       expect(game.running).toBe(true);
     });
   });
 
   describe('constructor with optional pre-built Board', () => {
-    it('new Game(20, 20) still works (existing behavior)', () => {
-      const game = new Game(20, 20);
+    it('new Game() uses default board from JSON', () => {
+      const game = new Game();
       expect(game.board).toBeDefined();
-      expect(game.board.width).toBe(20);
-      expect(game.board.height).toBe(20);
+      expect(game.board.width).toBe(60);
+      expect(game.board.height).toBe(25);
       expect(game.board.grid).toBeDefined();
-      expect(game.board.grid.length).toBe(20);
+      expect(game.board.grid.length).toBe(25);
     });
 
-    it('new Game(board.width, board.height, board) uses the passed Board instance', () => {
-      const board = new Board(3, 2);
+    it('new Game(board) uses the passed Board instance', () => {
+      const board = new Board({ width: 3, height: 2 });
       board.initializeFromGrid([['#', ' ', '#'], [' ', '#', ' ']]);
-      const game = new Game(board.width, board.height, board);
+      const game = new Game(board);
 
       expect(game.board).toBe(board);
       expect(game.board.width).toBe(3);

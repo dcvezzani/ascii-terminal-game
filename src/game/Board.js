@@ -1,11 +1,13 @@
 /**
- * Board class representing the game board grid
+ * Board class representing the game board grid.
+ * @param {{ width: number, height: number, grid?: string[][] }} boardData - Board data: width, height, and optional grid (when present, board is ready; when omitted, call initialize() or initializeFromGrid() after)
  */
 export class Board {
-  constructor(width, height) {
+  constructor(boardData) {
+    const { width, height, grid } = boardData;
     this.width = width;
     this.height = height;
-    this.grid = null;
+    this.grid = grid != null ? grid.map((row) => [...row]) : null;
   }
 
   /**

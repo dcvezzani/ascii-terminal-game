@@ -4,7 +4,7 @@ import Board from '../../src/game/Board.js';
 describe('Board', () => {
   describe('initialization', () => {
     it('should create board with specified dimensions', () => {
-      const board = new Board(20, 20);
+      const board = new Board({ width: 20, height: 20 });
       board.initialize();
 
       expect(board.width).toBe(20);
@@ -12,7 +12,7 @@ describe('Board', () => {
     });
 
     it('should create grid with correct dimensions', () => {
-      const board = new Board(20, 20);
+      const board = new Board({ width: 20, height: 20 });
       board.initialize();
 
       const serialized = board.serialize();
@@ -23,7 +23,7 @@ describe('Board', () => {
 
   describe('walls', () => {
     it('should have walls on top row', () => {
-      const board = new Board(20, 20);
+      const board = new Board({ width: 20, height: 20 });
       board.initialize();
 
       for (let x = 0; x < 20; x++) {
@@ -33,7 +33,7 @@ describe('Board', () => {
     });
 
     it('should have walls on bottom row', () => {
-      const board = new Board(20, 20);
+      const board = new Board({ width: 20, height: 20 });
       board.initialize();
 
       for (let x = 0; x < 20; x++) {
@@ -43,7 +43,7 @@ describe('Board', () => {
     });
 
     it('should have walls on left column', () => {
-      const board = new Board(20, 20);
+      const board = new Board({ width: 20, height: 20 });
       board.initialize();
 
       for (let y = 0; y < 20; y++) {
@@ -53,7 +53,7 @@ describe('Board', () => {
     });
 
     it('should have walls on right column', () => {
-      const board = new Board(20, 20);
+      const board = new Board({ width: 20, height: 20 });
       board.initialize();
 
       for (let y = 0; y < 20; y++) {
@@ -65,7 +65,7 @@ describe('Board', () => {
 
   describe('empty interior', () => {
     it('should have empty spaces in interior', () => {
-      const board = new Board(20, 20);
+      const board = new Board({ width: 20, height: 20 });
       board.initialize();
 
       // Check interior cells (not on perimeter)
@@ -80,7 +80,7 @@ describe('Board', () => {
 
   describe('getCell', () => {
     it('should return correct character at position', () => {
-      const board = new Board(20, 20);
+      const board = new Board({ width: 20, height: 20 });
       board.initialize();
 
       expect(board.getCell(0, 0)).toBe('#'); // Corner wall
@@ -91,7 +91,7 @@ describe('Board', () => {
 
   describe('isWall', () => {
     it('should return true for wall cells', () => {
-      const board = new Board(20, 20);
+      const board = new Board({ width: 20, height: 20 });
       board.initialize();
 
       expect(board.isWall(0, 0)).toBe(true);
@@ -101,7 +101,7 @@ describe('Board', () => {
     });
 
     it('should return false for empty cells', () => {
-      const board = new Board(20, 20);
+      const board = new Board({ width: 20, height: 20 });
       board.initialize();
 
       expect(board.isWall(10, 10)).toBe(false);
@@ -112,7 +112,7 @@ describe('Board', () => {
 
   describe('serialize', () => {
     it('should return 2D array of base characters', () => {
-      const board = new Board(20, 20);
+      const board = new Board({ width: 20, height: 20 });
       board.initialize();
 
       const serialized = board.serialize();
@@ -124,7 +124,7 @@ describe('Board', () => {
     });
 
     it('should return correct characters in serialized format', () => {
-      const board = new Board(20, 20);
+      const board = new Board({ width: 20, height: 20 });
       board.initialize();
 
       const serialized = board.serialize();
@@ -137,7 +137,7 @@ describe('Board', () => {
 
   describe('initializeFromGrid', () => {
     it('sets grid so getCell returns character at each position', () => {
-      const board = new Board(2, 2);
+      const board = new Board({ width: 2, height: 2 });
       const grid = [['#', ' '], [' ', '#']];
       board.initializeFromGrid(grid);
 
@@ -148,7 +148,7 @@ describe('Board', () => {
     });
 
     it('isWall returns true only where grid has #', () => {
-      const board = new Board(2, 2);
+      const board = new Board({ width: 2, height: 2 });
       const grid = [['#', ' '], [' ', '#']];
       board.initializeFromGrid(grid);
 
@@ -159,7 +159,7 @@ describe('Board', () => {
     });
 
     it('serialize returns a copy of the grid with same dimensions and contents', () => {
-      const board = new Board(2, 2);
+      const board = new Board({ width: 2, height: 2 });
       const grid = [['#', ' '], [' ', '#']];
       board.initializeFromGrid(grid);
 

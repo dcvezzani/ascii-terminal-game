@@ -26,7 +26,7 @@ describe('Renderer', () => {
 
   beforeEach(() => {
     renderer = new Renderer();
-    board = new Board(20, 20);
+    board = new Board({ width: 20, height: 20 });
     board.initialize();
 
     // Mock stdout
