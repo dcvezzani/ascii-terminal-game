@@ -10,13 +10,19 @@ import createClientLogger from '../utils/clientLogger.js';
 
 /**
  * WebSocket Server class
+ * @param {number} port - Port to listen on
+ * @param {Game} [game] - Game instance
+ * @param {{ spawnList?: Array<{x: number, y: number}>, spawnConfig?: object }} [options] - Spawn list and config for GameServer
  */
 export class Server {
-  constructor(port, game) {
+  constructor(port, game, options = {}) {
     this.port = port;
     this.wss = null;
     this.connectionManager = new ConnectionManager();
-    this.gameServer = new GameServer(game != null ? game : new Game());
+    this.gameServer = new GameServer(
+      game != null ? game : new Game(),
+      options
+    );
     this.broadcastInterval = null;
     this.broadcastIntervalMs = 250; // 250ms = 4 updates per second
   }
@@ -229,35 +235,69 @@ export class Server {
    * @param {object} message - CONNECT message
    */
   handleConnect(clientId, message) {
-    // Generate player ID
     const playerId = randomUUID();
     const playerName = `Player ${playerId.substring(0, 8)}`;
 
-    // Add player to game
     this.gameServer.addPlayer(clientId, playerId, playerName);
-    this.gameServer.spawnPlayer(playerId, playerName);
+    const result = this.gameServer.spawnPlayer(playerId, playerName);
 
-    // Map clientId to playerId
     this.connectionManager.setPlayerId(clientId, playerId);
 
-    // Send CONNECT response with gameState
-    const gameState = this.gameServer.serializeState();
-    const response = MessageHandler.createMessage(
-      MessageTypes.CONNECT,
-      {
+    const connection = this.connectionManager.getConnection(clientId);
+    if (!connection || !connection.ws) return;
+
+    if (result.spawned) {
+      const gameState = this.gameServer.serializeState();
+      const response = MessageHandler.createMessage(MessageTypes.CONNECT, {
         clientId,
         playerId,
         playerName,
         gameState
-      }
-    );
-
-    const connection = this.connectionManager.getConnection(clientId);
-    if (connection && connection.ws) {
+      });
       connection.ws.send(JSON.stringify(response));
+      this.log(clientId).info('Player joined', { playerId, playerName });
+    } else {
+      const waitMessage = this.gameServer.getSpawnWaitMessage();
+      const response = MessageHandler.createMessage(MessageTypes.CONNECT, {
+        clientId,
+        playerId,
+        playerName,
+        gameState: null,
+        waitingForSpawn: true,
+        message: waitMessage
+      });
+      connection.ws.send(JSON.stringify(response));
+      this.log(clientId).info('Player waiting for spawn', {
+        playerId,
+        playerName
+      });
     }
+  }
 
-    this.log(clientId).info('Player joined', { playerId, playerName });
+  /**
+   * Send CONNECT payload with gameState to a client (e.g. after deferred spawn)
+   * @param {string} clientId - Client identifier
+   */
+  sendSpawnedStateToClient(clientId) {
+    const connection = this.connectionManager.getConnection(clientId);
+    if (!connection || !connection.ws) return;
+    const playerId = this.connectionManager.getPlayerId(clientId);
+    if (!playerId) return;
+    const player = this.gameServer.getPlayer(playerId);
+    if (!player || player.x === null || player.y === null) return;
+
+    const gameState = this.gameServer.serializeState();
+    const response = MessageHandler.createMessage(MessageTypes.CONNECT, {
+      clientId,
+      playerId,
+      playerName: player.playerName,
+      gameState
+    });
+    connection.ws.send(JSON.stringify(response));
+    this.log(clientId).info('Player spawned (was waiting)', {
+      playerId,
+      playerName: player.playerName
+    });
   }
 
   /**
@@ -300,13 +340,20 @@ export class Server {
     const log = this.log(clientId);
     log.info('Client disconnected');
 
-    // Remove player from game
     const playerId = this.connectionManager.getPlayerId(clientId);
     if (playerId) {
       this.gameServer.removePlayer(playerId);
     }
-
     this.connectionManager.removeConnection(clientId);
+
+    // Try to spawn any players waiting for a spawn
+    const spawnedIds = this.gameServer.trySpawnWaitingPlayers();
+    for (const pid of spawnedIds) {
+      const conn = this.connectionManager.getConnectionByPlayerId(pid);
+      if (conn) {
+        this.sendSpawnedStateToClient(conn.clientId);
+      }
+    }
   }
 }
 

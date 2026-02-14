@@ -13,4 +13,11 @@ describe('serverConfig', () => {
     expect(serverConfig.logging).toBeDefined();
     expect(serverConfig.logging.level).toBe('info');
   });
+
+  it('should have spawnPoints configuration with maxCount, clearRadius, waitMessage', () => {
+    expect(serverConfig.spawnPoints).toBeDefined();
+    expect(serverConfig.spawnPoints.maxCount).toBe(25);
+    expect(serverConfig.spawnPoints.clearRadius).toBe(3);
+    expect(serverConfig.spawnPoints.waitMessage).toContain('spawn point');
+  });
 });

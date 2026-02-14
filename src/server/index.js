@@ -34,7 +34,29 @@ async function startServer(port, boardPath) {
 
   const board = new Board(boardData);
   const game = new Game(board);
-  const server = new Server(serverPort, game);
+
+  const maxCount = serverConfig.spawnPoints?.maxCount ?? 25;
+  const rawSpawns = boardData.spawnPoints ?? [];
+  const spawnList =
+    rawSpawns.length > 0
+      ? rawSpawns.slice(0, maxCount)
+      : [
+          {
+            x: Math.floor(board.width / 2),
+            y: Math.floor(board.height / 2)
+          }
+        ];
+  const spawnConfig = {
+    clearRadius: serverConfig.spawnPoints?.clearRadius ?? 3,
+    waitMessage:
+      serverConfig.spawnPoints?.waitMessage ??
+      'Thank you for waiting. A spawn point is being selected for you.'
+  };
+
+  const server = new Server(serverPort, game, {
+    spawnList,
+    spawnConfig
+  });
 
   // Set up graceful shutdown
   const shutdown = async () => {

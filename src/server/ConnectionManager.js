@@ -66,6 +66,20 @@ export class ConnectionManager {
   getPlayerId(clientId) {
     return this.playerIdMap.get(clientId);
   }
+
+  /**
+   * Get connection by playerId (for notifying a waiting player that they were spawned)
+   * @param {string} playerId - Player identifier
+   * @returns {object|undefined} Connection object or undefined
+   */
+  getConnectionByPlayerId(playerId) {
+    for (const [clientId, pid] of this.playerIdMap) {
+      if (pid === playerId) {
+        return this.connections.get(clientId);
+      }
+    }
+    return undefined;
+  }
 }
 
 // Default export

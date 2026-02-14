@@ -49,7 +49,7 @@ export function loadDimensionsFromFile(dimensionsFilePath = DEFAULT_DIMENSIONS_P
  * Load and decode board from JSON files (board layout + shared dimensions config).
  * @param {string} boardFilePath - Path to board JSON (run-length encoded cells), relative to cwd
  * @param {string} [dimensionsFilePath] - Path to dimensions JSON; defaults to DEFAULT_DIMENSIONS_PATH
- * @returns {{ width: number, height: number, grid: string[][] }}
+ * @returns {{ width: number, height: number, grid: string[][], spawnPoints: Array<{x: number, y: number}> }}
  * @throws {Error} If file missing, invalid JSON, invalid entity, or cell count mismatch.
  */
 export function loadBoardFromFiles(boardFilePath, dimensionsFilePath = DEFAULT_DIMENSIONS_PATH) {
@@ -109,23 +109,21 @@ export function loadBoardFromFiles(boardFilePath, dimensionsFilePath = DEFAULT_D
 
   const ENTITY_TO_CHAR = { 0: ' ', 1: '#', 2: ' ' };
   const cells = [];
+  const spawnPoints = [];
 
   // decode the board
   for (let i = 0; i < boardArray.length; i++) {
-    
-    // validate the entry; is it a valid object with an entity property?
     const entry = boardArray[i];
     if (entry === null || typeof entry !== 'object') {
       throw new Error(`Invalid board entry at index ${i}: must be object with entity`);
     }
 
-    // validate the entity; is it a supported entity value?
+    // entity: 0=space, 1=wall, 2=spawn (spawn is recorded in spawnPoints and rendered as space)
     const entity = entry.entity;
     if (entity !== 0 && entity !== 1 && entity !== 2) {
       throw new Error(`Unsupported entity value: ${entity}. Only 0, 1, 2 are valid.`);
     }
 
-    // validate the repeat; is it a number and at least 1?
     let repeat = 1;
     if (entry.repeat !== undefined) {
       repeat = entry.repeat;
@@ -134,9 +132,14 @@ export function loadBoardFromFiles(boardFilePath, dimensionsFilePath = DEFAULT_D
       }
     }
 
-    // map the entity to a character
     const char = ENTITY_TO_CHAR[entity];
     for (let r = 0; r < repeat; r++) {
+      const idx = cells.length;
+      const x = idx % width;
+      const y = Math.floor(idx / width);
+      if (entity === 2) {
+        spawnPoints.push({ x, y });
+      }
       cells.push(char);
     }
   }
@@ -155,5 +158,5 @@ export function loadBoardFromFiles(boardFilePath, dimensionsFilePath = DEFAULT_D
     grid.push(cells.slice(y * width, (y + 1) * width));
   }
 
-  return { width, height, grid };
+  return { width, height, grid, spawnPoints };
 }

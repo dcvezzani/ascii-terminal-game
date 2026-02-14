@@ -94,13 +94,15 @@ describe('boardLoader', () => {
       }
     });
 
-    it('returns object with width, height and grid when board and dimensions are valid', () => {
+    it('returns object with width, height, grid and spawnPoints when board and dimensions are valid', () => {
       const boardPath = `${FIXTURES}/valid-for-parse.json`;
       const result = loadBoardFromFiles(boardPath, `${FIXTURES}/dimensions.json`);
       expect(result).toHaveProperty('width', 2);
       expect(result).toHaveProperty('height', 2);
       expect(result).toHaveProperty('grid');
       expect(result.grid).toEqual([['#', '#'], ['#', '#']]);
+      expect(result).toHaveProperty('spawnPoints');
+      expect(Array.isArray(result.spawnPoints)).toBe(true);
     });
   });
 
@@ -118,6 +120,13 @@ describe('boardLoader', () => {
       expect(result.grid[0][1]).toBe(' ');  // entity 0
       expect(result.grid[1][0]).toBe(' '); // entity 2 (spawn)
       expect(result.grid[1][1]).toBe(' ');  // entity 0
+      expect(result.spawnPoints).toEqual([{ x: 0, y: 1 }]); // row-major: index 2 -> (0,1)
+    });
+
+    it('returns empty spawnPoints when board has no entity 2', () => {
+      const boardPath = `${FIXTURES}/valid-for-parse.json`;
+      const result = loadBoardFromFiles(boardPath, `${FIXTURES}/dimensions.json`);
+      expect(result.spawnPoints).toEqual([]);
     });
 
     it('throws and reports invalid entity value (e.g. 3, -1)', () => {

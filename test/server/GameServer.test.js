@@ -137,6 +137,75 @@ describe('GameServer', () => {
       const player = gameServer.getPlayer(playerId);
       expect(player.playerName).toBe(playerName);
     });
+
+    it('returns { spawned: true } when spawn is available', () => {
+      gameServer.addPlayer('client-1', 'player-1', 'Player 1');
+      const result = gameServer.spawnPlayer('player-1', 'Player 1');
+      expect(result).toEqual({ spawned: true });
+    });
+
+    it('assigns next unoccupied spawn: two players get different spawns', () => {
+      const board = new Board({ width: 20, height: 20 });
+      board.initializeFromGrid(
+        Array(20)
+          .fill(null)
+          .map(() => Array(20).fill(' '))
+      );
+      board.grid[0][0] = '#';
+      board.grid[19][19] = '#';
+      const game = new Game(board);
+      const spawnList = [
+        { x: 5, y: 5 },
+        { x: 15, y: 15 }
+      ];
+      const gs = new GameServer(game, {
+        spawnList,
+        spawnConfig: { clearRadius: 2, waitMessage: 'Wait' }
+      });
+      gs.addPlayer('c1', 'p1', 'P1');
+      gs.addPlayer('c2', 'p2', 'P2');
+      gs.spawnPlayer('p1', 'P1');
+      gs.spawnPlayer('p2', 'P2');
+      const p1 = gs.getPlayer('p1');
+      const p2 = gs.getPlayer('p2');
+      expect(p1.x).not.toBe(null);
+      expect(p1.y).not.toBe(null);
+      expect(p2.x).not.toBe(null);
+      expect(p2.y).not.toBe(null);
+      expect(p1.x !== p2.x || p1.y !== p2.y).toBe(true);
+      const spawnCoords = spawnList.map((s) => `${s.x},${s.y}`);
+      expect(spawnCoords).toContain(`${p1.x},${p1.y}`);
+      expect(spawnCoords).toContain(`${p2.x},${p2.y}`);
+    });
+
+    it('trySpawnWaitingPlayers spawns waiting players when spawns free up', () => {
+      const board = new Board({ width: 10, height: 10 });
+      board.initialize();
+      const game = new Game(board);
+      const gs = new GameServer(game, {
+        spawnList: [{ x: 5, y: 5 }],
+        spawnConfig: { clearRadius: 0, waitMessage: 'Wait' }
+      });
+      gs.addPlayer('c1', 'p1', 'P1');
+      gs.addPlayer('c2', 'p2', 'P2');
+      gs.spawnPlayer('p1', 'P1');
+      gs.spawnPlayer('p2', 'P2');
+      expect(gs.getPlayer('p1').x).toBe(5);
+      expect(gs.getPlayer('p2').x).toBe(null);
+      gs.removePlayer('p1');
+      const spawned = gs.trySpawnWaitingPlayers();
+      expect(spawned).toContain('p2');
+      expect(gs.getPlayer('p2').x).toBe(5);
+      expect(gs.getPlayer('p2').y).toBe(5);
+    });
+
+    it('getSpawnWaitMessage returns configured message', () => {
+      const gs = new GameServer(new Game(), {
+        spawnList: [{ x: 10, y: 10 }],
+        spawnConfig: { clearRadius: 3, waitMessage: 'Custom wait message.' }
+      });
+      expect(gs.getSpawnWaitMessage()).toBe('Custom wait message.');
+    });
   });
 
   describe('serializeState', () => {

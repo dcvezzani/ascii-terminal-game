@@ -1,13 +1,10 @@
 {
-  "websocket": {
-    "enabled": true,
-    "port": 3000,
-    "host": "0.0.0.0"
-  },
-  "logging": {
-    "level": "info"
-  },
-  "board": {
-    "defaultPath": "boards/classic.json"
+  "websocket": {"enabled": true, "port": 3000, "host": "0.0.0.0"},
+  "logging": {"level": "info"},
+  "board": {"defaultPath": "boards/classic.json"},
+  "spawnPoints": {
+    "maxCount": 25,
+    "clearRadius": 3,
+    "waitMessage": "Thank you for waiting. A spawn point is being selected for you."
   }
 }

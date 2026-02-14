@@ -1,13 +1,32 @@
 import Game from '../game/Game.js';
 import logger from '../utils/logger.js';
+import { isSpawnAvailable } from './spawnAvailability.js';
+
+const DEFAULT_SPAWN_CONFIG = {
+  clearRadius: 3,
+  waitMessage: 'Thank you for waiting. A spawn point is being selected for you.'
+};
 
 /**
  * GameServer class for managing game state and players
+ * @param {Game} [game] - Game instance
+ * @param {{ spawnList?: Array<{x: number, y: number}>, spawnConfig?: { clearRadius: number, waitMessage: string } }} [options] - Spawn list (from board or fallback) and config
  */
 export class GameServer {
-  constructor(game) {
+  constructor(game, options = {}) {
     this.game = game != null && typeof game.board !== 'undefined' ? game : new Game();
-    this.players = new Map(); // playerId -> player object
+    this.players = new Map();
+    const list = options.spawnList;
+    const width = this.game.board.width;
+    const height = this.game.board.height;
+    if (list != null && list.length > 0) {
+      this.spawnList = list;
+    } else {
+      this.spawnList = [
+        { x: Math.floor(width / 2), y: Math.floor(height / 2) }
+      ];
+    }
+    this.spawnConfig = { ...DEFAULT_SPAWN_CONFIG, ...options.spawnConfig };
   }
 
   /**
@@ -55,23 +74,79 @@ export class GameServer {
   }
 
   /**
-   * Spawn player at initial position
+   * Get all spawns that are currently available (clear circle, not occupied).
+   * @returns {Array<{ x: number, y: number }>}
+   */
+  _getAvailableSpawns() {
+    const players = this.getAllPlayers();
+    const board = this.game.board;
+    const R = this.spawnConfig.clearRadius;
+    return this.spawnList.filter((spawn) =>
+      isSpawnAvailable(spawn, board, players, R)
+    );
+  }
+
+  /**
+   * Pick one available spawn at random, or null if none available.
+   * @returns {{ x: number, y: number } | null}
+   */
+  _pickAvailableSpawn() {
+    const available = this._getAvailableSpawns();
+    if (available.length === 0) return null;
+    const index = Math.floor(Math.random() * available.length);
+    return available[index];
+  }
+
+  /**
+   * Spawn player at next available spawn, or leave waiting (x/y null).
    * @param {string} playerId - Player identifier
    * @param {string} playerName - Player name
+   * @returns {{ spawned: boolean, waiting?: boolean }} spawned true if placed; waiting true if deferred
    */
   spawnPlayer(playerId, playerName) {
     const player = this.players.get(playerId);
     if (!player) {
       logger.warn(`Cannot spawn player ${playerId}: player not found`);
-      return;
+      return { spawned: false };
     }
 
-    // Initial position: center of board (10, 10)
-    player.x = 10;
-    player.y = 10;
     player.playerName = playerName;
+    const spawn = this._pickAvailableSpawn();
+    if (spawn) {
+      player.x = spawn.x;
+      player.y = spawn.y;
+      logger.debug(`Player spawned: ${playerId} at (${player.x}, ${player.y})`);
+      return { spawned: true };
+    }
 
-    logger.debug(`Player spawned: ${playerId} at (${player.x}, ${player.y})`);
+    logger.debug(`Player ${playerId} waiting for spawn`);
+    return { spawned: false, waiting: true };
+  }
+
+  /**
+   * Try to assign spawns to waiting players (FIFO). Call after a player disconnects.
+   * @returns {string[]} Player IDs that were just spawned
+   */
+  trySpawnWaitingPlayers() {
+    const spawned = [];
+    const waiting = this.getAllPlayers().filter(
+      (p) => p.x === null && p.y === null
+    );
+    for (const player of waiting) {
+      const result = this.spawnPlayer(player.playerId, player.playerName);
+      if (result.spawned) {
+        spawned.push(player.playerId);
+      }
+    }
+    return spawned;
+  }
+
+  /**
+   * Get the configured wait message when no spawn is available
+   * @returns {string}
+   */
+  getSpawnWaitMessage() {
+    return this.spawnConfig.waitMessage;
   }
 
   /**

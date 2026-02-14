@@ -24,6 +24,11 @@ try {
     },
     board: {
       defaultPath: 'boards/classic.json'
+    },
+    spawnPoints: {
+      maxCount: 25,
+      clearRadius: 3,
+      waitMessage: 'Thank you for waiting. A spawn point is being selected for you.'
     }
   };
 }
