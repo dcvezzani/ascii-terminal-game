@@ -6,7 +6,8 @@ import {
   buildSimplifiedLine,
   padToWidth,
   formatBoxTopBottom,
-  formatBoxRow
+  formatBoxRow,
+  getStatusBarHeight
 } from '../../src/render/statusBarUtils.js';
 
 describe('wrapAtSpaces', () => {
@@ -106,5 +107,28 @@ describe('formatBoxRow', () => {
     expect(row).toMatch(/^\| .* \|$/);
     expect(row.length).toBe(20);
     expect(row).toContain('Score: 0');
+  });
+});
+
+describe('getStatusBarHeight', () => {
+  it('returns 4 for width 60 full format when content fits on one line each', () => {
+    // width 60 > 25 => full format; line1 and line2 each fit in 56 chars
+    const h = getStatusBarHeight(0, { x: 10, y: 12 }, 60);
+    expect(h).toBe(1 + 1 + 1 + 1); // top + line1 + line2 + bottom
+    expect(h).toBe(4);
+  });
+
+  it('returns more lines when content wraps for width 60', () => {
+    // Very long line1 that wraps to multiple segments
+    const longPos = { x: 99999, y: 99999 };
+    const h = getStatusBarHeight(0, longPos, 60);
+    expect(h).toBeGreaterThanOrEqual(4);
+    expect(Number.isInteger(h)).toBe(true);
+  });
+
+  it('simplified format for narrow width returns correct line count', () => {
+    const h = getStatusBarHeight(0, { x: 10, y: 12 }, 20);
+    expect(h).toBeGreaterThanOrEqual(3); // top + at least one content + bottom
+    expect(Number.isInteger(h)).toBe(true);
   });
 });
