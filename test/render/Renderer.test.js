@@ -7,7 +7,8 @@ vi.mock('ansi-escapes', () => ({
   cursorHide: '\x1b[?25l',
   cursorShow: '\x1b[?25h',
   eraseScreen: '\x1b[2J',
-  cursorTo: (x, y) => `\x1b[${y};${x}H`
+  cursorTo: (x, y) => `\x1b[${y};${x}H`,
+  eraseEndLine: '\x1b[K'
 }));
 
 vi.mock('cli-cursor', () => ({
@@ -109,7 +110,38 @@ describe('Renderer', () => {
   describe('renderStatusBar', () => {
     it('should have renderStatusBar method', () => {
       expect(typeof renderer.renderStatusBar).toBe('function');
-      expect(() => renderer.renderStatusBar(0, { x: 10, y: 10 })).not.toThrow();
+      expect(() =>
+        renderer.renderStatusBar(0, { x: 10, y: 10 }, 80, 20)
+      ).not.toThrow();
+    });
+
+    it('should use full format (two lines) when boardWidth > threshold', () => {
+      renderer.renderStatusBar(0, { x: 10, y: 12 }, 30, 20);
+      const calls = mockStdout.write.mock.calls;
+      const output = calls.map(c => c[0]).join('');
+      expect(output).toContain('Score: 0');
+      expect(output).toContain('Position: (10, 12)');
+      expect(output).toContain('Arrow keys/WASD to move');
+    });
+
+    it('should use simplified format when boardWidth <= threshold', () => {
+      mockStdout.write.mockClear();
+      renderer.renderStatusBar(0, { x: 10, y: 12 }, 20, 20);
+      const calls = mockStdout.write.mock.calls;
+      const output = calls.map(c => c[0]).join('');
+      expect(output).toContain('S: 0');
+      expect(output).toContain('P: (10, 12)');
+      expect(output).not.toContain('Arrow keys');
+    });
+
+    it('should not rewrite unchanged lines on second call', () => {
+      mockStdout.write.mockClear();
+      renderer.renderStatusBar(0, { x: 1, y: 1 }, 30, 20);
+      const firstCallCount = mockStdout.write.mock.calls.length;
+      mockStdout.write.mockClear();
+      renderer.renderStatusBar(0, { x: 1, y: 1 }, 30, 20);
+      const secondCallCount = mockStdout.write.mock.calls.length;
+      expect(secondCallCount).toBe(0);
     });
   });
 

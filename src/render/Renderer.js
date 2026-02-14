@@ -1,7 +1,13 @@
 import chalk from 'chalk';
-import { cursorHide, cursorShow, eraseScreen, cursorTo } from 'ansi-escapes';
+import { cursorHide, cursorShow, eraseScreen, cursorTo, eraseEndLine } from 'ansi-escapes';
 import hideCursor from 'cli-cursor';
 import process from 'process';
+import {
+  wrapAtSpaces,
+  buildLine1,
+  buildLine2,
+  buildSimplifiedLine
+} from './statusBarUtils.js';
 
 /**
  * Renderer class for terminal rendering
@@ -16,6 +22,9 @@ export class Renderer {
       spaceGlyph: '.',
       wallGlyph: '#'
     };
+    this._lastStatusBarContent = null;
+    this._lastStatusBarBoardWidth = null;
+    this._lastStatusBarBoardHeight = null;
   }
 
   /**
@@ -54,21 +63,67 @@ export class Renderer {
   }
 
   /**
-   * Render status bar
+   * Render status bar (two-line full or one-line simplified by board width).
+   * Only updates lines whose content changed or shortened. Clears to end of line when updating.
    * @param {number} score - Current score
-   * @param {object} position - Position object {x, y}
-   * @param {number} boardHeight - Height of the board (to position status bar below it)
+   * @param {object} position - Position object {x, y} or null
+   * @param {number} boardWidth - Board width (for format selection and wrap)
+   * @param {number} boardHeight - Board height (for vertical positioning)
    */
-  renderStatusBar(score, position, boardHeight = 20) {
-    // Position cursor below the board
-    // Title is 2 lines (title + blank), board is boardHeight lines
-    // So status bar should be at row: 2 (title) + boardHeight + 1 (1-indexed)
-    const statusBarRow = 2 + boardHeight + 1;
-    this.stdout.write(cursorTo(1, statusBarRow));
-    
-    const posStr = position ? `Position: (${position.x}, ${position.y})` : 'Position: (?, ?)';
-    const status = `Score: ${score} | ${posStr} | Arrow keys/WASD to move, Q/ESC to quit`;
-    this.stdout.write(chalk.gray(status));
+  renderStatusBar(score, position, boardWidth = 80, boardHeight = 20) {
+    const threshold = this.config?.statusBar?.widthThreshold ?? 25;
+    const fullFormat = boardWidth > threshold;
+
+    let logicalContents;
+    let physicalLines;
+
+    if (fullFormat) {
+      const line1Str = buildLine1(score, position);
+      const line2Str = buildLine2();
+      const segments1 = wrapAtSpaces(line1Str, boardWidth);
+      const segments2 = wrapAtSpaces(line2Str, boardWidth);
+      logicalContents = [line1Str, line2Str];
+      physicalLines = [segments1, segments2];
+    } else {
+      const lineStr = buildSimplifiedLine(score, position);
+      const segments = wrapAtSpaces(lineStr, boardWidth);
+      logicalContents = [lineStr];
+      physicalLines = [segments];
+    }
+
+    const layoutChanged =
+      this._lastStatusBarBoardWidth !== boardWidth ||
+      this._lastStatusBarBoardHeight !== boardHeight;
+    if (layoutChanged) {
+      this._lastStatusBarContent = null;
+    }
+    this._lastStatusBarBoardWidth = boardWidth;
+    this._lastStatusBarBoardHeight = boardHeight;
+
+    const statusBarStartRow = 2 + boardHeight + 1;
+    let rowOffset = 0;
+
+    for (let i = 0; i < logicalContents.length; i++) {
+      const newContent = logicalContents[i];
+      const lastContent = this._lastStatusBarContent?.[i];
+      const changed = lastContent !== newContent;
+      const shortened =
+        lastContent != null && newContent.length < lastContent.length;
+      const needUpdate = changed || shortened || layoutChanged;
+
+      if (needUpdate) {
+        const segments = physicalLines[i];
+        for (let s = 0; s < segments.length; s++) {
+          const row = statusBarStartRow + rowOffset + s;
+          this.stdout.write(cursorTo(1, row));
+          this.stdout.write(chalk.gray(segments[s]));
+          this.stdout.write(eraseEndLine);
+        }
+      }
+      rowOffset += physicalLines[i].length;
+    }
+
+    this._lastStatusBarContent = logicalContents.slice();
   }
 
   /**
@@ -278,9 +333,11 @@ export class Renderer {
       );
     }
 
-    // Update status bar if score changed
+    // Update status bar if score changed (position changes are handled by caller, which also calls renderStatusBar)
     if (changes.scoreChanged) {
-      this.renderStatusBar(score, position);
+      const boardWidth = board.width ?? 80;
+      const boardHeight = board.height ?? 20;
+      this.renderStatusBar(score, position, boardWidth, boardHeight);
     }
   }
 }
