@@ -13,7 +13,10 @@ import compareStates from '../utils/stateComparison.js';
  */
 export async function networkedMode() {
   const wsClient = new WebSocketClient(clientConfig.websocket.url);
-  const renderer = new Renderer(clientConfig.rendering);
+  const renderer = new Renderer({
+    ...clientConfig.rendering,
+    statusBar: clientConfig.statusBar
+  });
   const inputHandler = new InputHandler();
 
   let currentState = null;
@@ -120,6 +123,7 @@ export async function networkedMode() {
         renderer.renderStatusBar(
           currentState.score || 0,
           { x: newX, y: newY },
+          currentState.board.width,
           currentState.board.height
         );
       }
@@ -242,6 +246,7 @@ export async function networkedMode() {
       renderer.renderStatusBar(
         currentState.score || 0,
         serverPos,
+        currentState.board.width,
         currentState.board.height
       );
     }
@@ -506,7 +511,12 @@ export async function networkedMode() {
         if (position) {
           renderer.updateCell(position.x, position.y, renderer.config.playerGlyph, renderer.config.playerColor);
         }
-        renderer.renderStatusBar(currentState.score || 0, position, currentState.board.height);
+        renderer.renderStatusBar(
+          currentState.score || 0,
+          position,
+          currentState.board.width,
+          currentState.board.height
+        );
         previousState = currentState;
         previousPredictedPosition = position ? { ...position } : null;
         return;
@@ -528,7 +538,12 @@ export async function networkedMode() {
         if (position) {
           renderer.updateCell(position.x, position.y, renderer.config.playerGlyph, renderer.config.playerColor);
         }
-        renderer.renderStatusBar(currentState.score || 0, position, currentState.board.height);
+        renderer.renderStatusBar(
+          currentState.score || 0,
+          position,
+          currentState.board.width,
+          currentState.board.height
+        );
         previousState = currentState;
         previousPredictedPosition = position ? { ...position } : null;
         return;
@@ -555,8 +570,7 @@ export async function networkedMode() {
         currentState.entities || [],
         localPlayerId,
         currentState.score || 0,
-        position,
-        currentState.board.height
+        position
       );
 
       // Handle local player movement separately (using predicted position)
@@ -582,7 +596,12 @@ export async function networkedMode() {
 
       // Update status bar if score changed or position changed
       if (changes.scoreChanged || positionChanged) {
-        renderer.renderStatusBar(currentState.score || 0, position, currentState.board.height);
+        renderer.renderStatusBar(
+          currentState.score || 0,
+          position,
+          currentState.board.width,
+          currentState.board.height
+        );
       }
 
       // Update previous state and predicted position for next render
@@ -626,7 +645,12 @@ export async function networkedMode() {
         if (position) {
           renderer.updateCell(position.x, position.y, renderer.config.playerGlyph, renderer.config.playerColor);
         }
-        renderer.renderStatusBar(currentState.score || 0, position, currentState.board.height);
+        renderer.renderStatusBar(
+          currentState.score || 0,
+          position,
+          currentState.board.width,
+          currentState.board.height
+        );
         previousState = currentState;
         previousPredictedPosition = position ? { ...position } : null;
       } catch (fallbackError) {
