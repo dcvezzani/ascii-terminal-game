@@ -94,14 +94,15 @@ This keeps the custom map workflow (plain text → map parser → JSON → serve
 
 ## Status
 
-- **Status**: NOT STARTED
+- **Status**: COMPLETE
 - **Priority**: MEDIUM
 - **Created**: 2026-02-11
+- **Completed**: 2026-02-14
 
 ## Documentation
 
-- **SPECS**: `docs/development/specs/map-spawn-points-for-players/map-spawn-points-for-players_SPECS.md` (created).
-- **GAMEPLAN**: To be created under `docs/development/gameplans/` after SPECS.
+- **SPECS**: `docs/development/specs/map-spawn-points-for-players/map-spawn-points-for-players_SPECS.md` ✅ Created
+- **GAMEPLAN**: `docs/development/gameplans/X_map-spawn-points-for-players/map-spawn-points-for-players_GAMEPLAN.md` ✅ Created, complete
 
 ## Tags
 
