@@ -143,6 +143,20 @@ describe('Renderer', () => {
       const secondCallCount = mockStdout.write.mock.calls.length;
       expect(secondCallCount).toBe(0);
     });
+
+    it('should use threshold from config when provided', () => {
+      const rendererWithConfig = new Renderer({
+        ...renderer.config,
+        statusBar: { widthThreshold: 30 }
+      });
+      rendererWithConfig.stdout = mockStdout;
+      mockStdout.write.mockClear();
+      rendererWithConfig.renderStatusBar(0, { x: 10, y: 12 }, 25, 20);
+      const output = mockStdout.write.mock.calls.map(c => c[0]).join('');
+      expect(output).toContain('S: 0');
+      expect(output).toContain('P: (10, 12)');
+      expect(output).not.toContain('Arrow keys');
+    });
   });
 
   describe('updateCell', () => {
