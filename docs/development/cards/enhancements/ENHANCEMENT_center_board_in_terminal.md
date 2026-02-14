@@ -154,7 +154,7 @@
 
 ## Documentation
 
-- **SPECS**: To be created under `docs/development/specs/center-board-in-terminal/` (exact formulas, minimum size behavior, debounce).
+- **SPECS**: `docs/development/specs/center-board-in-terminal/center-board-in-terminal_SPECS.md` ✅ Created
 - **GAMEPLAN**: To be created under `docs/development/gameplans/` after SPECS.
 
 ## Related Cards
