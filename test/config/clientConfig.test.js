@@ -10,4 +10,11 @@ describe('clientConfig', () => {
   it('should have logging configuration', () => {
     expect(clientConfig.logging).toBeDefined();
   });
+
+  it('should have statusBar configuration with widthThreshold default', () => {
+    expect(clientConfig.statusBar).toBeDefined();
+    expect(clientConfig.statusBar.widthThreshold).toBeDefined();
+    expect(typeof clientConfig.statusBar.widthThreshold).toBe('number');
+    expect(clientConfig.statusBar.widthThreshold).toBe(25);
+  });
 });

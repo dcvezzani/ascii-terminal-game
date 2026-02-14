@@ -11,6 +11,12 @@ try {
   const configPath = join(__dirname, 'clientConfig.json');
   const configFile = readFileSync(configPath, 'utf-8');
   config = JSON.parse(configFile);
+  if (!config.statusBar) {
+    config.statusBar = { widthThreshold: 25 };
+  }
+  if (config.statusBar && config.statusBar.widthThreshold === undefined) {
+    config.statusBar.widthThreshold = 25;
+  }
 } catch (error) {
   // Use defaults if config file doesn't exist
   config = {
@@ -29,6 +35,9 @@ try {
     prediction: {
       enabled: true,
       reconciliationInterval: 5000
+    },
+    statusBar: {
+      widthThreshold: 25
     }
   };
 }
