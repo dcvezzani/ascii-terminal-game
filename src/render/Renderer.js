@@ -40,6 +40,31 @@ export class Renderer {
     this.stdout.write(cursorTo(1, 1));
   }
 
+  /** Message when terminal width is too narrow */
+  static TERMINAL_TOO_NARROW_MESSAGE = 'Please increase the width of your terminal window in order to play this game.';
+
+  /** Message when terminal has too few rows */
+  static TERMINAL_TOO_SHORT_MESSAGE = 'Terminal too small; please resize.';
+
+  /**
+   * Render only the terminal-too-small message (no game block).
+   * @param {number} terminalColumns - Current terminal columns
+   * @param {number} terminalRows - Current terminal rows
+   * @param {number} minColumns - Required minimum columns
+   * @param {number} minRows - Required minimum rows
+   */
+  renderTerminalTooSmallMessage(terminalColumns, terminalRows, minColumns, minRows) {
+    this.clearScreen();
+    const widthTooNarrow = terminalColumns < minColumns;
+    const message = widthTooNarrow
+      ? Renderer.TERMINAL_TOO_NARROW_MESSAGE
+      : Renderer.TERMINAL_TOO_SHORT_MESSAGE;
+    const row = Math.max(1, Math.floor(terminalRows / 2));
+    const col = Math.max(1, Math.floor((terminalColumns - message.length) / 2) + 1);
+    this.stdout.write(cursorTo(col, row));
+    this.stdout.write(chalk.yellow(message));
+  }
+
   /**
    * Render game title
    * @param {string} [titleString] - Title text (default: '=== Multiplayer Terminal Game ===')

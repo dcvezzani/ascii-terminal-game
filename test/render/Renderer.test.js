@@ -93,6 +93,29 @@ describe('Renderer', () => {
     });
   });
 
+  describe('renderTerminalTooSmallMessage', () => {
+    it('shows width message when terminal columns < minColumns', () => {
+      mockStdout.write.mockClear();
+      renderer.renderTerminalTooSmallMessage(40, 24, 60, 28);
+      const output = mockStdout.write.mock.calls.map(c => c[0]).join('');
+      expect(output).toContain(Renderer.TERMINAL_TOO_NARROW_MESSAGE);
+      expect(output).not.toContain(Renderer.TERMINAL_TOO_SHORT_MESSAGE);
+    });
+
+    it('shows rows message when terminal rows < minRows but columns OK', () => {
+      mockStdout.write.mockClear();
+      renderer.renderTerminalTooSmallMessage(80, 10, 60, 28);
+      const output = mockStdout.write.mock.calls.map(c => c[0]).join('');
+      expect(output).toContain(Renderer.TERMINAL_TOO_SHORT_MESSAGE);
+    });
+
+    it('clears screen before writing message', () => {
+      mockStdout.write.mockClear();
+      renderer.renderTerminalTooSmallMessage(40, 24, 60, 28);
+      expect(mockStdout.write).toHaveBeenCalledWith(expect.any(String)); // eraseScreen
+    });
+  });
+
   describe('renderTitle', () => {
     it('should have renderTitle method', () => {
       expect(typeof renderer.renderTitle).toBe('function');
