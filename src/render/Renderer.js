@@ -59,16 +59,20 @@ export class Renderer {
    * Render the game board with players
    * @param {Board} board - Board instance
    * @param {Array} players - Array of player objects
+   * @param {object} [layout] - Optional layout { startRow, boardStartColumn }; when provided, draw each row at position
    */
-  renderBoard(board, players) {
+  renderBoard(board, players, layout) {
     const serialized = board.serialize();
-    
+
     for (let y = 0; y < serialized.length; y++) {
       let line = '';
       for (let x = 0; x < serialized[y].length; x++) {
         const cellContent = this.getCellContent(x, y, board, players);
         const colorFn = this.getColorFunction(cellContent.color);
         line += colorFn(cellContent.character);
+      }
+      if (layout) {
+        this.stdout.write(cursorTo(layout.boardStartColumn, layout.startRow + TITLE_HEIGHT + y));
       }
       this.stdout.write(line + '\n');
     }

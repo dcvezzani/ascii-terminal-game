@@ -137,6 +137,26 @@ describe('Renderer', () => {
       expect(typeof renderer.renderBoard).toBe('function');
       expect(() => renderer.renderBoard(board, [])).not.toThrow();
     });
+
+    it('when layout provided, draws each row at layout position', () => {
+      const layout = { startRow: 3, boardStartColumn: 21 };
+      mockStdout.write.mockClear();
+      renderer.renderBoard(board, [], layout);
+      const cursorCalls = mockStdout.write.mock.calls
+        .map(c => c[0])
+        .filter(s => typeof s === 'string' && s.includes('\x1b[') && s.includes('H'));
+      expect(cursorCalls.length).toBe(20);
+      expect(cursorCalls[0]).toContain('\x1b[5;21H'); // startRow 3 + TITLE_HEIGHT 2 + y 0 = 5
+      expect(cursorCalls[19]).toContain('\x1b[24;21H'); // startRow 3 + 2 + 19 = 24
+    });
+
+    it('when layout not provided, does not use cursorTo for board rows', () => {
+      mockStdout.write.mockClear();
+      renderer.renderBoard(board, []);
+      const cursorCalls = mockStdout.write.mock.calls
+        .filter(c => typeof c[0] === 'string' && c[0].includes(';') && c[0].includes('H'));
+      expect(cursorCalls.length).toBe(0);
+    });
   });
 
   describe('renderStatusBar', () => {
