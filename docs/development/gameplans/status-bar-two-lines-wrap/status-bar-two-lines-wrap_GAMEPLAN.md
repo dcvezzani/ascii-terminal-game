@@ -18,9 +18,9 @@ This gameplan breaks down the status bar feature into logical phases. Implementa
 
 ## Prerequisites
 
-- [ ] All existing tests passing (`npm test`)
-- [ ] SPECS and feature card reviewed
-- [ ] Renderer and networkedMode existing (current single-line status bar in place)
+- [x] All existing tests passing (`npm test`)
+- [x] SPECS and feature card reviewed
+- [x] Renderer and networkedMode existing (current single-line status bar in place)
 
 ---
 
@@ -41,18 +41,18 @@ This gameplan breaks down the status bar feature into logical phases. Implementa
 4. **Run tests** — pass.
 
 **Verification:**
-- [ ] `clientConfig.statusBar.widthThreshold` is 25 by default
-- [ ] When present in JSON, custom value is used
-- [ ] `npm test` passes for client config
+- [x] `clientConfig.statusBar.widthThreshold` is 25 by default
+- [x] When present in JSON, custom value is used
+- [x] `npm test` passes for client config
 
 **Commit:** e.g. `Feature: Add client config statusBar.widthThreshold (default 25)`
 
 ---
 
 **Phase 1 Completion Checklist:**
-- [ ] Step 1.1 completed
-- [ ] Config tests passing
-- [ ] No regressions
+- [x] Step 1.1 completed
+- [x] Config tests passing
+- [x] No regressions
 
 ---
 
@@ -76,8 +76,8 @@ This gameplan breaks down the status bar feature into logical phases. Implementa
 4. **Run tests** — pass.
 
 **Verification:**
-- [ ] `wrapAtSpaces(str, maxWidth)` returns array of strings, each ≤ maxWidth (except a single overlong token)
-- [ ] `npm test` passes for statusBarUtils
+- [x] `wrapAtSpaces(str, maxWidth)` returns array of strings, each ≤ maxWidth (except a single overlong token)
+- [x] `npm test` passes for statusBarUtils
 
 **Commit:** e.g. `Feature: Add wrapAtSpaces utility for status bar`
 
@@ -96,17 +96,17 @@ This gameplan breaks down the status bar feature into logical phases. Implementa
 3. **Run tests** — pass.
 
 **Verification:**
-- [ ] All three builders return correct strings per SPECS
-- [ ] `npm test` passes for statusBarUtils
+- [x] All three builders return correct strings per SPECS
+- [x] `npm test` passes for statusBarUtils
 
 **Commit:** e.g. `Feature: Add status bar line content builders (line1, line2, simplified)`
 
 ---
 
 **Phase 2 Completion Checklist:**
-- [ ] Steps 2.1 and 2.2 completed
-- [ ] statusBarUtils tests passing
-- [ ] No regressions
+- [x] Steps 2.1 and 2.2 completed
+- [x] statusBarUtils tests passing
+- [x] No regressions
 
 ---
 
@@ -126,9 +126,9 @@ This gameplan breaks down the status bar feature into logical phases. Implementa
 3. **Run tests** — pass.
 
 **Verification:**
-- [ ] renderStatusBar(score, position, boardWidth, boardHeight) exists and uses boardWidth/boardHeight
-- [ ] Threshold from config or default 25
-- [ ] `npm test` passes for Renderer
+- [x] renderStatusBar(score, position, boardWidth, boardHeight) exists and uses boardWidth/boardHeight
+- [x] Threshold from config or default 25
+- [x] `npm test` passes for Renderer
 
 **Commit:** e.g. `Feature: Renderer renderStatusBar(score, position, boardWidth, boardHeight), config.statusBar`
 
@@ -147,9 +147,9 @@ This gameplan breaks down the status bar feature into logical phases. Implementa
 3. **Run tests** — pass.
 
 **Verification:**
-- [ ] Full format when boardWidth > threshold; simplified when <= threshold
-- [ ] Wrapping applied; segments ≤ boardWidth
-- [ ] `npm test` passes
+- [x] Full format when boardWidth > threshold; simplified when <= threshold
+- [x] Wrapping applied; segments ≤ boardWidth
+- [x] `npm test` passes
 
 **Commit:** e.g. `Feature: Status bar format selection and wrap (full vs simplified)`
 
@@ -168,18 +168,18 @@ This gameplan breaks down the status bar feature into logical phases. Implementa
 3. **Run tests** — pass.
 
 **Verification:**
-- [ ] Unchanged lines are not written/cleared on second call
-- [ ] When content shortens, line is redrawn and cleared to EOL
-- [ ] `npm test` passes
+- [x] Unchanged lines are not written/cleared on second call
+- [x] When content shortens, line is redrawn and cleared to EOL
+- [x] `npm test` passes
 
 **Commit:** e.g. `Feature: Status bar render only when necessary, clear to EOL when updated`
 
 ---
 
 **Phase 3 Completion Checklist:**
-- [ ] Steps 3.1–3.3 completed
-- [ ] Renderer uses statusBarUtils, threshold, last-rendered state, per-line update
-- [ ] No regressions
+- [x] Steps 3.1–3.3 completed
+- [x] Renderer uses statusBarUtils, threshold, last-rendered state, per-line update
+- [x] No regressions
 
 ---
 
@@ -198,19 +198,19 @@ This gameplan breaks down the status bar feature into logical phases. Implementa
 4. **Run tests** — pass.
 
 **Verification:**
-- [ ] Renderer is constructed with statusBar from client config
-- [ ] renderStatusBar is called with (score, position, boardWidth, boardHeight) everywhere
-- [ ] `npm test` passes
-- [ ] Manual: run client with wide and narrow board; status bar shows two lines vs one line
+- [x] Renderer is constructed with statusBar from client config
+- [x] renderStatusBar is called with (score, position, boardWidth, boardHeight) everywhere
+- [x] `npm test` passes
+- [x] Manual: run client with wide and narrow board; status bar shows two lines vs one line
 
 **Commit:** e.g. `Feature: Callers pass boardWidth/boardHeight and statusBar config to Renderer`
 
 ---
 
 **Phase 4 Completion Checklist:**
-- [ ] All renderStatusBar call sites updated
-- [ ] Renderer receives statusBar config
-- [ ] No regressions
+- [x] All renderStatusBar call sites updated
+- [x] Renderer receives statusBar config
+- [x] No regressions
 
 ---
 
@@ -226,7 +226,7 @@ This gameplan breaks down the status bar feature into logical phases. Implementa
 - Format selection: boardWidth > threshold → full format (two lines); boardWidth <= threshold → simplified (one line). Threshold from config (e.g. 30) used when set.
 - Line content: line 1 "Score: 0 | Position: (10, 12)" or "(?, ?)"; line 2 "Arrow keys/WASD to move, Q/ESC to quit"; simplified "S: 0 | P: (10, 12)" or "P: (?, ?)".
 
-**Verification:** [ ] All format and content cases covered and passing
+**Verification:** [x] All format and content cases covered and passing
 
 ---
 
@@ -239,7 +239,7 @@ This gameplan breaks down the status bar feature into logical phases. Implementa
 - Clean display: render once with score 10, position (10, 12); then render with score 0, position (1, 2); assert second render updates line 1 and clears to EOL (no leftover digits).
 - Render only when necessary: two consecutive calls with same (score, position, boardWidth, boardHeight) → second call does not write line 2; and does not write line 1 if content identical.
 
-**Verification:** [ ] Wrap and clean-display tests pass
+**Verification:** [x] Wrap and clean-display tests pass
 
 ---
 
@@ -251,7 +251,7 @@ This gameplan breaks down the status bar feature into logical phases. Implementa
 - First status bar line at row `2 + boardHeight + 1`; second at `2 + boardHeight + 2`. Content starts at column 1. (Assert via cursorTo calls or written output structure.)
 - renderStatusBar(score, position, boardWidth, boardHeight) is invoked with all four arguments in tests and in callers.
 
-**Verification:** [ ] Positioning and contract tests pass
+**Verification:** [x] Positioning and contract tests pass
 
 ---
 
@@ -262,15 +262,15 @@ This gameplan breaks down the status bar feature into logical phases. Implementa
 2. Manual: start server and client; play with different board sizes (if configurable) or terminal width; confirm two-line status bar when wide, one-line when narrow; confirm no leftover text when score/position shorten.
 
 **Verification:**
-- [ ] All automated tests pass
-- [ ] Manual: status bar layout and clean display as specified
+- [x] All automated tests pass
+- [x] Manual: status bar layout and clean display as specified
 
 ---
 
 **Phase 5 Completion Checklist:**
-- [ ] statusBarUtils and Renderer tests cover SPECS cases
-- [ ] Full test suite green
-- [ ] No regressions in rendering or networked mode
+- [x] statusBarUtils and Renderer tests cover SPECS cases
+- [x] Full test suite green
+- [x] No regressions in rendering or networked mode
 
 ---
 
