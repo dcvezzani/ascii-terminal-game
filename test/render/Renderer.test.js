@@ -98,6 +98,38 @@ describe('Renderer', () => {
       expect(typeof renderer.renderTitle).toBe('function');
       expect(() => renderer.renderTitle()).not.toThrow();
     });
+
+    it('when layout provided, writes title at layout position with 60-char truncation', () => {
+      const layout = { startRow: 5, startColumn: 10 };
+      renderer.renderTitle('Short Title', layout);
+      expect(mockStdout.write).toHaveBeenCalledWith(
+        expect.stringContaining('\x1b[5;10H')
+      );
+      const chalkCall = mockStdout.write.mock.calls.find(
+        c => typeof c[0] === 'string' && c[0].includes('Short Title')
+      );
+      expect(chalkCall).toBeDefined();
+    });
+
+    it('when layout provided, truncates long title to 60 chars with ellipses', () => {
+      const layout = { startRow: 1, startColumn: 1 };
+      const longTitle = 'A'.repeat(70);
+      renderer.renderTitle(longTitle, layout);
+      const chalkCall = mockStdout.write.mock.calls.find(
+        c => typeof c[0] === 'string' && c[0].includes('...')
+      );
+      expect(chalkCall).toBeDefined();
+      expect(chalkCall[0].length).toBeLessThanOrEqual(60 + 20); // chalk adds codes; content part is 60
+    });
+
+    it('when layout not provided, writes title and newlines (current behavior)', () => {
+      mockStdout.write.mockClear();
+      renderer.renderTitle();
+      expect(mockStdout.write).toHaveBeenCalledWith(
+        expect.stringContaining('=== Multiplayer Terminal Game ===')
+      );
+      expect(mockStdout.write).toHaveBeenCalledWith(expect.stringMatching(/\n\n$/));
+    });
   });
 
   describe('renderBoard', () => {

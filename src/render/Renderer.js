@@ -10,6 +10,9 @@ import {
   formatBoxTopBottom,
   formatBoxRow
 } from './statusBarUtils.js';
+import { truncateTitleToWidth, BLANK_LINES_BEFORE_STATUS_BAR } from './layout.js';
+
+const TITLE_HEIGHT = 2;
 
 /**
  * Renderer class for terminal rendering
@@ -39,10 +42,17 @@ export class Renderer {
 
   /**
    * Render game title
+   * @param {string} [titleString] - Title text (default: '=== Multiplayer Terminal Game ===')
+   * @param {object} [layout] - Optional layout { startRow, startColumn }; when provided, draw at position with 60-char truncation
    */
-  renderTitle() {
-    const title = '=== Multiplayer Terminal Game ===';
-    this.stdout.write(chalk.bold.cyan(title) + '\n\n');
+  renderTitle(titleString, layout) {
+    const title = titleString ?? '=== Multiplayer Terminal Game ===';
+    if (layout) {
+      this.stdout.write(cursorTo(layout.startColumn, layout.startRow));
+      this.stdout.write(chalk.bold.cyan(truncateTitleToWidth(title, 60)));
+    } else {
+      this.stdout.write(chalk.bold.cyan(title) + '\n\n');
+    }
   }
 
   /**
