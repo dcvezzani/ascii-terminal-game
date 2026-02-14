@@ -87,6 +87,7 @@ export class Renderer {
    * @param {object} [layout] - Optional layout { startRow, boardStartColumn }; when provided, draw each row at position
    */
   renderBoard(board, players, layout) {
+    this._currentLayout = layout || null;
     const serialized = board.serialize();
 
     for (let y = 0; y < serialized.length; y++) {
@@ -268,15 +269,20 @@ export class Renderer {
       return;
     }
 
-    // Calculate screen coordinates
-    // Title is 2 lines (title + blank line), so offset is 2
-    // ANSI escape codes are 1-indexed
-    const screenX = x;
-    const screenY = y + 2 + 1; // +2 for title offset, +1 for 1-indexed
+    let screenX;
+    let screenY;
+    if (this._currentLayout) {
+      screenX = this._currentLayout.boardStartColumn + x;
+      screenY = this._currentLayout.startRow + TITLE_HEIGHT + y;
+    } else {
+      // Title is 2 lines (title + blank line), so offset is 2; ANSI is 1-indexed
+      screenX = x;
+      screenY = y + 2 + 1;
+    }
 
     // Position cursor
     this.stdout.write(cursorTo(screenX, screenY));
-    
+
     // Write character with color
     const colorFn = this.getColorFunction(color);
     this.stdout.write(colorFn(character));

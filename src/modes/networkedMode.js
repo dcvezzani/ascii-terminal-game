@@ -5,8 +5,10 @@ import InputHandler from '../input/InputHandler.js';
 import MessageHandler from '../network/MessageHandler.js';
 import MessageTypes from '../network/MessageTypes.js';
 import logger from '../utils/logger.js';
-import { checkTerminalSize } from '../utils/terminal.js';
+import { checkTerminalSize, getTerminalSize } from '../utils/terminal.js';
 import compareStates from '../utils/stateComparison.js';
+import { computeLayout } from '../render/layout.js';
+import { getStatusBarHeight } from '../render/statusBarUtils.js';
 
 /**
  * Networked game mode - connects to server and plays multiplayer game
@@ -26,6 +28,9 @@ export async function networkedMode() {
   let previousPredictedPosition = null; // Track previous predicted position for rendering
   let reconciliationTimer = null; // Timer for periodic reconciliation
   let running = true;
+  let displayEmptyDuringResize = false;
+  let resizeDebounceTimer = null;
+  let cachedLayout = null;
 
   // Set up WebSocket event handlers
   wsClient.on('connect', () => {
@@ -120,12 +125,22 @@ export async function networkedMode() {
         );
 
         // Update status bar with new position
-        renderer.renderStatusBar(
-          currentState.score || 0,
-          { x: newX, y: newY },
-          currentState.board.width,
-          currentState.board.height
-        );
+        if (cachedLayout) {
+          renderer.renderStatusBar(
+            currentState.score || 0,
+            { x: newX, y: newY },
+            60,
+            currentState.board.height,
+            cachedLayout
+          );
+        } else {
+          renderer.renderStatusBar(
+            currentState.score || 0,
+            { x: newX, y: newY },
+            currentState.board.width,
+            currentState.board.height
+          );
+        }
       }
     }
 
@@ -243,12 +258,22 @@ export async function networkedMode() {
       );
 
       // Update status bar
-      renderer.renderStatusBar(
-        currentState.score || 0,
-        serverPos,
-        currentState.board.width,
-        currentState.board.height
-      );
+      if (cachedLayout) {
+        renderer.renderStatusBar(
+          currentState.score || 0,
+          serverPos,
+          60,
+          currentState.board.height,
+          cachedLayout
+        );
+      } else {
+        renderer.renderStatusBar(
+          currentState.score || 0,
+          serverPos,
+          currentState.board.width,
+          currentState.board.height
+        );
+      }
     }
   }
 
@@ -469,6 +494,9 @@ export async function networkedMode() {
     if (!currentState) {
       return;
     }
+    if (displayEmptyDuringResize) {
+      return;
+    }
 
     try {
       // Create board adapter from state
@@ -491,32 +519,79 @@ export async function networkedMode() {
       // Get local player position (predicted or server)
       const localPlayer = currentState.players?.find(p => p.playerId === localPlayerId);
       const serverPosition = localPlayer ? { x: localPlayer.x, y: localPlayer.y } : null;
-      
+
       // Use predicted position if available, otherwise server position
       const position = localPlayerPredictedPosition.x !== null
         ? localPlayerPredictedPosition
         : serverPosition;
 
-      // First render: use full render
       // Exclude local player from server state rendering
       const otherPlayers = (currentState.players || []).filter(
         p => p.playerId !== localPlayerId
       );
 
+      const centerBoard = clientConfig.rendering?.centerBoard !== false;
+      let layout = null;
+      if (centerBoard) {
+        const { columns, rows } = getTerminalSize();
+        const statusBarHeight = getStatusBarHeight(
+          currentState.score || 0,
+          position,
+          60
+        );
+        layout = computeLayout(
+          columns,
+          rows,
+          board.width,
+          board.height,
+          statusBarHeight,
+          { centerBoard: true }
+        );
+        if (!layout.fitsInTerminal) {
+          renderer.renderTerminalTooSmallMessage(
+            columns,
+            rows,
+            layout.minColumns,
+            layout.minRows
+          );
+          return;
+        }
+      }
+      renderer._currentLayout = layout || null;
+      cachedLayout = layout;
+
+      const titleString = '=== Multiplayer Terminal Game ===';
+
+      // First render: use full render
       if (previousState === null) {
         renderer.clearScreen();
-        renderer.renderTitle();
-        renderer.renderBoard(board, otherPlayers);
+        if (layout) {
+          renderer.renderTitle(titleString, layout);
+          renderer.renderBoard(board, otherPlayers, layout);
+        } else {
+          renderer.renderTitle(titleString);
+          renderer.renderBoard(board, otherPlayers);
+        }
         // Render local player separately
         if (position) {
           renderer.updateCell(position.x, position.y, renderer.config.playerGlyph, renderer.config.playerColor);
         }
-        renderer.renderStatusBar(
-          currentState.score || 0,
-          position,
-          currentState.board.width,
-          currentState.board.height
-        );
+        if (layout) {
+          renderer.renderStatusBar(
+            currentState.score || 0,
+            position,
+            60,
+            currentState.board.height,
+            layout
+          );
+        } else {
+          renderer.renderStatusBar(
+            currentState.score || 0,
+            position,
+            currentState.board.width,
+            currentState.board.height
+          );
+        }
         previousState = currentState;
         previousPredictedPosition = position ? { ...position } : null;
         return;
@@ -532,18 +607,33 @@ export async function networkedMode() {
       // Fallback to full render if too many changes
       if (totalChanges > 10) {
         renderer.clearScreen();
-        renderer.renderTitle();
-        renderer.renderBoard(board, otherPlayers);
+        if (layout) {
+          renderer.renderTitle(titleString, layout);
+          renderer.renderBoard(board, otherPlayers, layout);
+        } else {
+          renderer.renderTitle(titleString);
+          renderer.renderBoard(board, otherPlayers);
+        }
         // Render local player separately
         if (position) {
           renderer.updateCell(position.x, position.y, renderer.config.playerGlyph, renderer.config.playerColor);
         }
-        renderer.renderStatusBar(
-          currentState.score || 0,
-          position,
-          currentState.board.width,
-          currentState.board.height
-        );
+        if (layout) {
+          renderer.renderStatusBar(
+            currentState.score || 0,
+            position,
+            60,
+            currentState.board.height,
+            layout
+          );
+        } else {
+          renderer.renderStatusBar(
+            currentState.score || 0,
+            position,
+            currentState.board.width,
+            currentState.board.height
+          );
+        }
         previousState = currentState;
         previousPredictedPosition = position ? { ...position } : null;
         return;
@@ -596,12 +686,22 @@ export async function networkedMode() {
 
       // Update status bar if score changed or position changed
       if (changes.scoreChanged || positionChanged) {
-        renderer.renderStatusBar(
-          currentState.score || 0,
-          position,
-          currentState.board.width,
-          currentState.board.height
-        );
+        if (layout) {
+          renderer.renderStatusBar(
+            currentState.score || 0,
+            position,
+            60,
+            currentState.board.height,
+            layout
+          );
+        } else {
+          renderer.renderStatusBar(
+            currentState.score || 0,
+            position,
+            currentState.board.width,
+            currentState.board.height
+          );
+        }
       }
 
       // Update previous state and predicted position for next render
@@ -639,18 +739,43 @@ export async function networkedMode() {
         );
         
         renderer.clearScreen();
-        renderer.renderTitle();
-        renderer.renderBoard(board, otherPlayersFallback);
+        const fallbackLayout = centerBoard ? computeLayout(
+          getTerminalSize().columns,
+          getTerminalSize().rows,
+          currentState.board.width,
+          currentState.board.height,
+          getStatusBarHeight(currentState.score || 0, position, 60),
+          { centerBoard: true }
+        ) : null;
+        if (fallbackLayout?.fitsInTerminal) {
+          renderer._currentLayout = fallbackLayout;
+          renderer.renderTitle('=== Multiplayer Terminal Game ===', fallbackLayout);
+          renderer.renderBoard(board, otherPlayersFallback, fallbackLayout);
+        } else {
+          renderer._currentLayout = null;
+          renderer.renderTitle('=== Multiplayer Terminal Game ===');
+          renderer.renderBoard(board, otherPlayersFallback);
+        }
         // Render local player separately using predicted/server position
         if (position) {
           renderer.updateCell(position.x, position.y, renderer.config.playerGlyph, renderer.config.playerColor);
         }
-        renderer.renderStatusBar(
-          currentState.score || 0,
-          position,
-          currentState.board.width,
-          currentState.board.height
-        );
+        if (fallbackLayout?.fitsInTerminal) {
+          renderer.renderStatusBar(
+            currentState.score || 0,
+            position,
+            60,
+            currentState.board.height,
+            fallbackLayout
+          );
+        } else {
+          renderer.renderStatusBar(
+            currentState.score || 0,
+            position,
+            currentState.board.width,
+            currentState.board.height
+          );
+        }
         previousState = currentState;
         previousPredictedPosition = position ? { ...position } : null;
       } catch (fallbackError) {
@@ -689,6 +814,23 @@ export async function networkedMode() {
     process.exit(0);
   }
 
+  // Resize handling: clear during resize, full re-render when debounce fires
+  if (process.stdout.isTTY) {
+    process.stdout.on('resize', () => {
+      displayEmptyDuringResize = true;
+      renderer.clearScreen();
+      if (resizeDebounceTimer) {
+        clearTimeout(resizeDebounceTimer);
+      }
+      const debounceMs = clientConfig.rendering?.resizeDebounceMs ?? 200;
+      resizeDebounceTimer = setTimeout(() => {
+        resizeDebounceTimer = null;
+        displayEmptyDuringResize = false;
+        render();
+      }, debounceMs);
+    });
+  }
+
   // Start
   try {
     // Check terminal size (minimum 25x25 for board + UI)
@@ -696,10 +838,10 @@ export async function networkedMode() {
     if (!terminalOk) {
       logger.warn('Terminal size warning - game may not display correctly');
     }
-    
+
     renderer.hideCursor();
     inputHandler.start();
-    
+
     logger.info(`Connecting to ${clientConfig.websocket.url}...`);
     wsClient.connect();
 
