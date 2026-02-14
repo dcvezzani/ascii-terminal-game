@@ -223,6 +223,22 @@ describe('Renderer', () => {
       expect(output).toContain('P: (10, 12)');
       expect(output).not.toContain('Arrow keys');
     });
+
+    it('when layout provided, draws status bar at layout position with 60-char width', () => {
+      const layout = { startRow: 2, startColumn: 10 };
+      mockStdout.write.mockClear();
+      renderer.renderStatusBar(0, { x: 10, y: 12 }, 60, 20, layout);
+      const cursorCalls = mockStdout.write.mock.calls
+        .map(c => c[0])
+        .filter(s => typeof s === 'string' && s.includes('\x1b[') && s.includes('H'));
+      const statusBarStartRow = 2 + 2 + 20 + 1; // layout.startRow + TITLE_HEIGHT + boardHeight + BLANK
+      expect(cursorCalls[0]).toContain(`\x1b[${statusBarStartRow};10H`);
+      const dashLine = mockStdout.write.mock.calls
+        .map(c => c[0])
+        .find(s => typeof s === 'string' && /^-+$/.test(s.trim()));
+      expect(dashLine).toBeDefined();
+      expect(dashLine.trim().length).toBe(60);
+    });
   });
 
   describe('updateCell', () => {

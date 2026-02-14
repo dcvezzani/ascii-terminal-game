@@ -85,11 +85,13 @@ export class Renderer {
    * @param {object} position - Position object {x, y} or null
    * @param {number} boardWidth - Board width (for format selection and box width)
    * @param {number} boardHeight - Board height (for vertical positioning)
+   * @param {object} [layout] - Optional layout { startRow, startColumn }; when provided, use position and box width 60
    */
-  renderStatusBar(score, position, boardWidth = 80, boardHeight = 20) {
+  renderStatusBar(score, position, boardWidth = 80, boardHeight = 20, layout) {
+    const effectiveWidth = layout ? 60 : boardWidth;
     const threshold = this.config?.statusBar?.widthThreshold ?? 25;
-    const fullFormat = boardWidth > threshold;
-    const contentWidth = Math.max(1, boardWidth - 4);
+    const fullFormat = effectiveWidth > threshold;
+    const contentWidth = Math.max(1, effectiveWidth - 4);
 
     let logicalContents;
     let segments1;
@@ -108,17 +110,17 @@ export class Renderer {
       logicalContents = [lineStr];
     }
 
-    const topBorder = formatBoxTopBottom(boardWidth);
-    const bottomBorder = formatBoxTopBottom(boardWidth);
+    const topBorder = formatBoxTopBottom(effectiveWidth);
+    const bottomBorder = formatBoxTopBottom(effectiveWidth);
     const boxedRows = [
       topBorder,
-      ...segments1.map(s => formatBoxRow(s, boardWidth)),
-      ...segments2.map(s => formatBoxRow(s, boardWidth)),
+      ...segments1.map(s => formatBoxRow(s, effectiveWidth)),
+      ...segments2.map(s => formatBoxRow(s, effectiveWidth)),
       bottomBorder
     ];
 
     const layoutChanged =
-      this._lastStatusBarBoardWidth !== boardWidth ||
+      this._lastStatusBarBoardWidth !== effectiveWidth ||
       this._lastStatusBarBoardHeight !== boardHeight;
     const contentChanged =
       !this._lastStatusBarContent ||
@@ -135,16 +137,19 @@ export class Renderer {
       layoutChanged || contentChanged || contentShortened;
 
     if (needUpdate) {
-      const statusBarStartRow = 2 + boardHeight + 1;
+      const statusBarStartRow = layout
+        ? layout.startRow + TITLE_HEIGHT + boardHeight + BLANK_LINES_BEFORE_STATUS_BAR
+        : 2 + boardHeight + 1;
+      const statusBarStartCol = layout ? layout.startColumn : 0;
       for (let r = 0; r < boxedRows.length; r++) {
-        this.stdout.write(cursorTo(0, statusBarStartRow + r));
+        this.stdout.write(cursorTo(statusBarStartCol, statusBarStartRow + r));
         this.stdout.write(chalk.gray(boxedRows[r]));
         this.stdout.write(eraseEndLine);
       }
       const lastRowCount = this._lastStatusBarRowCount ?? 0;
       if (lastRowCount > boxedRows.length) {
         for (let r = boxedRows.length; r < lastRowCount; r++) {
-          this.stdout.write(cursorTo(0, statusBarStartRow + r));
+          this.stdout.write(cursorTo(statusBarStartCol, statusBarStartRow + r));
           this.stdout.write(eraseEndLine);
         }
       }
@@ -152,7 +157,7 @@ export class Renderer {
 
     this._lastStatusBarContent = logicalContents.slice();
     this._lastStatusBarRowCount = boxedRows.length;
-    this._lastStatusBarBoardWidth = boardWidth;
+    this._lastStatusBarBoardWidth = effectiveWidth;
     this._lastStatusBarBoardHeight = boardHeight;
   }
 
