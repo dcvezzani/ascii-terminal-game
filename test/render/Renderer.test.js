@@ -267,13 +267,24 @@ describe('Renderer', () => {
   describe('updateCell', () => {
     it('should update cell at correct position', () => {
       renderer.updateCell(5, 10, '@', '00FF00');
-      
+
       // Check that cursorTo was called with correct coordinates
       // Title offset is 2 lines (title + blank line)
       // So y = 10 + 2 + 1 = 13 (1-indexed)
       // x = 5 + 1 = 6 (1-indexed)
       const calls = mockStdout.write.mock.calls;
       expect(calls.length).toBeGreaterThan(0);
+    });
+
+    it('when _currentLayout is set, uses layout position for cursor', () => {
+      renderer._currentLayout = { startRow: 3, boardStartColumn: 21 };
+      mockStdout.write.mockClear();
+      renderer.updateCell(5, 10, '@', '00FF00');
+      const cursorCall = mockStdout.write.mock.calls.find(
+        c => typeof c[0] === 'string' && c[0].includes('\x1b[') && c[0].includes('H')
+      );
+      expect(cursorCall).toBeDefined();
+      expect(cursorCall[0]).toContain('\x1b[15;26H'); // row 3+2+10=15, col 21+5=26
     });
 
     it('should use correct color', () => {
