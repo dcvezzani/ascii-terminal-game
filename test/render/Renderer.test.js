@@ -120,8 +120,21 @@ describe('Renderer', () => {
       const calls = mockStdout.write.mock.calls;
       const output = calls.map(c => c[0]).join('');
       expect(output).toContain('Score: 0');
-      expect(output).toContain('Position: (10, 12)');
+      expect(output).toContain('Position: (10,');
+      expect(output).toContain('12)');
       expect(output).toContain('Arrow keys/WASD to move');
+    });
+
+    it('should render status bar in a box (dash top/bottom, pipe content lines)', () => {
+      mockStdout.write.mockClear();
+      renderer.renderStatusBar(0, { x: 3, y: 5 }, 60, 20);
+      const calls = mockStdout.write.mock.calls;
+      const lines = calls.map(c => c[0]).filter(s => typeof s === 'string');
+      const output = lines.join('');
+      expect(output).toContain('------------------------------------------------------------');
+      expect(output).toContain('| Score: 0 | Position: (3, 5)');
+      expect(output).toContain('| Arrow keys/WASD to move, Q/ESC to quit');
+      expect(output).toMatch(/\|\s+Score: 0 \| Position: \(3, 5\)\s+\|/);
     });
 
     it('should use simplified format when boardWidth <= threshold', () => {
@@ -130,7 +143,8 @@ describe('Renderer', () => {
       const calls = mockStdout.write.mock.calls;
       const output = calls.map(c => c[0]).join('');
       expect(output).toContain('S: 0');
-      expect(output).toContain('P: (10, 12)');
+      expect(output).toContain('P: (10,');
+      expect(output).toContain('12)');
       expect(output).not.toContain('Arrow keys');
     });
 

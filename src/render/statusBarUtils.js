@@ -66,3 +66,37 @@ export function buildSimplifiedLine(score, position) {
     position != null ? `P: (${position.x}, ${position.y})` : 'P: (?, ?)';
   return `S: ${score} | ${posStr}`;
 }
+
+/**
+ * Pad string to width with spaces, or truncate. Used for status bar box content.
+ * @param {string} str - String to pad or truncate
+ * @param {number} width - Target width
+ * @returns {string}
+ */
+export function padToWidth(str, width) {
+  if (str.length >= width) {
+    return str.slice(0, width);
+  }
+  return str + ' '.repeat(width - str.length);
+}
+
+/**
+ * Format a full-width top or bottom border for the status bar box.
+ * @param {number} boardWidth - Board width (number of # characters)
+ * @returns {string}
+ */
+export function formatBoxTopBottom(boardWidth) {
+  return '-'.repeat(boardWidth);
+}
+
+/**
+ * Format a single content line as a box row: "# " + content (padded) + " #".
+ * @param {string} content - Line content (will be padded or truncated to boardWidth - 4)
+ * @param {number} boardWidth - Board width
+ * @returns {string}
+ */
+export function formatBoxRow(content, boardWidth) {
+  const contentWidth = boardWidth - 4;
+  const padded = padToWidth(content, contentWidth);
+  return `| ${padded} |`;
+}

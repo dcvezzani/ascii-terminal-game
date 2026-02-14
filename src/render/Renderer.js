@@ -6,7 +6,9 @@ import {
   wrapAtSpaces,
   buildLine1,
   buildLine2,
-  buildSimplifiedLine
+  buildSimplifiedLine,
+  formatBoxTopBottom,
+  formatBoxRow
 } from './statusBarUtils.js';
 
 /**
@@ -63,67 +65,81 @@ export class Renderer {
   }
 
   /**
-   * Render status bar (two-line full or one-line simplified by board width).
-   * Only updates lines whose content changed or shortened. Clears to end of line when updating.
+   * Render status bar in a box (top/bottom # border, content lines "# content #").
+   * Two-line full or one-line simplified by board width. Redraws when content or layout changes.
    * @param {number} score - Current score
    * @param {object} position - Position object {x, y} or null
-   * @param {number} boardWidth - Board width (for format selection and wrap)
+   * @param {number} boardWidth - Board width (for format selection and box width)
    * @param {number} boardHeight - Board height (for vertical positioning)
    */
   renderStatusBar(score, position, boardWidth = 80, boardHeight = 20) {
     const threshold = this.config?.statusBar?.widthThreshold ?? 25;
     const fullFormat = boardWidth > threshold;
+    const contentWidth = Math.max(1, boardWidth - 4);
 
     let logicalContents;
-    let physicalLines;
+    let segments1;
+    let segments2;
 
     if (fullFormat) {
       const line1Str = buildLine1(score, position);
       const line2Str = buildLine2();
-      const segments1 = wrapAtSpaces(line1Str, boardWidth);
-      const segments2 = wrapAtSpaces(line2Str, boardWidth);
+      segments1 = wrapAtSpaces(line1Str, contentWidth);
+      segments2 = wrapAtSpaces(line2Str, contentWidth);
       logicalContents = [line1Str, line2Str];
-      physicalLines = [segments1, segments2];
     } else {
       const lineStr = buildSimplifiedLine(score, position);
-      const segments = wrapAtSpaces(lineStr, boardWidth);
+      segments1 = wrapAtSpaces(lineStr, contentWidth);
+      segments2 = [];
       logicalContents = [lineStr];
-      physicalLines = [segments];
     }
+
+    const topBorder = formatBoxTopBottom(boardWidth);
+    const bottomBorder = formatBoxTopBottom(boardWidth);
+    const boxedRows = [
+      topBorder,
+      ...segments1.map(s => formatBoxRow(s, boardWidth)),
+      ...segments2.map(s => formatBoxRow(s, boardWidth)),
+      bottomBorder
+    ];
 
     const layoutChanged =
       this._lastStatusBarBoardWidth !== boardWidth ||
       this._lastStatusBarBoardHeight !== boardHeight;
-    if (layoutChanged) {
-      this._lastStatusBarContent = null;
-    }
-    this._lastStatusBarBoardWidth = boardWidth;
-    this._lastStatusBarBoardHeight = boardHeight;
+    const contentChanged =
+      !this._lastStatusBarContent ||
+      this._lastStatusBarContent.length !== logicalContents.length ||
+      logicalContents.some((c, i) => this._lastStatusBarContent[i] !== c);
+    const contentShortened =
+      this._lastStatusBarContent &&
+      logicalContents.some(
+        (c, i) =>
+          this._lastStatusBarContent[i] != null &&
+          c.length < this._lastStatusBarContent[i].length
+      );
+    const needUpdate =
+      layoutChanged || contentChanged || contentShortened;
 
-    const statusBarStartRow = 2 + boardHeight + 1;
-    let rowOffset = 0;
-
-    for (let i = 0; i < logicalContents.length; i++) {
-      const newContent = logicalContents[i];
-      const lastContent = this._lastStatusBarContent?.[i];
-      const changed = lastContent !== newContent;
-      const shortened =
-        lastContent != null && newContent.length < lastContent.length;
-      const needUpdate = changed || shortened || layoutChanged;
-
-      if (needUpdate) {
-        const segments = physicalLines[i];
-        for (let s = 0; s < segments.length; s++) {
-          const row = statusBarStartRow + rowOffset + s;
-          this.stdout.write(cursorTo(1, row));
-          this.stdout.write(chalk.gray(segments[s]));
+    if (needUpdate) {
+      const statusBarStartRow = 2 + boardHeight + 1;
+      for (let r = 0; r < boxedRows.length; r++) {
+        this.stdout.write(cursorTo(0, statusBarStartRow + r));
+        this.stdout.write(chalk.gray(boxedRows[r]));
+        this.stdout.write(eraseEndLine);
+      }
+      const lastRowCount = this._lastStatusBarRowCount ?? 0;
+      if (lastRowCount > boxedRows.length) {
+        for (let r = boxedRows.length; r < lastRowCount; r++) {
+          this.stdout.write(cursorTo(0, statusBarStartRow + r));
           this.stdout.write(eraseEndLine);
         }
       }
-      rowOffset += physicalLines[i].length;
     }
 
     this._lastStatusBarContent = logicalContents.slice();
+    this._lastStatusBarRowCount = boxedRows.length;
+    this._lastStatusBarBoardWidth = boardWidth;
+    this._lastStatusBarBoardHeight = boardHeight;
   }
 
   /**

@@ -3,7 +3,10 @@ import {
   wrapAtSpaces,
   buildLine1,
   buildLine2,
-  buildSimplifiedLine
+  buildSimplifiedLine,
+  padToWidth,
+  formatBoxTopBottom,
+  formatBoxRow
 } from '../../src/render/statusBarUtils.js';
 
 describe('wrapAtSpaces', () => {
@@ -72,5 +75,36 @@ describe('buildSimplifiedLine', () => {
     const result = buildSimplifiedLine(3, undefined);
     expect(result).toContain('P: (?, ?)');
     expect(result).toContain('S: 3');
+  });
+});
+
+describe('padToWidth', () => {
+  it('pads short string with spaces', () => {
+    expect(padToWidth('Hi', 5)).toBe('Hi   ');
+    expect(padToWidth('Hi', 5).length).toBe(5);
+  });
+
+  it('returns string unchanged when length equals width', () => {
+    expect(padToWidth('Hello', 5)).toBe('Hello');
+  });
+
+  it('truncates long string', () => {
+    expect(padToWidth('Hello', 3)).toBe('Hel');
+  });
+});
+
+describe('formatBoxTopBottom', () => {
+  it('returns boardWidth dash characters for top/bottom border', () => {
+    expect(formatBoxTopBottom(5)).toBe('-----');
+    expect(formatBoxTopBottom(10)).toBe('----------');
+  });
+});
+
+describe('formatBoxRow', () => {
+  it('wraps content in | with padding to boardWidth', () => {
+    const row = formatBoxRow('Score: 0', 20);
+    expect(row).toMatch(/^\| .* \|$/);
+    expect(row.length).toBe(20);
+    expect(row).toContain('Score: 0');
   });
 });
