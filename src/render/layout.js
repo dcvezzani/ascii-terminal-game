@@ -61,3 +61,16 @@ export function computeLayout(terminalColumns, terminalRows, boardWidth, boardHe
     minRows
   };
 }
+
+/**
+ * Truncate title to at most maxWidth characters; append '...' when truncated.
+ * @param {string} title - Title string
+ * @param {number} [maxWidth=60] - Maximum length
+ * @returns {string} Title of length at most maxWidth
+ */
+export function truncateTitleToWidth(title, maxWidth = 60) {
+  if (title.length <= maxWidth) {
+    return title;
+  }
+  return title.slice(0, maxWidth - 3) + '...';
+}

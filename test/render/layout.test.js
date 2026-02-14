@@ -3,7 +3,8 @@ import {
   TITLE_AND_STATUS_BAR_WIDTH,
   BLANK_LINES_AFTER_TITLE,
   BLANK_LINES_BEFORE_STATUS_BAR,
-  computeLayout
+  computeLayout,
+  truncateTitleToWidth
 } from '../../src/render/layout.js';
 
 describe('layout', () => {
@@ -75,6 +76,28 @@ describe('layout', () => {
     it('fitsInTerminal false when terminal columns too small', () => {
       const layout = computeLayout(50, 30, 20, 20, 5, { centerBoard: true });
       expect(layout.fitsInTerminal).toBe(false);
+    });
+  });
+
+  describe('truncateTitleToWidth', () => {
+    it('returns short string unchanged', () => {
+      expect(truncateTitleToWidth('Short')).toBe('Short');
+    });
+    it('returns string of length 60 unchanged', () => {
+      const s = 'A'.repeat(60);
+      expect(truncateTitleToWidth(s)).toBe(s);
+      expect(truncateTitleToWidth(s).length).toBe(60);
+    });
+    it('truncates long string to 57 chars + ellipses (length 60)', () => {
+      const result = truncateTitleToWidth('A'.repeat(70));
+      expect(result).toBe('A'.repeat(57) + '...');
+      expect(result.length).toBe(60);
+    });
+    it('respects custom maxWidth', () => {
+      expect(truncateTitleToWidth('Title', 10)).toBe('Title');
+      const result = truncateTitleToWidth('A'.repeat(20), 10);
+      expect(result.length).toBe(10);
+      expect(result).toBe('A'.repeat(7) + '...');
     });
   });
 });
