@@ -155,7 +155,7 @@
 ## Documentation
 
 - **SPECS**: `docs/development/specs/center-board-in-terminal/center-board-in-terminal_SPECS.md` ✅ Created
-- **GAMEPLAN**: To be created under `docs/development/gameplans/` after SPECS.
+- **GAMEPLAN**: `docs/development/gameplans/center-board-in-terminal/center-board-in-terminal_GAMEPLAN.md` ✅ Created
 
 ## Related Cards
 
