@@ -548,6 +548,7 @@ export async function networkedMode() {
           layout.minColumns,
           layout.minRows
         );
+        renderer.moveCursorToHome();
         wasTooSmall = true;
         return false;
       }
@@ -557,6 +558,7 @@ export async function networkedMode() {
       renderer.clearScreen();
     }
     wasTooSmall = false;
+    renderer.moveCursorToHome();
     renderer.clearContentRegion(lastContentRegion);
     const titleString = '=== Multiplayer Terminal Game ===';
     if (layout) {
@@ -588,6 +590,7 @@ export async function networkedMode() {
     lastContentRegion = layout ? getContentRegionFromLayout(layout) : null;
     cachedLayout = layout;
     renderer._currentLayout = layout || null;
+    renderer.moveCursorToHome();
     return true;
   }
 
@@ -658,6 +661,7 @@ export async function networkedMode() {
             layout.minColumns,
             layout.minRows
           );
+          renderer.moveCursorToHome();
           return;
         }
       }

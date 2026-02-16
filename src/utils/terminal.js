@@ -1,4 +1,5 @@
 import process from 'process';
+import logger from './logger.js';
 
 /**
  * Check terminal size and warn if too small
@@ -8,12 +9,12 @@ import process from 'process';
  */
 export function checkTerminalSize(minWidth, minHeight) {
   const { columns, rows } = getTerminalSize();
-  
+
   if (columns < minWidth || rows < minHeight) {
-    console.warn(`Warning: Terminal size is ${columns}x${rows}, minimum recommended is ${minWidth}x${minHeight}`);
+    logger.warn(`Terminal size is ${columns}x${rows}, minimum recommended is ${minWidth}x${minHeight}`);
     return false;
   }
-  
+
   return true;
 }
 

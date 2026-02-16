@@ -41,6 +41,13 @@ export class Renderer {
   }
 
   /**
+   * Move cursor to home (1, 1). Call after each complete frame per spec §3.6.
+   */
+  moveCursorToHome() {
+    this.stdout.write(cursorTo(1, 1));
+  }
+
+  /**
    * Clear a content region by overwriting with spaces (1-based row/column).
    * No-op if region is null/undefined.
    * @param {{ startRow: number, startColumn: number, rows: number, columns: number } | null} region
@@ -96,7 +103,8 @@ export class Renderer {
       this.stdout.write(cursorTo(layout.startColumn, layout.startRow));
       this.stdout.write(chalk.bold.cyan(truncateTitleToWidth(title, 60)));
     } else {
-      this.stdout.write(chalk.bold.cyan(title) + '\n\n');
+      this.stdout.write(cursorTo(1, 1));
+      this.stdout.write(chalk.bold.cyan(title));
     }
   }
 
@@ -119,8 +127,10 @@ export class Renderer {
       }
       if (layout) {
         this.stdout.write(cursorTo(layout.boardStartColumn, layout.startRow + TITLE_HEIGHT + y));
+      } else {
+        this.stdout.write(cursorTo(1, 2 + 1 + y));
       }
-      this.stdout.write(line + '\n');
+      this.stdout.write(line);
     }
   }
 

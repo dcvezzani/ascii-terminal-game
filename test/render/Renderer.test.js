@@ -118,6 +118,22 @@ describe('Renderer', () => {
     });
   });
 
+  describe('moveCursorToHome', () => {
+    it('writes cursor-to-home ANSI sequence (1;1H)', () => {
+      mockStdout.write.mockClear();
+      renderer.moveCursorToHome();
+      expect(mockStdout.write).toHaveBeenCalledTimes(1);
+      expect(mockStdout.write).toHaveBeenCalledWith(expect.stringContaining('1;1H'));
+    });
+
+    it('does not write newlines', () => {
+      mockStdout.write.mockClear();
+      renderer.moveCursorToHome();
+      const out = mockStdout.write.mock.calls[0][0];
+      expect(out).not.toContain('\n');
+    });
+  });
+
   describe('renderTerminalTooSmallMessage', () => {
     it('shows two-line message (terminal is too small / please resize)', () => {
       mockStdout.write.mockClear();
@@ -163,13 +179,15 @@ describe('Renderer', () => {
       expect(chalkCall[0].length).toBeLessThanOrEqual(60 + 20); // chalk adds codes; content part is 60
     });
 
-    it('when layout not provided, writes title and newlines (current behavior)', () => {
+    it('when layout not provided, writes cursor position and title (no newlines per spec §3.1)', () => {
       mockStdout.write.mockClear();
       renderer.renderTitle();
+      expect(mockStdout.write).toHaveBeenCalledWith(expect.stringContaining('\x1b[1;1H'));
       expect(mockStdout.write).toHaveBeenCalledWith(
         expect.stringContaining('=== Multiplayer Terminal Game ===')
       );
-      expect(mockStdout.write).toHaveBeenCalledWith(expect.stringMatching(/\n\n$/));
+      const allCalls = mockStdout.write.mock.calls.map(c => c[0]).join('');
+      expect(allCalls.endsWith('\n\n')).toBe(false);
     });
   });
 
@@ -191,12 +209,16 @@ describe('Renderer', () => {
       expect(cursorCalls[19]).toContain('\x1b[24;21H'); // startRow 3 + 2 + 19 = 24
     });
 
-    it('when layout not provided, does not use cursorTo for board rows', () => {
+    it('when layout not provided, uses cursorTo for each board row and no newlines (spec §3.1)', () => {
       mockStdout.write.mockClear();
       renderer.renderBoard(board, []);
       const cursorCalls = mockStdout.write.mock.calls
-        .filter(c => typeof c[0] === 'string' && c[0].includes(';') && c[0].includes('H'));
-      expect(cursorCalls.length).toBe(0);
+        .filter(c => typeof c[0] === 'string' && c[0].includes('\x1b[') && c[0].includes('H'));
+      expect(cursorCalls.length).toBe(20);
+      expect(cursorCalls[0]).toContain('\x1b[3;1H');
+      const lineCalls = mockStdout.write.mock.calls
+        .filter(c => typeof c[0] === 'string' && !c[0].includes('\x1b['));
+      lineCalls.forEach(c => expect(c[0].endsWith('\n')).toBe(false));
     });
   });
 
