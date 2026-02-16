@@ -59,7 +59,7 @@ export class Renderer {
    * Call after each complete frame per spec §3.6 if writing to terminal elsewhere.
    */
   moveCursorToHome() {
-    this.stdout.write(cursorTo(1, 1));
+    this.stdout.write(cursorTo(0, 0));
   }
 
   /**
@@ -76,10 +76,17 @@ export class Renderer {
     hideCursor.show();
   }
 
-  clearScreen(canvas) {
-    return false;
-    canvas.clearScreen();
-    this.render(canvas);
+  clearScreen() {
+    this.moveCursorToHome();
+
+    const columns = process.stdout.columns ?? 80;
+    const rows = process.stdout.rows ?? 20;
+    for (let y = 0; y < rows; y++) {
+      for (let x = 0; x < columns; x++) {
+        this.stdout.write(cursorTo(x, y));
+        this.stdout.write(' ');
+      }
+    }
   }
 
   /**
@@ -101,16 +108,25 @@ export class Renderer {
   }
 
   renderFull(canvas) {
+    this.logger.debug(">>>dcv (Renderer.js, , renderFull:104)", )
     if (!canvas || !canvas.grid || canvas.grid.length === 0) {
       return;
     }
-    this.moveCursorToHome();
-    this.stdout.write(clearScreen);
+
+    this.clearScreen();
+
+    // center the canvas (grid) in the terminal by adding horizontal offset
+    const columns = process.stdout.columns ?? 80;
+    const gridWidth = canvas.grid[0] ? canvas.grid[0].length : 0;
+    const horizOffset = Math.max(0, Math.floor((columns - gridWidth) / 2));
 
     // Render each cell in the Canvas grid to the terminal
     for (let y = 0; y < canvas.grid.length; y++) {
       const row = canvas.grid[y];
       if (!row) continue;
+
+      this.stdout.write(cursorTo(horizOffset, y));
+
       for (let x = 0; x < row.length; x++) {
         const cell = row[x];
         this.stdout.write(this.getColorFunction(cell.color)(cell.character));
@@ -119,6 +135,41 @@ export class Renderer {
         this.stdout.write('\n');
       }
     }
+
+    if (process.env.DEBUG_CANVAS === 'true') {
+      this.moveCursorToHome();
+
+      // Render a red '*' for the first and last rows, and the first and last characters of every row
+      const redStar = this.getColorFunction('FF0000')('*');
+      for (let y = 0; y < canvas.grid.length; y++) {
+        const row = canvas.grid[y];
+
+        this.stdout.write(cursorTo(horizOffset, y));
+
+        // First and last rows: overwrite entire row with red '*'
+        if (y === 0 || y === canvas.grid.length - 1) {
+          for (let x = 0; x < row.length; x++) {
+            this.stdout.write(redStar);
+          }
+        } else {
+          // For other rows: first and last characters as red '*', rest leave as normal
+          for (let x = 0; x < row.length; x++) {
+            if (x === 0 || x === row.length - 1) {
+              this.stdout.write(redStar);
+            } else {
+              // Re-render the original cell content
+              const cell = row[x];
+              this.stdout.write(this.getColorFunction(cell.color)(cell.character));
+            }
+          }
+        }
+
+        if (y < canvas.grid.length - 1) {
+          this.stdout.write('\n');
+        }
+      }
+    }
+
     this._lastRenderedGrid = copyGrid(canvas.grid);
   }
 

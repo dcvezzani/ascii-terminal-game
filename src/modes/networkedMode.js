@@ -495,6 +495,10 @@ export async function networkedMode() {
     }
   }
 
+  inputHandler.onRender(() => {
+    runNormalRenderPath();
+  });
+
   /**
    * Normal render path: size check → too small message or clear-then-draw.
    * Used for first render, resize debounce, and too-many-changes full redraw.
@@ -531,6 +535,8 @@ export async function networkedMode() {
 
     const centerBoard = clientConfig.rendering?.centerBoard !== false;
     let layout = null;
+
+    renderer.moveCursorToHome(); 
     if (centerBoard) {
       const { columns, rows } = getTerminalSize();
       const statusBarHeight = getStatusBarHeight(

@@ -153,10 +153,12 @@ export class Canvas {
             ? truncateTitleToWidth(raw, TITLE_AND_STATUS_BAR_WIDTH)
             : raw;
         const width = Math.max(TITLE_AND_STATUS_BAR_WIDTH, title.length);
+        const startCol = Math.max(0, Math.floor((width - title.length) / 2));
         const titleRow = [];
         for (let i = 0; i < width; i++) {
+            const inTitle = i >= startCol && i < startCol + title.length;
             titleRow.push({
-                character: i < title.length ? title[i] : ' ',
+                character: inTitle ? title[i - startCol] : ' ',
                 color: Canvas.TITLE_COLOR
             });
         }
