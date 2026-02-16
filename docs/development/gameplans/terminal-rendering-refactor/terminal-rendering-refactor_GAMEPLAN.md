@@ -13,19 +13,19 @@ This gameplan refactors terminal rendering so behavior matches `terminal-renderi
 
 ## Progress Summary
 
-- [ ] **Phase 1: Resize debounce config (env + CLI)**
-- [ ] **Phase 2: One-time startup clear (newline scroll)**
-- [ ] **Phase 3: Content region tracking and clear-then-draw**
-- [ ] **Phase 4: Unified normal render path and resize fix**
-- [ ] **Phase 5: Terminal too small (wasTooSmall, two-line message)**
-- [ ] **Phase 6: Tests and verification**
+- [x] **Phase 1: Resize debounce config (env + CLI)** - COMPLETE
+- [x] **Phase 2: One-time startup clear (newline scroll)** - COMPLETE
+- [x] **Phase 3: Content region tracking and clear-then-draw** - COMPLETE
+- [x] **Phase 4: Unified normal render path and resize fix** - COMPLETE
+- [x] **Phase 5: Terminal too small (wasTooSmall, two-line message)** - COMPLETE
+- [x] **Phase 6: Tests and verification** - COMPLETE
 
 ## Prerequisites
 
-- [ ] All existing tests passing (`npm test`)
-- [ ] Spec and current-vs-desired doc reviewed
-- [ ] Layout module and Renderer (renderTitle, renderBoard, renderStatusBar) in place
-- [ ] Resize handler and debounce already present in `networkedMode.js` (will be adapted)
+- [x] All existing tests passing (`npm test`)
+- [x] Spec and current-vs-desired doc reviewed
+- [x] Layout module and Renderer (renderTitle, renderBoard, renderStatusBar) in place
+- [x] Resize handler and debounce already present in `networkedMode.js` (will be adapted)
 
 ---
 
@@ -242,11 +242,11 @@ This gameplan refactors terminal rendering so behavior matches `terminal-renderi
 
 ## Success Criteria (from spec §9, relevant subset)
 
-- [ ] **Startup:** One-time newline scroll clears previous terminal content; first frame is not mixed with prior output.
-- [ ] **Resize:** Each resize clears the screen; one full re-render after debounce. Board and UI reappear. RESIZE_DEBOUNCE_MS and --resize-debounce work; CLI overrides env; default 250 ms.
-- [ ] **Terminal too small:** When too small, clear screen and show centered “too small” message (two lines). When resized to sufficient size, clear screen once then show content.
-- [ ] **Clear-then-draw:** Full redraws clear the previous content region (spaces) then draw new content and store the new region.
-- [ ] **Bug fixed:** After terminal resize, the game board (and title, status bar) consistently render (BUG_resize_board_not_rendering).
+- [x] **Startup:** One-time newline scroll clears previous terminal content; first frame is not mixed with prior output.
+- [x] **Resize:** Each resize clears the screen; one full re-render after debounce. Board and UI reappear. RESIZE_DEBOUNCE_MS and --resize-debounce work; CLI overrides env; default 250 ms.
+- [x] **Terminal too small:** When too small, clear screen and show centered “too small” message (two lines). When resized to sufficient size, clear screen once then show content.
+- [x] **Clear-then-draw:** Full redraws clear the previous content region (spaces) then draw new content and store the new region.
+- [x] **Bug fixed:** After terminal resize, the game board (and title, status bar) consistently render (BUG_resize_board_not_rendering).
 
 ---
 
