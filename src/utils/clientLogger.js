@@ -36,7 +36,14 @@ function sanitizeClientIdForFilename(clientId) {
  * @returns {winston.transport[]} Array of transports
  */
 function createClientTransports(clientId, options = {}) {
-  const safeId = sanitizeClientIdForFilename(clientId);
+  let safeId
+  if (process.env.REUSE_CLIENT_LOGGER === 'true') {
+    safeId = 'client';
+    // fs.unlinkSync(join(clientsLogsDir, `client.log`));
+  } else {
+    safeId = sanitizeClientIdForFilename(clientId);
+  }
+
   const transports = [
     // Shared error log (all client errors in one place)
     new winston.transports.File({

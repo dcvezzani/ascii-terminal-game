@@ -437,6 +437,39 @@ export class Canvas {
             this.renderStatusBar(score, position, boardWidth, boardHeight);
         }
     }
+
+    static MAX_DIFF_COUNT = 10;
+    compareStates(canvasPrevious, canvasCurrent) {
+        // compare the grid of the two canvases; return diff count (force full render if invalid)
+        if (!canvasPrevious?.grid || !canvasCurrent?.grid) {
+            return Canvas.MAX_DIFF_COUNT + 1;
+        }
+        if (canvasPrevious.grid.length !== canvasCurrent.grid.length) {
+            return Canvas.MAX_DIFF_COUNT + 1;
+        }
+
+        let diffCount = 0;
+        for (let y = 0; y < canvasPrevious.grid.length; y++) {
+            const rowPrevious = canvasPrevious.grid[y];
+            const rowCurrent = canvasCurrent.grid[y];
+            if (rowPrevious.length !== rowCurrent.length) {
+                diffCount++;
+            }
+            for (let x = 0; x < rowPrevious.length; x++) {
+                const cellPrevious = rowPrevious[x];
+                const cellCurrent = rowCurrent[x];
+                if (cellPrevious.character !== cellCurrent.character || cellPrevious.color !== cellCurrent.color) {
+                    diffCount++;
+                }
+            }
+        }
+        return diffCount;
+    }
+
+    hasLittleToNoChanges(canvasPrevious, canvasCurrent) {
+        const totalChanges = this.compareStates(canvasPrevious, canvasCurrent);
+        return (totalChanges <= Canvas.MAX_DIFF_COUNT);
+    }
 }
 
 export default Canvas;
