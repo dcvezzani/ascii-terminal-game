@@ -27,3 +27,25 @@ export function getTerminalSize() {
     rows: process.stdout.rows || 24
   };
 }
+
+/**
+ * One-time startup clear: scroll terminal by writing newlines (spec §2.1).
+ * Only runs when stream is TTY and has rows; otherwise no-op.
+ * If stream.write() returns false, waits for 'drain' before resolving.
+ * @param {NodeJS.WritableStream} stream - Typically process.stdout
+ * @returns {Promise<void>}
+ */
+export function startupClear(stream) {
+  if (!stream?.isTTY || stream.rows == null || stream.rows < 1) {
+    return Promise.resolve();
+  }
+  const rows = stream.rows;
+  const chunk = '\n'.repeat(rows);
+  const ok = stream.write(chunk);
+  if (ok) {
+    return Promise.resolve();
+  }
+  return new Promise((resolve) => {
+    stream.once('drain', resolve);
+  });
+}

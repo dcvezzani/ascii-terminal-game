@@ -6,7 +6,7 @@ import InputHandler from '../input/InputHandler.js';
 import MessageHandler from '../network/MessageHandler.js';
 import MessageTypes from '../network/MessageTypes.js';
 import logger from '../utils/logger.js';
-import { checkTerminalSize, getTerminalSize } from '../utils/terminal.js';
+import { checkTerminalSize, getTerminalSize, startupClear } from '../utils/terminal.js';
 import compareStates from '../utils/stateComparison.js';
 import { computeLayout } from '../render/layout.js';
 import { getStatusBarHeight } from '../render/statusBarUtils.js';
@@ -843,6 +843,8 @@ export async function networkedMode() {
 
     renderer.hideCursor();
     inputHandler.start();
+
+    await startupClear(process.stdout);
 
     logger.info(`Connecting to ${clientConfig.websocket.url}...`);
     wsClient.connect();
