@@ -2,17 +2,17 @@ import chalk from 'chalk';
 import { cursorHide, cursorShow, cursorTo, clearScreen } from 'ansi-escapes';
 import hideCursor from 'cli-cursor';
 import process from 'process';
-import {
-  wrapAtSpaces,
-  buildLine1,
-  buildLine2,
-  buildSimplifiedLine,
-  formatBoxTopBottom,
-  formatBoxRow
-} from './statusBarUtils.js';
-import { truncateTitleToWidth, BLANK_LINES_BEFORE_STATUS_BAR, TITLE_AND_STATUS_BAR_WIDTH } from './layout.js';
+// import {
+//   wrapAtSpaces,
+//   buildLine1,
+//   buildLine2,
+//   buildSimplifiedLine,
+//   formatBoxTopBottom,
+//   formatBoxRow
+// } from './statusBarUtils.js';
+// import { truncateTitleToWidth, BLANK_LINES_BEFORE_STATUS_BAR, TITLE_AND_STATUS_BAR_WIDTH } from './layout.js';
 
-const TITLE_HEIGHT = 2;
+// const TITLE_HEIGHT = 2;
 
 /**
  * Renderer class for terminal rendering
@@ -36,8 +36,19 @@ function copyGrid(grid) {
   return out;
 }
 
+function noLogger() {
+  const _noLogger = () => {};
+  return {
+    info: _noLogger,
+    error: _noLogger,
+    warn: _noLogger,
+    debug: _noLogger
+  };
+}
+
 export class Renderer {
-  constructor() {
+  constructor(options={}) {
+    this.logger = options.logger || noLogger();
     this.stdout = process.stdout;
     /** @type {Array<Array<{character: string, color: string}>|null} */
     this._lastRenderedGrid = null;
@@ -66,6 +77,7 @@ export class Renderer {
   }
 
   clearScreen(canvas) {
+    return false;
     canvas.clearScreen();
     this.render(canvas);
   }
@@ -117,6 +129,7 @@ export class Renderer {
    * @param {import('./Canvas.js').default} canvas
    */
   renderIncremental(canvas) {
+    this.logger.debug(">>>dcv (Renderer.js, , renderIncremental:122)", )
     if (!canvas || !canvas.grid || canvas.grid.length === 0) {
       return;
     }
@@ -160,8 +173,13 @@ export class Renderer {
       this.renderFull(canvas);
       return;
     }
+
     const prevCanvas = { grid: this._lastRenderedGrid };
-    if (canvas.hasLittleToNoChanges(prevCanvas, canvas)) {
+    if (canvas.hasNoChanges(prevCanvas, canvas)) {
+      this.logger.debug("No changes, skipping render");
+      return;
+    }
+    if (canvas.hasFewChanges(prevCanvas, canvas)) {
       this.renderIncremental(canvas);
     } else {
       this.renderFull(canvas);

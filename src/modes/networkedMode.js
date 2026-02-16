@@ -18,7 +18,7 @@ import Message from '../render/Message.js';
  */
 export async function networkedMode() {
   const wsClient = new WebSocketClient(clientConfig.websocket.url);
-  const renderer = new Renderer()
+  const renderer = new Renderer({logger})
   const canvas = new Canvas({
     ...clientConfig.rendering,
     statusBar: clientConfig.statusBar
@@ -598,10 +598,11 @@ export async function networkedMode() {
    * Render the game
    */
   function render() {
-    if (!currentState) {
-      return;
-    }
-    if (displayEmptyDuringResize) {
+    if (
+      !currentState
+      || !changesSinceLastRender(previousState, currentState)
+      || displayEmptyDuringResize
+    ) {
       return;
     }
 
@@ -656,6 +657,7 @@ export async function networkedMode() {
         );
         if (!layout.fitsInTerminal) {
           Message.apply(canvas, { terminalColumns: columns, terminalRows: rows });
+          previousState = currentState
           renderer.render(canvas);
           return;
         }
@@ -789,7 +791,8 @@ export async function networkedMode() {
         );
         
         canvas.clearContentRegion(lastContentRegion);
-        const fallbackLayout = centerBoard ? computeLayout(
+        const centerBoardFallback = clientConfig.rendering?.centerBoard !== false;
+        const fallbackLayout = centerBoardFallback ? computeLayout(
           getTerminalSize().columns,
           getTerminalSize().rows,
           currentState.board.width,
@@ -834,6 +837,11 @@ export async function networkedMode() {
       }
     }
   }
+
+  function changesSinceLastRender(previousState, currentState) {
+    const changes = compareStates(previousState, currentState);
+    return changes.players.moved.length > 0 || changes.players.joined.length > 0 || changes.players.left.length > 0 || changes.scoreChanged;
+  } 
 
   /**
    * Shutdown and cleanup
