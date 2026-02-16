@@ -1,4 +1,5 @@
 import clientConfig from '../../config/clientConfig.js';
+import { resolveRenderingConfig } from '../config/resolveRendering.js';
 import WebSocketClient from '../network/WebSocketClient.js';
 import Renderer from '../render/Renderer.js';
 import InputHandler from '../input/InputHandler.js';
@@ -815,6 +816,7 @@ export async function networkedMode() {
   }
 
   // Resize handling: clear during resize, full re-render when debounce fires
+  const renderingConfig = resolveRenderingConfig(clientConfig);
   if (process.stdout.isTTY) {
     process.stdout.on('resize', () => {
       displayEmptyDuringResize = true;
@@ -822,7 +824,7 @@ export async function networkedMode() {
       if (resizeDebounceTimer) {
         clearTimeout(resizeDebounceTimer);
       }
-      const debounceMs = clientConfig.rendering?.resizeDebounceMs ?? 200;
+      const debounceMs = renderingConfig.resizeDebounceMs;
       resizeDebounceTimer = setTimeout(() => {
         resizeDebounceTimer = null;
         displayEmptyDuringResize = false;
