@@ -21,7 +21,8 @@ export async function networkedMode() {
   const renderer = new Renderer({logger})
   const canvas = new Canvas({
     ...clientConfig.rendering,
-    statusBar: clientConfig.statusBar
+    statusBar: clientConfig.statusBar,
+    logger: logger
   });
   const inputHandler = new InputHandler();
 
@@ -577,6 +578,7 @@ export async function networkedMode() {
     if (position) {
       canvas.updateCell(position.x, position.y, canvas.config.playerGlyph, canvas.config.playerColor);
     }
+    
     if (layout) {
       canvas.renderStatusBar(
         currentState.score || 0,
@@ -857,6 +859,8 @@ export async function networkedMode() {
       return;
     }
 
+    renderer.clearScreen();
+
     running = false;
     logger.info(`Shutting down: ${reason}`);
 
@@ -884,7 +888,7 @@ export async function networkedMode() {
   if (process.stdout.isTTY) {
     process.stdout.on('resize', () => {
       displayEmptyDuringResize = true;
-      canvas.clearScreen();
+      renderer.clearScreen();
       if (resizeDebounceTimer) {
         clearTimeout(resizeDebounceTimer);
       }

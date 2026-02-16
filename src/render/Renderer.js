@@ -52,6 +52,7 @@ export class Renderer {
     this.stdout = process.stdout;
     /** @type {Array<Array<{character: string, color: string}>|null} */
     this._lastRenderedGrid = null;
+    this.horizOffset = 0;
   }
 
   /**
@@ -87,6 +88,8 @@ export class Renderer {
         this.stdout.write(' ');
       }
     }
+
+    this._lastRenderedGrid = null;
   }
 
   /**
@@ -108,7 +111,6 @@ export class Renderer {
   }
 
   renderFull(canvas) {
-    this.logger.debug(">>>dcv (Renderer.js, , renderFull:104)", )
     if (!canvas || !canvas.grid || canvas.grid.length === 0) {
       return;
     }
@@ -118,14 +120,14 @@ export class Renderer {
     // center the canvas (grid) in the terminal by adding horizontal offset
     const columns = process.stdout.columns ?? 80;
     const gridWidth = canvas.grid[0] ? canvas.grid[0].length : 0;
-    const horizOffset = Math.max(0, Math.floor((columns - gridWidth) / 2));
+    this.horizOffset = Math.max(0, Math.floor((columns - gridWidth) / 2));
 
     // Render each cell in the Canvas grid to the terminal
     for (let y = 0; y < canvas.grid.length; y++) {
       const row = canvas.grid[y];
       if (!row) continue;
 
-      this.stdout.write(cursorTo(horizOffset, y));
+      this.stdout.write(cursorTo(this.horizOffset, y));
 
       for (let x = 0; x < row.length; x++) {
         const cell = row[x];
@@ -144,7 +146,7 @@ export class Renderer {
       for (let y = 0; y < canvas.grid.length; y++) {
         const row = canvas.grid[y];
 
-        this.stdout.write(cursorTo(horizOffset, y));
+        this.stdout.write(cursorTo(this.horizOffset, y));
 
         // First and last rows: overwrite entire row with red '*'
         if (y === 0 || y === canvas.grid.length - 1) {
@@ -207,7 +209,7 @@ export class Renderer {
         if (!cell) continue;
         const same = prev && prev.character === cell.character && prev.color === cell.color;
         if (!same) {
-          this.stdout.write(cursorTo(x, y));
+          this.stdout.write(cursorTo(x + this.horizOffset, y));
           this.stdout.write(this.getColorFunction(cell.color)(cell.character));
         }
       }
