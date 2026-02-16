@@ -40,6 +40,24 @@ export class Renderer {
     this.stdout.write(cursorTo(1, 1));
   }
 
+  /**
+   * Clear a content region by overwriting with spaces (1-based row/column).
+   * No-op if region is null/undefined.
+   * @param {{ startRow: number, startColumn: number, rows: number, columns: number } | null} region
+   */
+  clearContentRegion(region) {
+    if (!region || region.rows < 1 || region.columns < 1) {
+      return;
+    }
+    const { startRow, startColumn, rows, columns } = region;
+    for (let r = 0; r < rows; r++) {
+      const row = startRow + r;
+      this.stdout.write(cursorTo(startColumn, row));
+      this.stdout.write(' '.repeat(columns));
+      this.stdout.write(eraseEndLine);
+    }
+  }
+
   /** Message when terminal width is too narrow */
   static TERMINAL_TOO_NARROW_MESSAGE = 'Please increase the width of your terminal window in order to play this game.';
 

@@ -93,6 +93,31 @@ describe('Renderer', () => {
     });
   });
 
+  describe('clearContentRegion', () => {
+    it('is no-op when region is null', () => {
+      mockStdout.write.mockClear();
+      renderer.clearContentRegion(null);
+      expect(mockStdout.write).not.toHaveBeenCalled();
+    });
+
+    it('is no-op when region has zero rows', () => {
+      mockStdout.write.mockClear();
+      renderer.clearContentRegion({ startRow: 1, startColumn: 1, rows: 0, columns: 10 });
+      expect(mockStdout.write).not.toHaveBeenCalled();
+    });
+
+    it('overwrites region with spaces and eraseEndLine per row', () => {
+      mockStdout.write.mockClear();
+      renderer.clearContentRegion({ startRow: 2, startColumn: 3, rows: 2, columns: 5 });
+      const calls = mockStdout.write.mock.calls.map(c => c[0]);
+      expect(calls.length).toBeGreaterThanOrEqual(6); // 2 rows × (cursorTo + spaces + eraseEndLine)
+      expect(calls.some(c => c.includes('2;3H'))).toBe(true);
+      expect(calls.some(c => c.includes('3;3H'))).toBe(true);
+      expect(calls.some(c => c === '     ')).toBe(true);
+      expect(calls.some(c => c === '\x1b[K')).toBe(true);
+    });
+  });
+
   describe('renderTerminalTooSmallMessage', () => {
     it('shows width message when terminal columns < minColumns', () => {
       mockStdout.write.mockClear();

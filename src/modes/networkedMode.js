@@ -8,7 +8,7 @@ import MessageTypes from '../network/MessageTypes.js';
 import logger from '../utils/logger.js';
 import { checkTerminalSize, getTerminalSize, startupClear } from '../utils/terminal.js';
 import compareStates from '../utils/stateComparison.js';
-import { computeLayout } from '../render/layout.js';
+import { computeLayout, getContentRegionFromLayout } from '../render/layout.js';
 import { getStatusBarHeight } from '../render/statusBarUtils.js';
 
 /**
@@ -32,6 +32,7 @@ export async function networkedMode() {
   let displayEmptyDuringResize = false;
   let resizeDebounceTimer = null;
   let cachedLayout = null;
+  let lastContentRegion = null;
 
   // Set up WebSocket event handlers
   wsClient.on('connect', () => {
@@ -563,9 +564,9 @@ export async function networkedMode() {
 
       const titleString = '=== Multiplayer Terminal Game ===';
 
-      // First render: use full render
+      // First render: use full render (clear previous content region if any, then draw)
       if (previousState === null) {
-        renderer.clearScreen();
+        renderer.clearContentRegion(lastContentRegion);
         if (layout) {
           renderer.renderTitle(titleString, layout);
           renderer.renderBoard(board, otherPlayers, layout);
@@ -593,6 +594,7 @@ export async function networkedMode() {
             currentState.board.height
           );
         }
+        lastContentRegion = layout ? getContentRegionFromLayout(layout) : null;
         previousState = currentState;
         previousPredictedPosition = position ? { ...position } : null;
         return;
@@ -605,9 +607,9 @@ export async function networkedMode() {
         changes.players.joined.length +
         changes.players.left.length;
 
-      // Fallback to full render if too many changes
+      // Fallback to full render if too many changes (clear previous region, then draw)
       if (totalChanges > 10) {
-        renderer.clearScreen();
+        renderer.clearContentRegion(lastContentRegion);
         if (layout) {
           renderer.renderTitle(titleString, layout);
           renderer.renderBoard(board, otherPlayers, layout);
@@ -635,6 +637,7 @@ export async function networkedMode() {
             currentState.board.height
           );
         }
+        lastContentRegion = layout ? getContentRegionFromLayout(layout) : null;
         previousState = currentState;
         previousPredictedPosition = position ? { ...position } : null;
         return;
@@ -739,7 +742,7 @@ export async function networkedMode() {
           p => p.playerId !== localPlayerId
         );
         
-        renderer.clearScreen();
+        renderer.clearContentRegion(lastContentRegion);
         const fallbackLayout = centerBoard ? computeLayout(
           getTerminalSize().columns,
           getTerminalSize().rows,
@@ -777,6 +780,7 @@ export async function networkedMode() {
             currentState.board.height
           );
         }
+        lastContentRegion = fallbackLayout ? getContentRegionFromLayout(fallbackLayout) : null;
         previousState = currentState;
         previousPredictedPosition = position ? { ...position } : null;
       } catch (fallbackError) {

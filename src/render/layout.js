@@ -74,3 +74,23 @@ export function truncateTitleToWidth(title, maxWidth = 60) {
   }
   return title.slice(0, maxWidth - 3) + '...';
 }
+
+/**
+ * Content region shape for clear-then-draw (1-based row/column).
+ * @typedef {{ startRow: number, startColumn: number, rows: number, columns: number }} ContentRegion
+ */
+
+/**
+ * Compute content region rectangle from layout (title + board + status bar block).
+ * @param {object} layout - Result of computeLayout()
+ * @returns {ContentRegion}
+ */
+export function getContentRegionFromLayout(layout) {
+  if (!layout) return null;
+  return {
+    startRow: layout.startRow,
+    startColumn: layout.startColumn,
+    rows: layout.blockHeight,
+    columns: layout.blockWidth
+  };
+}

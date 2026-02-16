@@ -4,7 +4,8 @@ import {
   BLANK_LINES_AFTER_TITLE,
   BLANK_LINES_BEFORE_STATUS_BAR,
   computeLayout,
-  truncateTitleToWidth
+  truncateTitleToWidth,
+  getContentRegionFromLayout
 } from '../../src/render/layout.js';
 
 describe('layout', () => {
@@ -98,6 +99,23 @@ describe('layout', () => {
       const result = truncateTitleToWidth('A'.repeat(20), 10);
       expect(result.length).toBe(10);
       expect(result).toBe('A'.repeat(7) + '...');
+    });
+  });
+
+  describe('getContentRegionFromLayout', () => {
+    it('returns null when layout is null', () => {
+      expect(getContentRegionFromLayout(null)).toBeNull();
+    });
+
+    it('returns region matching layout block dimensions', () => {
+      const layout = computeLayout(100, 30, 20, 20, 5, { centerBoard: true });
+      const region = getContentRegionFromLayout(layout);
+      expect(region).toEqual({
+        startRow: layout.startRow,
+        startColumn: layout.startColumn,
+        rows: layout.blockHeight,
+        columns: layout.blockWidth
+      });
     });
   });
 });
