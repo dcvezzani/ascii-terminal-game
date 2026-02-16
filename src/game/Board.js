@@ -10,6 +10,17 @@ export class Board {
     this.grid = grid != null ? grid.map((row) => [...row]) : null;
   }
 
+  empty() {
+    const grid = [];
+    for (let y = 0; y < this.height; y++) {
+      grid[y] = [];
+      for (let x = 0; x < this.width; x++) {
+        grid[y][x] = ' ';
+      }
+    }
+    return new Board({ width: this.width, height: this.height, grid });
+  }
+
   /**
    * Initialize the board from a pre-decoded 2D grid (e.g. from JSON loader).
    * Caller must ensure grid dimensions match this.width and this.height.
