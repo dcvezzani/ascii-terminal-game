@@ -94,46 +94,46 @@ export class Canvas {
         }
     }
 
-    /** Two-line message per spec §3.5 */
-    static TERMINAL_TOO_SMALL_LINE1 = 'terminal is too small';
-    static TERMINAL_TOO_SMALL_LINE2 = 'please resize';
+    // /** Two-line message per spec §3.5 */
+    // static TERMINAL_TOO_SMALL_LINE1 = 'terminal is too small';
+    // static TERMINAL_TOO_SMALL_LINE2 = 'please resize';
 
-    /** Hex color for terminal-too-small message (yellow) when stored in grid */
-    static TERMINAL_TOO_SMALL_COLOR = 'FFFF00';
+    // /** Hex color for terminal-too-small message (yellow) when stored in grid */
+    // static TERMINAL_TOO_SMALL_COLOR = 'FFFF00';
 
-    /**
-     * Render the terminal-too-small message into this.grid (two lines, centered).
-     * Does not write to the terminal. Grid size is terminalRows x terminalColumns.
-     * @param {number} terminalColumns - Current terminal columns
-     * @param {number} terminalRows - Current terminal rows
-     * @param {number} minColumns - Required minimum columns (unused; kept for API compatibility)
-     * @param {number} minRows - Required minimum rows (unused; kept for API compatibility)
-     */
-    renderTerminalTooSmallMessage(terminalColumns, terminalRows, minColumns, minRows) {
-        const line1 = Canvas.TERMINAL_TOO_SMALL_LINE1;
-        const line2 = Canvas.TERMINAL_TOO_SMALL_LINE2;
-        const cols = Math.max(1, terminalColumns);
-        const rows = Math.max(1, terminalRows);
-        const startCol1 = Math.max(0, Math.floor((cols - line1.length) / 2));
-        const startCol2 = Math.max(0, Math.floor((cols - line2.length) / 2));
-        const midRow = Math.max(1, Math.floor(rows / 2));
-        const row1 = midRow - 1;
-        const row2 = midRow;
+    // /**
+    //  * Render the terminal-too-small message into this.grid (two lines, centered).
+    //  * Does not write to the terminal. Grid size is terminalRows x terminalColumns.
+    //  * @param {number} terminalColumns - Current terminal columns
+    //  * @param {number} terminalRows - Current terminal rows
+    //  * @param {number} minColumns - Required minimum columns (unused; kept for API compatibility)
+    //  * @param {number} minRows - Required minimum rows (unused; kept for API compatibility)
+    //  */
+    // renderTerminalTooSmallMessage(terminalColumns, terminalRows, minColumns, minRows) {
+    //     const line1 = Canvas.TERMINAL_TOO_SMALL_LINE1;
+    //     const line2 = Canvas.TERMINAL_TOO_SMALL_LINE2;
+    //     const cols = Math.max(1, terminalColumns);
+    //     const rows = Math.max(1, terminalRows);
+    //     const startCol1 = Math.max(0, Math.floor((cols - line1.length) / 2));
+    //     const startCol2 = Math.max(0, Math.floor((cols - line2.length) / 2));
+    //     const midRow = Math.max(1, Math.floor(rows / 2));
+    //     const row1 = midRow - 1;
+    //     const row2 = midRow;
 
-        const emptyCell = () => ({ character: ' ', color: 'FFFFFF' });
-        this.grid = [];
-        for (let y = 0; y < rows; y++) {
-            this.grid[y] = Array.from({ length: cols }, emptyCell);
-        }
-        const yellow = Canvas.TERMINAL_TOO_SMALL_COLOR;
-        for (let i = 0; i < line1.length && startCol1 + i < cols; i++) {
-            this.grid[row1][startCol1 + i] = { character: line1[i], color: yellow };
-        }
-        for (let i = 0; i < line2.length && startCol2 + i < cols; i++) {
-            this.grid[row2][startCol2 + i] = { character: line2[i], color: yellow };
-        }
-        this._boardOffset = null;
-    }
+    //     const emptyCell = () => ({ character: ' ', color: 'FFFFFF' });
+    //     this.grid = [];
+    //     for (let y = 0; y < rows; y++) {
+    //         this.grid[y] = Array.from({ length: cols }, emptyCell);
+    //     }
+    //     const yellow = Canvas.TERMINAL_TOO_SMALL_COLOR;
+    //     for (let i = 0; i < line1.length && startCol1 + i < cols; i++) {
+    //         this.grid[row1][startCol1 + i] = { character: line1[i], color: yellow };
+    //     }
+    //     for (let i = 0; i < line2.length && startCol2 + i < cols; i++) {
+    //         this.grid[row2][startCol2 + i] = { character: line2[i], color: yellow };
+    //     }
+    //     this._boardOffset = null;
+    // }
 
     /** Hex color for title (cyan) when stored in grid */
     static TITLE_COLOR = '00FFFF';
@@ -438,7 +438,17 @@ export class Canvas {
         }
     }
 
+    /**
+     * Maximum number of changes to allow for incremental render
+     */
     static MAX_DIFF_COUNT = 10;
+
+    /**
+     * Compare the grid of the two canvases; return diff count (force full render if invalid)
+     * @param {import('./Canvas.js').default} canvasPrevious
+     * @param {import('./Canvas.js').default} canvasCurrent
+     * @returns {number}
+     */
     compareStates(canvasPrevious, canvasCurrent) {
         // compare the grid of the two canvases; return diff count (force full render if invalid)
         if (!canvasPrevious?.grid || !canvasCurrent?.grid) {
@@ -466,6 +476,12 @@ export class Canvas {
         return diffCount;
     }
 
+    /**
+     * Check if the two canvases have little to no changes
+     * @param {import('./Canvas.js').default} canvasPrevious
+     * @param {import('./Canvas.js').default} canvasCurrent
+     * @returns {boolean}
+     */
     hasLittleToNoChanges(canvasPrevious, canvasCurrent) {
         const totalChanges = this.compareStates(canvasPrevious, canvasCurrent);
         return (totalChanges <= Canvas.MAX_DIFF_COUNT);

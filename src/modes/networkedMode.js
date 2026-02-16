@@ -11,6 +11,7 @@ import { checkTerminalSize, getTerminalSize, startupClear } from '../utils/termi
 import compareStates from '../utils/stateComparison.js';
 import { computeLayout, getContentRegionFromLayout } from '../render/layout.js';
 import { getStatusBarHeight } from '../render/statusBarUtils.js';
+import Message from '../render/Message.js';
 
 /**
  * Networked game mode - connects to server and plays multiplayer game
@@ -546,12 +547,7 @@ export async function networkedMode() {
         { centerBoard: true }
       );
       if (!layout.fitsInTerminal) {
-        canvas.renderTerminalTooSmallMessage(
-          columns,
-          rows,
-          layout.minColumns,
-          layout.minRows
-        );
+        Message.apply(canvas, { terminalColumns: columns, terminalRows: rows });
         renderer.render(canvas);
         wasTooSmall = true;
         return false;
@@ -659,12 +655,7 @@ export async function networkedMode() {
           { centerBoard: true }
         );
         if (!layout.fitsInTerminal) {
-          canvas.renderTerminalTooSmallMessage(
-            columns,
-            rows,
-            layout.minColumns,
-            layout.minRows
-          );
+          Message.apply(canvas, { terminalColumns: columns, terminalRows: rows });
           renderer.render(canvas);
           return;
         }
