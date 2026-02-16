@@ -553,6 +553,9 @@ export async function networkedMode() {
       }
     }
 
+    if (wasTooSmall) {
+      renderer.clearScreen();
+    }
     wasTooSmall = false;
     renderer.clearContentRegion(lastContentRegion);
     const titleString = '=== Multiplayer Terminal Game ===';

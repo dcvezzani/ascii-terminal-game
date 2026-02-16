@@ -58,29 +58,31 @@ export class Renderer {
     }
   }
 
-  /** Message when terminal width is too narrow */
-  static TERMINAL_TOO_NARROW_MESSAGE = 'Please increase the width of your terminal window in order to play this game.';
-
-  /** Message when terminal has too few rows */
-  static TERMINAL_TOO_SHORT_MESSAGE = 'Terminal too small; please resize.';
+  /** Two-line message per spec §3.5 */
+  static TERMINAL_TOO_SMALL_LINE1 = 'terminal is too small';
+  static TERMINAL_TOO_SMALL_LINE2 = 'please resize';
 
   /**
-   * Render only the terminal-too-small message (no game block).
+   * Render only the terminal-too-small message (two lines, centered).
    * @param {number} terminalColumns - Current terminal columns
    * @param {number} terminalRows - Current terminal rows
-   * @param {number} minColumns - Required minimum columns
-   * @param {number} minRows - Required minimum rows
+   * @param {number} minColumns - Required minimum columns (unused; kept for API compatibility)
+   * @param {number} minRows - Required minimum rows (unused; kept for API compatibility)
    */
   renderTerminalTooSmallMessage(terminalColumns, terminalRows, minColumns, minRows) {
     this.clearScreen();
-    const widthTooNarrow = terminalColumns < minColumns;
-    const message = widthTooNarrow
-      ? Renderer.TERMINAL_TOO_NARROW_MESSAGE
-      : Renderer.TERMINAL_TOO_SHORT_MESSAGE;
-    const row = Math.max(1, Math.floor(terminalRows / 2));
-    const col = Math.max(1, Math.floor((terminalColumns - message.length) / 2) + 1);
-    this.stdout.write(cursorTo(col, row));
-    this.stdout.write(chalk.yellow(message));
+    const line1 = Renderer.TERMINAL_TOO_SMALL_LINE1;
+    const line2 = Renderer.TERMINAL_TOO_SMALL_LINE2;
+    const maxLen = Math.max(line1.length, line2.length);
+    const col1 = Math.max(1, Math.floor((terminalColumns - line1.length) / 2) + 1);
+    const col2 = Math.max(1, Math.floor((terminalColumns - line2.length) / 2) + 1);
+    const midRow = Math.max(1, Math.floor(terminalRows / 2));
+    const row1 = midRow - 1;
+    const row2 = midRow;
+    this.stdout.write(cursorTo(col1, row1));
+    this.stdout.write(chalk.yellow(line1));
+    this.stdout.write(cursorTo(col2, row2));
+    this.stdout.write(chalk.yellow(line2));
   }
 
   /**
