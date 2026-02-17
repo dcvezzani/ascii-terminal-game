@@ -29,6 +29,45 @@ function checkNodeVersion() {
   }
 }
 
+/**
+ * Parse argv into subcommand and optional --board path.
+ * @param {string[]} argv - e.g. process.argv
+ * @returns {{ subcommand: 'client'|'server'|'init', boardPath?: string }}
+ */
+function parseArgs(argv) {
+  const args = argv.slice(2);
+  const first = args[0];
+  const subcommand =
+    first === 'server' ? 'server' : first === 'init' ? 'init' : 'client';
+
+  let boardPath;
+  if (subcommand === 'server') {
+    const idx = args.indexOf('--board');
+    if (idx !== -1 && idx + 1 < args.length) {
+      boardPath = args[idx + 1];
+    }
+  }
+
+  return { subcommand, boardPath };
+}
+
+function runClient() {
+  // Phase 4 will wire to real client with cwd config
+  process.exit(0);
+}
+
+function runServer(_boardPath) {
+  // Phase 5 will wire to real server with cwd config
+  process.exit(0);
+}
+
+function runInit() {
+  // Phase 6 will implement init
+  process.exit(0);
+}
+
+const VALID_SUBCOMMANDS = ['client', 'server', 'init'];
+
 function run(argv = process.argv) {
   checkNodeVersion();
 
@@ -47,8 +86,16 @@ function run(argv = process.argv) {
     process.exit(0);
   }
 
-  // Step 2 will add subcommand dispatch
-  process.exit(0);
+  const { subcommand, boardPath } = parseArgs(argv);
+  const firstArg = args[0];
+  if (firstArg && !VALID_SUBCOMMANDS.includes(firstArg)) {
+    process.stderr.write(`Unknown command: ${firstArg}\n`);
+    process.exit(1);
+  }
+
+  if (subcommand === 'client') runClient();
+  else if (subcommand === 'server') runServer(boardPath);
+  else if (subcommand === 'init') runInit();
 }
 
 const isMain = process.argv[1] && resolve(process.argv[1]) === resolve(scriptPath);
@@ -56,4 +103,4 @@ if (isMain) {
   run();
 }
 
-export { run, checkNodeVersion, getPackageVersion };
+export { run, checkNodeVersion, getPackageVersion, parseArgs };

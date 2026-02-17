@@ -58,7 +58,7 @@ describe('CLI Node version check and --version/--help (Phase 1.2)', () => {
     expect(stderr).toBe('');
   });
 
-  it('when Node version is below 22, CLI exits non-zero and stderr contains required message', () => {
+  it('when Node version is below 22 (or no version error when Node >= 22)', () => {
     // Mock by setting a fake version in a child: use node -e "process.version = 'v21.0.0'; ..."
     // Or run with a different node. Simpler: skip when Node >= 22, or test the message format.
     // We test that when we run without --version/--help, if node is < 22 we exit 1. We can't easily
@@ -79,5 +79,36 @@ describe('CLI Node version check and --version/--help (Phase 1.2)', () => {
     const { status, stderr } = runCli([]);
     expect(status).toBe(1);
     expect(stderr).toMatch(/Node\.js 22|required/);
+  });
+});
+
+describe('CLI subcommand parsing (Phase 2)', () => {
+  it('no positional or "client" -> subcommand client', async () => {
+    const { parseArgs } = await import(pathToFileURL(join(repoRoot, 'src', 'cli.js')).href);
+    expect(parseArgs(['node', 'cli.js']).subcommand).toBe('client');
+    expect(parseArgs(['node', 'cli.js', 'client']).subcommand).toBe('client');
+  });
+
+  it('"server" -> subcommand server', async () => {
+    const { parseArgs } = await import(pathToFileURL(join(repoRoot, 'src', 'cli.js')).href);
+    expect(parseArgs(['node', 'cli.js', 'server']).subcommand).toBe('server');
+  });
+
+  it('"server --board foo.json" -> subcommand server, boardPath foo.json', async () => {
+    const { parseArgs } = await import(pathToFileURL(join(repoRoot, 'src', 'cli.js')).href);
+    const r = parseArgs(['node', 'cli.js', 'server', '--board', 'foo.json']);
+    expect(r.subcommand).toBe('server');
+    expect(r.boardPath).toBe('foo.json');
+  });
+
+  it('"init" -> subcommand init', async () => {
+    const { parseArgs } = await import(pathToFileURL(join(repoRoot, 'src', 'cli.js')).href);
+    expect(parseArgs(['node', 'cli.js', 'init']).subcommand).toBe('init');
+  });
+
+  it('unknown subcommand exits 1 with stderr message', () => {
+    const { status, stderr } = runCli(['unknown']);
+    expect(status).toBe(1);
+    expect(stderr).toMatch(/unknown|Unknown|error|Error/i);
   });
 });
