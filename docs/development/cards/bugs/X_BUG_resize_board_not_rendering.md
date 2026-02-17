@@ -1,7 +1,7 @@
 # Bug Report: Game Board Does Not Render After Terminal Resize
 
 ## Status
-**OPEN**
+**COMPLETE** (fixed via terminal-rendering refactor; 2025-02-16)
 
 ## Bug Summary
 

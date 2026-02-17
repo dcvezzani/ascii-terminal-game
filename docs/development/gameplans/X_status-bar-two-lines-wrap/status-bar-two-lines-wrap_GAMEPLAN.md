@@ -282,8 +282,8 @@ This gameplan breaks down the status bar feature into logical phases. Implementa
 - [x] Phase 4: Callers pass boardWidth/boardHeight and statusBar config
 - [x] Phase 5: Tests and verification
 - [x] All tests passing (`npm test`)
-- [ ] Feature card status updated when product complete (optional)
-- [ ] Gameplan directory renamed with `X_` prefix when feature is closed (optional)
+- [x] Feature card status updated when product complete (optional)
+- [x] Gameplan directory renamed with `X_` prefix when feature is closed (optional)
 
 ---
 
