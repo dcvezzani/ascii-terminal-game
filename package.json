@@ -30,6 +30,9 @@
     "diagrams:client:data": "mmdc -i docs/development/specs/client-architecture_SPECS/client-architecture_data-structures.mmd -o docs/development/specs/client-architecture_SPECS/client-architecture_data-structures.svg -b white",
     "diagrams:client:interactions": "npm run diagrams:client:init && npm run diagrams:client:connection && npm run diagrams:client:movement && npm run diagrams:client:state && npm run diagrams:client:rendering",
     "diagrams:client:all": "npm run diagrams:client:components && npm run diagrams:client:interactions && npm run diagrams:client:data",
+    "diagrams:terminal-game:relationships": "mmdc -i docs/development/specs/terminal-game/diagrams/spec-relationships.mmd -o docs/development/specs/terminal-game/diagrams/spec-relationships.svg -b white",
+    "diagrams:terminal-game:pipeline": "mmdc -i docs/development/specs/terminal-game/diagrams/rendering-pipeline.mmd -o docs/development/specs/terminal-game/diagrams/rendering-pipeline.svg -b white",
+    "diagrams:terminal-game": "npm run diagrams:terminal-game:relationships && npm run diagrams:terminal-game:pipeline",
     "diagrams:generate": "node scripts/generate-diagrams.js"
   },
   "keywords": [
