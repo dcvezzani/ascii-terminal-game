@@ -1,9 +1,11 @@
 {
-  "name": "first-game",
+  "name": "@dcvezzani/ascii-tag",
   "version": "1.0.0",
   "type": "module",
   "description": "A simple terminal-based game",
   "main": "src/index.js",
+  "engines": { "node": ">=22" },
+  "bin": { "ascii-tag": "src/cli.js" },
   "scripts": {
     "start": "node src/index.js",
     "server": "node src/server/index.js",
