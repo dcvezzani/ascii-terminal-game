@@ -6,6 +6,8 @@ import { parseBoardPath } from './parseBoardArgv.js';
 import { loadBoardFromFiles } from '../board/boardLoader.js';
 import Board from '../game/Board.js';
 import Game from '../game/Game.js';
+import { dirname, join } from 'path';
+import { existsSync } from 'fs';
 
 // Configure logger for server mode (console + files)
 configureLogger('server');
@@ -28,9 +30,14 @@ async function startServer(port, boardPath, injectedConfig) {
   const path =
     boardPath ?? parseBoardPath(process.argv, config.board?.defaultPath);
 
+  const dimensionsPath =
+    path && existsSync(join(dirname(path), 'dimensions.json'))
+      ? join(dirname(path), 'dimensions.json')
+      : undefined;
+
   let boardData;
   try {
-    boardData = loadBoardFromFiles(path);
+    boardData = loadBoardFromFiles(path, dimensionsPath);
   } catch (err) {
     logger.error(err.message);
     process.exit(1);
