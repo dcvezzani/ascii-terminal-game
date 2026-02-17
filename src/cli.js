@@ -51,9 +51,12 @@ function parseArgs(argv) {
   return { subcommand, boardPath };
 }
 
-function runClient() {
-  // Phase 4 will wire to real client with cwd config
-  process.exit(0);
+async function runClient() {
+  const { ensureClientConfig } = await import('./cli/ensureConfig.js');
+  const { startClient } = await import('./index.js');
+  const cwd = process.cwd();
+  const config = ensureClientConfig(cwd);
+  await startClient(config);
 }
 
 function runServer(_boardPath) {
@@ -93,8 +96,12 @@ function run(argv = process.argv) {
     process.exit(1);
   }
 
-  if (subcommand === 'client') runClient();
-  else if (subcommand === 'server') runServer(boardPath);
+  if (subcommand === 'client') {
+    runClient().catch((err) => {
+      console.error(err);
+      process.exit(1);
+    });
+  } else if (subcommand === 'server') runServer(boardPath);
   else if (subcommand === 'init') runInit();
 }
 

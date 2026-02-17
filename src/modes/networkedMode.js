@@ -14,14 +14,16 @@ import { getStatusBarHeight } from '../render/statusBarUtils.js';
 import Message from '../render/Message.js';
 
 /**
- * Networked game mode - connects to server and plays multiplayer game
+ * Networked game mode - connects to server and plays multiplayer game.
+ * @param {object} [injectedConfig] - Optional config (when provided, used instead of repo clientConfig; used by CLI)
  */
-export async function networkedMode() {
-  const wsClient = new WebSocketClient(clientConfig.websocket.url);
+export async function networkedMode(injectedConfig) {
+  const config = injectedConfig ?? clientConfig;
+  const wsClient = new WebSocketClient(config.websocket.url);
   const renderer = new Renderer({logger})
   const canvas = new Canvas({
-    ...clientConfig.rendering,
-    statusBar: clientConfig.statusBar,
+    ...config.rendering,
+    statusBar: config.statusBar,
     logger: logger
   });
   const inputHandler = new InputHandler();
@@ -78,7 +80,7 @@ export async function networkedMode() {
     }
 
     // Check if prediction is enabled
-    if (clientConfig.prediction?.enabled !== false) {
+    if (config.prediction?.enabled !== false) {
       // Get current predicted position (or fall back to server position)
       const currentPos = localPlayerPredictedPosition.x !== null
         ? localPlayerPredictedPosition
@@ -294,7 +296,7 @@ export async function networkedMode() {
       clearInterval(reconciliationTimer);
     }
 
-    const interval = clientConfig.prediction?.reconciliationInterval || 5000;
+    const interval = config.prediction?.reconciliationInterval || 5000;
     reconciliationTimer = setInterval(() => {
       reconcilePosition();
     }, interval);
@@ -534,7 +536,7 @@ export async function networkedMode() {
       p => p.playerId !== localPlayerId
     );
 
-    const centerBoard = clientConfig.rendering?.centerBoard !== false;
+    const centerBoard = config.rendering?.centerBoard !== false;
     let layout = null;
 
     renderer.moveCursorToHome(); 
@@ -646,7 +648,7 @@ export async function networkedMode() {
         p => p.playerId !== localPlayerId
       );
 
-      const centerBoard = clientConfig.rendering?.centerBoard !== false;
+      const centerBoard = config.rendering?.centerBoard !== false;
       let layout = null;
       if (centerBoard) {
         const { columns, rows } = getTerminalSize();
@@ -799,7 +801,7 @@ export async function networkedMode() {
         );
         
         canvas.clearContentRegion(lastContentRegion);
-        const centerBoardFallback = clientConfig.rendering?.centerBoard !== false;
+        const centerBoardFallback = config.rendering?.centerBoard !== false;
         const fallbackLayout = centerBoardFallback ? computeLayout(
           getTerminalSize().columns,
           getTerminalSize().rows,
@@ -884,7 +886,7 @@ export async function networkedMode() {
   }
 
   // Resize handling: clear during resize, full re-render when debounce fires
-  const renderingConfig = resolveRenderingConfig(clientConfig);
+  const renderingConfig = resolveRenderingConfig(config);
   if (process.stdout.isTTY) {
     process.stdout.on('resize', () => {
       displayEmptyDuringResize = true;
@@ -921,7 +923,7 @@ export async function networkedMode() {
 
     await startupClear(process.stdout);
 
-    logger.info(`Connecting to ${clientConfig.websocket.url}...`);
+    logger.info(`Connecting to ${config.websocket.url}...`);
     wsClient.connect();
 
     // Keep process alive
