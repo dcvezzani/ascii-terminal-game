@@ -59,9 +59,25 @@ async function runClient() {
   await startClient(config);
 }
 
-function runServer(_boardPath) {
-  // Phase 5 will wire to real server with cwd config
-  process.exit(0);
+async function runServer(boardPath) {
+  const { ensureServerConfig } = await import('./cli/ensureConfig.js');
+  const { listAvailableBoards } = await import('./cli/packagePaths.js');
+  const { startServer } = await import('./server/index.js');
+  const cwd = process.cwd();
+  const config = ensureServerConfig(cwd);
+  const port = config.websocket.port;
+
+  let pathToUse = boardPath;
+  if (!pathToUse) {
+    const boards = listAvailableBoards(cwd);
+    if (boards.length > 0) {
+      const idx = Math.floor(Math.random() * boards.length);
+      pathToUse = boards[idx];
+    } else {
+      pathToUse = config.board?.defaultPath ?? 'boards/classic.json';
+    }
+  }
+  await startServer(port, pathToUse, config);
 }
 
 function runInit() {
@@ -101,8 +117,12 @@ function run(argv = process.argv) {
       console.error(err);
       process.exit(1);
     });
-  } else if (subcommand === 'server') runServer(boardPath);
-  else if (subcommand === 'init') runInit();
+  } else if (subcommand === 'server') {
+    runServer(boardPath).catch((err) => {
+      console.error(err);
+      process.exit(1);
+    });
+  } else if (subcommand === 'init') runInit();
 }
 
 const isMain = process.argv[1] && resolve(process.argv[1]) === resolve(scriptPath);

@@ -1,6 +1,6 @@
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
-import { existsSync } from 'fs';
+import { existsSync, readdirSync } from 'fs';
 
 let cachedPackageRoot = null;
 
@@ -32,4 +32,28 @@ export function getPackageBoardsDir() {
   const distBoards = join(root, 'dist', 'boards');
   if (existsSync(distBoards)) return distBoards;
   return join(root, 'boards');
+}
+
+/**
+ * List available board files (.json) from package boards dir and cwd/boards.
+ * @param {string} cwd - Current working directory
+ * @returns {string[]} Board filenames (e.g. ['classic.json', 'my-board.json'])
+ */
+export function listAvailableBoards(cwd) {
+  const result = [];
+  const packageDir = getPackageBoardsDir();
+  if (existsSync(packageDir)) {
+    const files = readdirSync(packageDir);
+    files.forEach((f) => {
+      if (f.endsWith('.json') && f !== 'dimensions.json') result.push(join(packageDir, f));
+    });
+  }
+  const cwdBoards = join(cwd, 'boards');
+  if (existsSync(cwdBoards)) {
+    const files = readdirSync(cwdBoards);
+    files.forEach((f) => {
+      if (f.endsWith('.json') && f !== 'dimensions.json') result.push(join(cwdBoards, f));
+    });
+  }
+  return result;
 }
