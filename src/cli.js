@@ -61,14 +61,24 @@ async function runClient() {
 
 async function runServer(boardPath) {
   const { ensureServerConfig } = await import('./cli/ensureConfig.js');
-  const { listAvailableBoards } = await import('./cli/packagePaths.js');
+  const {
+    listAvailableBoards,
+    resolveBoardPath
+  } = await import('./cli/packagePaths.js');
   const { startServer } = await import('./server/index.js');
   const cwd = process.cwd();
   const config = ensureServerConfig(cwd);
   const port = config.websocket.port;
 
-  let pathToUse = boardPath;
-  if (!pathToUse) {
+  let pathToUse;
+  if (boardPath) {
+    try {
+      pathToUse = resolveBoardPath(cwd, boardPath);
+    } catch (err) {
+      console.error(err.message);
+      process.exit(1);
+    }
+  } else {
     const boards = listAvailableBoards(cwd);
     if (boards.length > 0) {
       const idx = Math.floor(Math.random() * boards.length);
@@ -81,8 +91,9 @@ async function runServer(boardPath) {
 }
 
 function runInit() {
-  // Phase 6 will implement init
-  process.exit(0);
+  import('./cli/init.js').then(({ runInit: doInit }) => {
+    doInit(process.cwd());
+  });
 }
 
 const VALID_SUBCOMMANDS = ['client', 'server', 'init'];

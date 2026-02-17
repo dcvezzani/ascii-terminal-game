@@ -1,11 +1,19 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { existsSync, readFileSync, mkdtempSync, mkdirSync, writeFileSync } from 'fs';
+import {
+  existsSync,
+  readFileSync,
+  readdirSync,
+  mkdtempSync,
+  mkdirSync,
+  writeFileSync
+} from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
 import {
   getPackageRoot,
   getPackageBoardsDir,
-  listAvailableBoards
+  listAvailableBoards,
+  resolveBoardPath
 } from '../../src/cli/packagePaths.js';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
@@ -64,5 +72,32 @@ describe('listAvailableBoards (Phase 5.2)', () => {
     const idx = Math.floor(Math.random() * list.length);
     const chosen = list[idx];
     expect(list).toContain(chosen);
+  });
+});
+
+describe('resolveBoardPath (Phase 6.2)', () => {
+  it('returns cwd path when file exists in cwd', () => {
+    const tmpDir = mkdtempSync(join(tmpdir(), 'ascii-resolve-test-'));
+    mkdirSync(join(tmpDir, 'boards'), { recursive: true });
+    writeFileSync(join(tmpDir, 'boards', 'my.json'), '[]');
+    const resolved = resolveBoardPath(tmpDir, 'boards/my.json');
+    expect(resolved).toContain('my.json');
+    expect(resolved).toContain(tmpDir);
+  });
+
+  it('returns package path when not in cwd but in package', () => {
+    const tmpDir = mkdtempSync(join(tmpdir(), 'ascii-resolve-pkg-'));
+    const packageDir = getPackageBoardsDir();
+    if (!existsSync(packageDir)) return;
+    const files = readdirSync(packageDir).filter((f) => f.endsWith('.json') && f !== 'dimensions.json');
+    if (files.length === 0) return;
+    const resolved = resolveBoardPath(tmpDir, files[0]);
+    expect(resolved).toContain(files[0]);
+    expect(resolved).toContain(packageDir);
+  });
+
+  it('throws when not found in cwd or package', () => {
+    const tmpDir = mkdtempSync(join(tmpdir(), 'ascii-resolve-none-'));
+    expect(() => resolveBoardPath(tmpDir, 'nonexistent.json')).toThrow(/not found|Board file/);
   });
 });

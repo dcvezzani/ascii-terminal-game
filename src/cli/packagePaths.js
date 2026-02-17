@@ -57,3 +57,19 @@ export function listAvailableBoards(cwd) {
   }
   return result;
 }
+
+/**
+ * Resolve board path: try cwd first, then package boards dir.
+ * @param {string} cwd - Current working directory
+ * @param {string} pathArg - Board path (e.g. from --board)
+ * @returns {string} Resolved absolute path
+ * @throws {Error} If not found in cwd or package
+ */
+export function resolveBoardPath(cwd, pathArg) {
+  const cwdPath = join(cwd, pathArg);
+  if (existsSync(cwdPath)) return cwdPath;
+  const packageDir = getPackageBoardsDir();
+  const packagePath = join(packageDir, pathArg);
+  if (existsSync(packagePath)) return packagePath;
+  throw new Error(`Board file not found: ${pathArg}`);
+}
