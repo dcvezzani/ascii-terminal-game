@@ -1,0 +1,56 @@
+%% Terminal Game — Rendering Pipeline
+%% Flow from terminal size and content to screen output.
+%% Generate SVG: mmdc -i rendering-pipeline.mmd -o rendering-pipeline.svg -b white
+
+flowchart LR
+    subgraph Inputs["Inputs"]
+        TerminalSize["Terminal\ncolumns, rows"]
+        BoardDims["Board\nwidth, height"]
+        TitleHeight["Title height\n(2 lines)"]
+        StatusHeight["Status bar\nheight"]
+    end
+
+    subgraph Canvas["Canvas (layout)"]
+        SizeCheck{"Fits in\nterminal?"}
+        Layout["Compute layout\nstartRow, startColumn\nboardStartColumn"]
+        TooSmall["Show\n'too small'\nmessage"]
+    end
+
+    subgraph Renderer["Renderer"]
+        ClearRegion["Clear previous\ncontent region"]
+        DrawTitle["Draw title\nat startRow"]
+        DrawBoard["Draw board\nat boardStartColumn"]
+        DrawStatus["Draw status bar"]
+        StoreRegion["Store content\nregion"]
+    end
+
+    subgraph Output["Output"]
+        Screen["Terminal\nscreen"]
+    end
+
+    TerminalSize --> SizeCheck
+    BoardDims --> SizeCheck
+    TitleHeight --> Layout
+    StatusHeight --> Layout
+    BoardDims --> Layout
+
+    SizeCheck -->|No| TooSmall
+    SizeCheck -->|Yes| Layout
+
+    Layout --> ClearRegion
+    ClearRegion --> DrawTitle
+    DrawTitle --> DrawBoard
+    DrawBoard --> DrawStatus
+    DrawStatus --> StoreRegion
+    StoreRegion --> Screen
+    TooSmall --> Screen
+
+    classDef inputs fill:#e8eaf6,stroke:#3949ab,stroke-width:2px
+    classDef canvas fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px
+    classDef renderer fill:#fff3e0,stroke:#ef6c00,stroke-width:2px
+    classDef output fill:#fce4ec,stroke:#c2185b,stroke-width:2px
+
+    class TerminalSize,BoardDims,TitleHeight,StatusHeight inputs
+    class SizeCheck,Layout,TooSmall canvas
+    class ClearRegion,DrawTitle,DrawBoard,DrawStatus,StoreRegion renderer
+    class Screen output

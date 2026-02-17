@@ -1,0 +1,62 @@
+%% Terminal Game Specs — Relationship Diagram
+%% Shows how the consolidated specs relate to each other.
+%% Generate SVG: mmdc -i spec-relationships.mmd -o spec-relationships.svg -b white
+
+graph TB
+    subgraph Overall["Overall spec"]
+        SPEC_Overall["SPEC_Overall\nAssociates all specs\nand high-level flow"]
+    end
+
+    subgraph Viewport["Viewport & preparation"]
+        Canvas["Canvas\nOrganizes & prepares\ntitle, board, status bar;\nviewport, layout, resize,\ntoo small"]
+    end
+
+    subgraph Drawing["Drawing"]
+        Renderer["Renderer\nRenders the Canvas\nto the terminal\n(clear/incremental)"]
+    end
+
+    subgraph Content["Content specs"]
+        GameTitle["Game Title\nTitle line\n60 chars"]
+        GameBoard["Game Board\nBoard display\nposition, cells"]
+        StatusBar["Status Bar\nScore, position\ninstructions"]
+    end
+
+    subgraph Data["Data & input"]
+        BoardParsing["Board Parsing\nLoad JSON\nRLE + dimensions"]
+        UserInputs["User Inputs\nTTY/readline\nkey bindings"]
+    end
+
+    %% Overall references all
+    SPEC_Overall --> Canvas
+    SPEC_Overall --> Renderer
+    SPEC_Overall --> GameTitle
+    SPEC_Overall --> GameBoard
+    SPEC_Overall --> StatusBar
+    SPEC_Overall --> BoardParsing
+    SPEC_Overall --> UserInputs
+
+    %% Canvas uses content specs to prepare; provides prepared Canvas to Renderer
+    GameTitle -->|"content"| Canvas
+    GameBoard -->|"content"| Canvas
+    StatusBar -->|"content"| Canvas
+    Canvas -->|"prepared Canvas"| Renderer
+
+    %% Board Parsing feeds Game Board (data)
+    BoardParsing -->|"grid, width, height"| GameBoard
+
+    %% User Inputs independent; app wires to actions
+    UserInputs -.->|"application\nwires actions"| Canvas
+    UserInputs -.->|"e.g. quit\nclear timers"| Canvas
+
+    %% Styling
+    classDef overall fill:#e3f2fd,stroke:#1565c0,stroke-width:2px
+    classDef viewport fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px
+    classDef drawing fill:#fff3e0,stroke:#ef6c00,stroke-width:2px
+    classDef content fill:#f3e5f5,stroke:#6a1b9a,stroke-width:2px
+    classDef data fill:#fce4ec,stroke:#c2185b,stroke-width:2px
+
+    class SPEC_Overall overall
+    class Canvas viewport
+    class Renderer drawing
+    class GameTitle,GameBoard,StatusBar content
+    class BoardParsing,UserInputs data

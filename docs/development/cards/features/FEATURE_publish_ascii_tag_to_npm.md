@@ -23,7 +23,7 @@
 ## Desired Feature
 
 1. **Package**
-   - Publish package **`ascii-tag`** to npm. Package is runnable as a **CLI** (e.g. `npx ascii-tag` or `ascii-tag` when installed globally).
+   - Publish package **`@dcvezzani/ascii-tag`** (scoped only) to npm. Package is runnable as a **CLI** (e.g. `npx @dcvezzani/ascii-tag` or `ascii-tag` when installed globally).
 
 2. **Config in cwd**
    - The CLI reads a **configuration file from the current working directory** where the command is run. Spec (build-distribution) will define config file name and format (e.g. server URL, client options). If config is missing, behavior to be defined in spec (e.g. default to localhost, or show usage).
@@ -38,7 +38,7 @@
 
 - Implement only after (or in parallel with) **ENHANCEMENT_create_distribution_spec**; implementation must follow the distribution spec.
 - Config file location: **cwd** (directory where CLI is invoked). Config format and required/optional keys per spec.
-- Package name **ascii-tag**; publishable to npm (public or scoped per project choice).
+- Package name **`@dcvezzani/ascii-tag`** (scoped); publishable to npm.
 
 ## Dependencies
 
@@ -47,13 +47,59 @@
 
 ## Documentation
 
-- **SPECS**: `docs/development/specs/build-distribution/` (created by distribution spec card).
-- **GAMEPLAN**: To be created under `docs/development/gameplans/` when implementing.
+- **SPECS**: [Build and Distribution](docs/development/specs/build-distribution/build-distribution_SPECS.md) (parent); [Publish to npm](docs/development/specs/build-distribution/publish-to-npm_SPECS.md) (implementation spec for this card).
+- **GAMEPLAN**: [publish-to-npm GAMEPLAN](docs/development/gameplans/publish-to-npm/publish-to-npm_GAMEPLAN.md).
 
 ## Related Cards
 
 - **FEATURE_build_distribution_and_terminal_compatibility**: Parent card; “Where to go from here” option 3 (spin-off implementation).
 - **ENHANCEMENT_create_distribution_spec**: Provides the spec this feature implements.
+
+## Open Questions & Answers (Publish to npm)
+
+Decisions recorded 2026-02-16; reflected in this card and in `docs/development/specs/build-distribution/`.
+
+### Package identity and naming
+
+1. **Package name:** Publish as scoped **`@dcvezzani/ascii-tag`** only (no unscoped `ascii-tag`). Install: `npx @dcvezzani/ascii-tag`.
+
+### Publishing process and ownership
+
+2. **Who publishes?** Manual `npm publish` by a maintainer for now.
+
+3. **Versioning:** Semver. **Major** for breaking changes; **minor** for moderate architectural changes with backward compatibility; **patch** otherwise.
+
+4. **Pre-publish checks:** All tests must pass before publish.
+
+### Package contents and dependencies
+
+5. **What ships in the tarball?** Ship a minimal set: runtime code, config defaults, and bundled boards. No tests, no documentation other than a single **README.md** with instructions on how to run the client and/or server and how to play. Use `package.json` "files" and document in spec.
+
+6. **Dependencies:** Normal dependencies (no bundling). No optional or peer dependencies at this time.
+
+### First-run and config UX
+
+7. **When we auto-create `.ascii-tag/client.json` or `.ascii-tag/server.json`:** Print a one-line message (e.g. "Created default config at .ascii-tag/client.json") so the user knows where to edit. Same for server.
+
+8. **Default `websocket.url` in generated client.json:** Use the same default port as the server config (e.g. `ws://localhost:<server-default-port>`). Document in spec.
+
+9. **`ascii-tag init`:** Create only the missing file(s); never overwrite existing ones.
+
+### Node version and compatibility
+
+10. **Node 22 enforcement:** Enforce via `package.json` **engines** field and at **runtime** when the CLI starts. Document in README and show a clear error message if Node &lt; 22.
+
+### Documentation and discoverability
+
+11. **README for npm:** Include quick start (npx, init, run client/server), how to play, link to config docs, and Node 22 requirement.
+
+12. **Exit codes:** Current exit codes are standard; no need to document in spec or README for now.
+
+### Boards and server
+
+13. **Board discovery:** Boards live in **`dist/boards/`** in the package. When running `ascii-tag server`, enumerate available boards by listing files in **`dist/boards/`** and also in **`{cwd}/boards`** (cwd = directory where CLI is invoked).
+
+14. **Default board:** No single recommended default. When the user runs `ascii-tag server` and picks from the list, the **default selection is randomly chosen** from the available boards.
 
 ## Tags
 
