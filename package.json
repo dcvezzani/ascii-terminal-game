@@ -6,6 +6,7 @@
   "main": "src/index.js",
   "engines": { "node": ">=22" },
   "bin": { "ascii-tag": "src/cli.js" },
+  "files": ["src", "dist/boards", "README.md"],
   "scripts": {
     "start": "node src/index.js",
     "server": "node src/server/index.js",
