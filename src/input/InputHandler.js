@@ -8,6 +8,7 @@ export class InputHandler {
   constructor() {
     this.moveCallback = null;
     this.quitCallback = null;
+    this.renderCallback = null;
     this.dataHandler = null;
     this.running = false;
   }
@@ -66,6 +67,14 @@ export class InputHandler {
   }
 
   /**
+   * Register render callback
+   * @param {Function} callback - Callback function
+   */
+  onRender(callback) {
+    this.renderCallback = callback;
+  }
+
+  /**
    * Handle raw input data
    * @param {Buffer|string} data - Raw input data
    */
@@ -96,6 +105,9 @@ export class InputHandler {
     else if (str === 'q' || str === 'Q' || str === '\x1b') { // Q or ESC
       this.triggerQuit();
     }
+    else if (str === 'r' || str === 'R') { // R
+      this.triggerRender();
+    }    
   }
 
   /**
@@ -122,6 +134,19 @@ export class InputHandler {
         this.quitCallback();
       } catch (error) {
         logger.error('Error in quit callback:', error);
+      }
+    }
+  }
+
+  /**
+   * Trigger render callback
+   */
+  triggerRender() {
+    if (this.renderCallback) {
+      try {
+        this.renderCallback();
+      } catch (error) {
+        logger.error('Error in render callback:', error);
       }
     }
   }

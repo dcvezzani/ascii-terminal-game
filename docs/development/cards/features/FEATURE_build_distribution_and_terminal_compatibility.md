@@ -136,8 +136,22 @@ This card is **exploratory and planning-focused**: the goal is to answer questio
 
 **Recommendation:** Stub the compatibility matrix (2) soon so it’s a living doc. In parallel, when you have bandwidth, write the distribution and terminal-compatibility specs (1) so follow-up questions have a clear home and implementation has a single source of truth.
 
+## Follow-up Cards
+
+Cards created from the options above (track work and link back here):
+
+| Option | Card | Purpose |
+|--------|------|--------|
+| 1 – Create spec(s) | **ENHANCEMENT_create_distribution_spec** | Write distribution spec (ascii-tag, CLI, config in cwd, Node 22, Docker/standalone). |
+| 1 – Create spec(s) | **ENHANCEMENT_create_terminal_compatibility_spec** | Write terminal compatibility spec (supported/may work, ANSI, resize, color, matrix). |
+| 2 – Stub matrix | **ENHANCEMENT_stub_terminal_compatibility_matrix** | Add “Terminal compatibility” section + table to README or wiki. |
+| 3 – Implement | **FEATURE_publish_ascii_tag_to_npm** | Publish `ascii-tag` to npm (CLI + config in cwd); depends on distribution spec. |
+| 3 – Implement | **ENHANCEMENT_windows_terminal_testing_and_compatibility_matrix** | Test on Windows terminals; update compatibility matrix. |
+| 3 – Implement | **ENHANCEMENT_ci_setup_github_actions** | Set up CI (e.g. GitHub Actions) for tests and optional server run. |
+
 ## Related Features
 
+- **Follow-up cards** (see table above): ENHANCEMENT_create_distribution_spec, ENHANCEMENT_create_terminal_compatibility_spec, ENHANCEMENT_stub_terminal_compatibility_matrix, FEATURE_publish_ascii_tag_to_npm, ENHANCEMENT_windows_terminal_testing_and_compatibility_matrix, ENHANCEMENT_ci_setup_github_actions.
 - **X_FEATURE_mvp_multiplayer_game**: Client and server architecture; distribution may affect how players obtain and run both.
 - **FEATURE_status_bar_two_lines_wrap**: Status bar already adapts to board width; terminal size and dimensions are related.
 - **Rendering and input**: Any compatibility work may touch `Renderer.js`, `terminal.js`, and input handling.

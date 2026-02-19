@@ -199,7 +199,7 @@ Config is read from `config/serverConfig.js` / `config/serverConfig.json`. The f
 
 ## Related Documents
 
-- **Feature card:** `docs/development/cards/features/FEATURE_map_spawn_points_for_players.md`
+- **Feature card:** `docs/development/cards/features/X_FEATURE_map_spawn_points_for_players.md`
 - **Load board from JSON spec:** `docs/development/specs/load-board-from-json/load-board-from-json_SPECS.md`
 - **Map parser specs:** `docs/development/wiki/map-parser/specs.md`
 - **Board loader:** `src/board/boardLoader.js`

@@ -17,6 +17,15 @@ try {
   if (config.statusBar && config.statusBar.widthThreshold === undefined) {
     config.statusBar.widthThreshold = 25;
   }
+  if (!config.rendering) {
+    config.rendering = {};
+  }
+  if (config.rendering.centerBoard === undefined) {
+    config.rendering.centerBoard = true;
+  }
+  if (config.rendering.resizeDebounceMs === undefined) {
+    config.rendering.resizeDebounceMs = 200;
+  }
 } catch (error) {
   // Use defaults if config file doesn't exist
   config = {
@@ -30,7 +39,9 @@ try {
       playerGlyph: '@',
       playerColor: '00FF00',
       spaceGlyph: '.',
-      wallGlyph: '#'
+      wallGlyph: '#',
+      centerBoard: true,
+      resizeDebounceMs: 200
     },
     prediction: {
       enabled: true,

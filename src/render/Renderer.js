@@ -1,145 +1,66 @@
 import chalk from 'chalk';
-import { cursorHide, cursorShow, eraseScreen, cursorTo, eraseEndLine } from 'ansi-escapes';
+import { cursorHide, cursorShow, cursorTo, clearScreen } from 'ansi-escapes';
 import hideCursor from 'cli-cursor';
 import process from 'process';
-import {
-  wrapAtSpaces,
-  buildLine1,
-  buildLine2,
-  buildSimplifiedLine,
-  formatBoxTopBottom,
-  formatBoxRow
-} from './statusBarUtils.js';
+// import {
+//   wrapAtSpaces,
+//   buildLine1,
+//   buildLine2,
+//   buildSimplifiedLine,
+//   formatBoxTopBottom,
+//   formatBoxRow
+// } from './statusBarUtils.js';
+// import { truncateTitleToWidth, BLANK_LINES_BEFORE_STATUS_BAR, TITLE_AND_STATUS_BAR_WIDTH } from './layout.js';
+
+// const TITLE_HEIGHT = 2;
 
 /**
  * Renderer class for terminal rendering
  */
+/**
+ * Deep-copy a canvas grid (array of rows of { character, color }).
+ * @param {Array<Array<{character: string, color: string}>>} grid
+ * @returns {Array<Array<{character: string, color: string}>>}
+ */
+function copyGrid(grid) {
+  if (!grid || grid.length === 0) return [];
+  const out = [];
+  for (let y = 0; y < grid.length; y++) {
+    const row = grid[y];
+    if (!row) {
+      out[y] = [];
+      continue;
+    }
+    out[y] = row.map((cell) => (cell ? { character: cell.character, color: cell.color } : { character: ' ', color: 'FFFFFF' }));
+  }
+  return out;
+}
+
+function noLogger() {
+  const _noLogger = () => {};
+  return {
+    info: _noLogger,
+    error: _noLogger,
+    warn: _noLogger,
+    debug: _noLogger
+  };
+}
+
 export class Renderer {
-  constructor(config = null) {
+  constructor(options={}) {
+    this.logger = options.logger || noLogger();
     this.stdout = process.stdout;
-    // Default rendering config
-    this.config = config || {
-      playerGlyph: '☻',
-      playerColor: '00FF00',
-      spaceGlyph: '.',
-      wallGlyph: '#'
-    };
-    this._lastStatusBarContent = null;
-    this._lastStatusBarBoardWidth = null;
-    this._lastStatusBarBoardHeight = null;
+    /** @type {Array<Array<{character: string, color: string}>|null} */
+    this._lastRenderedGrid = null;
+    this.horizOffset = 0;
   }
 
   /**
-   * Clear the screen
+   * Move cursor to home (1, 1). No-op when rendering to grid; cursor position is not stored in this.grid.
+   * Call after each complete frame per spec §3.6 if writing to terminal elsewhere.
    */
-  clearScreen() {
-    this.stdout.write(eraseScreen);
-    this.stdout.write(cursorTo(1, 1));
-  }
-
-  /**
-   * Render game title
-   */
-  renderTitle() {
-    const title = '=== Multiplayer Terminal Game ===';
-    this.stdout.write(chalk.bold.cyan(title) + '\n\n');
-  }
-
-  /**
-   * Render the game board with players
-   * @param {Board} board - Board instance
-   * @param {Array} players - Array of player objects
-   */
-  renderBoard(board, players) {
-    const serialized = board.serialize();
-    
-    for (let y = 0; y < serialized.length; y++) {
-      let line = '';
-      for (let x = 0; x < serialized[y].length; x++) {
-        const cellContent = this.getCellContent(x, y, board, players);
-        const colorFn = this.getColorFunction(cellContent.color);
-        line += colorFn(cellContent.character);
-      }
-      this.stdout.write(line + '\n');
-    }
-  }
-
-  /**
-   * Render status bar in a box (top/bottom # border, content lines "# content #").
-   * Two-line full or one-line simplified by board width. Redraws when content or layout changes.
-   * @param {number} score - Current score
-   * @param {object} position - Position object {x, y} or null
-   * @param {number} boardWidth - Board width (for format selection and box width)
-   * @param {number} boardHeight - Board height (for vertical positioning)
-   */
-  renderStatusBar(score, position, boardWidth = 80, boardHeight = 20) {
-    const threshold = this.config?.statusBar?.widthThreshold ?? 25;
-    const fullFormat = boardWidth > threshold;
-    const contentWidth = Math.max(1, boardWidth - 4);
-
-    let logicalContents;
-    let segments1;
-    let segments2;
-
-    if (fullFormat) {
-      const line1Str = buildLine1(score, position);
-      const line2Str = buildLine2();
-      segments1 = wrapAtSpaces(line1Str, contentWidth);
-      segments2 = wrapAtSpaces(line2Str, contentWidth);
-      logicalContents = [line1Str, line2Str];
-    } else {
-      const lineStr = buildSimplifiedLine(score, position);
-      segments1 = wrapAtSpaces(lineStr, contentWidth);
-      segments2 = [];
-      logicalContents = [lineStr];
-    }
-
-    const topBorder = formatBoxTopBottom(boardWidth);
-    const bottomBorder = formatBoxTopBottom(boardWidth);
-    const boxedRows = [
-      topBorder,
-      ...segments1.map(s => formatBoxRow(s, boardWidth)),
-      ...segments2.map(s => formatBoxRow(s, boardWidth)),
-      bottomBorder
-    ];
-
-    const layoutChanged =
-      this._lastStatusBarBoardWidth !== boardWidth ||
-      this._lastStatusBarBoardHeight !== boardHeight;
-    const contentChanged =
-      !this._lastStatusBarContent ||
-      this._lastStatusBarContent.length !== logicalContents.length ||
-      logicalContents.some((c, i) => this._lastStatusBarContent[i] !== c);
-    const contentShortened =
-      this._lastStatusBarContent &&
-      logicalContents.some(
-        (c, i) =>
-          this._lastStatusBarContent[i] != null &&
-          c.length < this._lastStatusBarContent[i].length
-      );
-    const needUpdate =
-      layoutChanged || contentChanged || contentShortened;
-
-    if (needUpdate) {
-      const statusBarStartRow = 2 + boardHeight + 1;
-      for (let r = 0; r < boxedRows.length; r++) {
-        this.stdout.write(cursorTo(0, statusBarStartRow + r));
-        this.stdout.write(chalk.gray(boxedRows[r]));
-        this.stdout.write(eraseEndLine);
-      }
-      const lastRowCount = this._lastStatusBarRowCount ?? 0;
-      if (lastRowCount > boxedRows.length) {
-        for (let r = boxedRows.length; r < lastRowCount; r++) {
-          this.stdout.write(cursorTo(0, statusBarStartRow + r));
-          this.stdout.write(eraseEndLine);
-        }
-      }
-    }
-
-    this._lastStatusBarContent = logicalContents.slice();
-    this._lastStatusBarRowCount = boxedRows.length;
-    this._lastStatusBarBoardWidth = boardWidth;
-    this._lastStatusBarBoardHeight = boardHeight;
+  moveCursorToHome() {
+    this.stdout.write(cursorTo(0, 0));
   }
 
   /**
@@ -156,41 +77,19 @@ export class Renderer {
     hideCursor.show();
   }
 
-  /**
-   * Get cell content at position (player > board cell)
-   * @param {number} x - X coordinate
-   * @param {number} y - Y coordinate
-   * @param {Board} board - Board instance
-   * @param {Array} players - Array of player objects
-   * @returns {object} Object with character and color
-   */
-  getCellContent(x, y, board, players) {
-    // Check for player at position
-    const player = players.find(p => p.x === x && p.y === y);
-    if (player) {
-      return {
-        character: this.config.playerGlyph,
-        color: this.config.playerColor
-      };
+  clearScreen() {
+    this.moveCursorToHome();
+
+    const columns = process.stdout.columns ?? 80;
+    const rows = process.stdout.rows ?? 20;
+    for (let y = 0; y < rows; y++) {
+      for (let x = 0; x < columns; x++) {
+        this.stdout.write(cursorTo(x, y));
+        this.stdout.write(' ');
+      }
     }
 
-    // Return board cell
-    const cellChar = board.getCell(x, y);
-    let character = cellChar;
-    let color = 'FFFFFF'; // White default
-    
-    // Map server characters to configured glyphs
-    if (cellChar === '#') {
-      character = this.config.wallGlyph || '#';
-      color = '808080'; // Gray for walls
-    } else if (cellChar === '.') {
-      character = this.config.spaceGlyph || '.';
-    }
-
-    return {
-      character,
-      color
-    };
+    this._lastRenderedGrid = null;
   }
 
   /**
@@ -211,149 +110,132 @@ export class Renderer {
     return chalk.rgb(r, g, b);
   }
 
-  /**
-   * Update a single cell at the specified position
-   * @param {number} x - X coordinate (0-indexed)
-   * @param {number} y - Y coordinate (0-indexed)
-   * @param {string} character - Character to render
-   * @param {string} color - Hex color string (e.g., "FF0000")
-   */
-  updateCell(x, y, character, color) {
-    // Handle out-of-bounds gracefully
-    if (x < 0 || y < 0) {
+  renderFull(canvas) {
+    if (!canvas || !canvas.grid || canvas.grid.length === 0) {
       return;
     }
 
-    // Calculate screen coordinates
-    // Title is 2 lines (title + blank line), so offset is 2
-    // ANSI escape codes are 1-indexed
-    const screenX = x;
-    const screenY = y + 2 + 1; // +2 for title offset, +1 for 1-indexed
+    this.clearScreen();
 
-    // Position cursor
-    this.stdout.write(cursorTo(screenX, screenY));
-    
-    // Write character with color
-    const colorFn = this.getColorFunction(color);
-    this.stdout.write(colorFn(character));
+    // center the canvas (grid) in the terminal by adding horizontal offset
+    const columns = process.stdout.columns ?? 80;
+    const gridWidth = canvas.grid[0] ? canvas.grid[0].length : 0;
+    this.horizOffset = Math.max(0, Math.floor((columns - gridWidth) / 2));
+
+    // Render each cell in the Canvas grid to the terminal
+    for (let y = 0; y < canvas.grid.length; y++) {
+      const row = canvas.grid[y];
+      if (!row) continue;
+
+      this.stdout.write(cursorTo(this.horizOffset, y));
+
+      for (let x = 0; x < row.length; x++) {
+        const cell = row[x];
+        this.stdout.write(this.getColorFunction(cell.color)(cell.character));
+      }
+      if (y < canvas.grid.length - 1) {
+        this.stdout.write('\n');
+      }
+    }
+
+    if (process.env.DEBUG_CANVAS === 'true') {
+      this.moveCursorToHome();
+
+      // Render a red '*' for the first and last rows, and the first and last characters of every row
+      const redStar = this.getColorFunction('FF0000')('*');
+      for (let y = 0; y < canvas.grid.length; y++) {
+        const row = canvas.grid[y];
+
+        this.stdout.write(cursorTo(this.horizOffset, y));
+
+        // First and last rows: overwrite entire row with red '*'
+        if (y === 0 || y === canvas.grid.length - 1) {
+          for (let x = 0; x < row.length; x++) {
+            this.stdout.write(redStar);
+          }
+        } else {
+          // For other rows: first and last characters as red '*', rest leave as normal
+          for (let x = 0; x < row.length; x++) {
+            if (x === 0 || x === row.length - 1) {
+              this.stdout.write(redStar);
+            } else {
+              // Re-render the original cell content
+              const cell = row[x];
+              this.stdout.write(this.getColorFunction(cell.color)(cell.character));
+            }
+          }
+        }
+
+        if (y < canvas.grid.length - 1) {
+          this.stdout.write('\n');
+        }
+      }
+    }
+
+    this._lastRenderedGrid = copyGrid(canvas.grid);
   }
 
   /**
-   * Restore cell content at position (what was underneath)
-   * @param {number} x - X coordinate
-   * @param {number} y - Y coordinate
-   * @param {Board} board - Board instance
-   * @param {Array} players - Array of player objects
-   * @param {Array} entities - Array of entity objects (for future use)
+   * Render only cells that differ from the last full render.
+   * Uses cursor positioning to update individual cells. Falls back to full render
+   * if there is no previous grid or the grid shape changed.
+   * @param {import('./Canvas.js').default} canvas
    */
-  restoreCellContent(x, y, board, players, entities) {
-    // Handle out-of-bounds gracefully
-    if (x < 0 || y < 0) {
+  renderIncremental(canvas) {
+    this.logger.debug(">>>dcv (Renderer.js, , renderIncremental:122)", )
+    if (!canvas || !canvas.grid || canvas.grid.length === 0) {
+      return;
+    }
+    const grid = canvas.grid;
+    const last = this._lastRenderedGrid;
+
+    const rows = grid.length;
+    const cols = grid[0]?.length ?? 0;
+    const lastRows = last?.length ?? 0;
+    const lastCols = last?.[0]?.length ?? 0;
+
+    if (!last || lastRows !== rows || lastCols !== cols) {
+      this.renderFull(canvas);
       return;
     }
 
-    // Check for entities at position (future: top-most visible)
-    // For MVP, entities array is empty, so skip
-
-    // Check for other players at position
-    const otherPlayer = players.find(p => p.x === x && p.y === y);
-    if (otherPlayer) {
-      this.updateCell(x, y, this.config.playerGlyph, this.config.playerColor);
-      return;
+    for (let y = 0; y < rows; y++) {
+      const row = grid[y];
+      const lastRow = last[y];
+      if (!row || !lastRow) continue;
+      for (let x = 0; x < row.length; x++) {
+        const cell = row[x];
+        const prev = lastRow[x];
+        if (!cell) continue;
+        const same = prev && prev.character === cell.character && prev.color === cell.color;
+        if (!same) {
+          this.stdout.write(cursorTo(x + this.horizOffset, y));
+          this.stdout.write(this.getColorFunction(cell.color)(cell.character));
+        }
+      }
     }
-
-    // Fall back to board cell
-    const cellChar = board.getCell(x, y);
-    if (cellChar === null) {
-      return; // Out of bounds
-    }
-
-    let character = cellChar;
-    let color = 'FFFFFF'; // White default
-    
-    // Map server characters to configured glyphs
-    if (cellChar === '#') {
-      character = this.config.wallGlyph || '#';
-      color = '808080'; // Gray for walls
-    } else if (cellChar === '.') {
-      character = this.config.spaceGlyph || '.';
-    }
-
-    this.updateCell(x, y, character, color);
+    this._lastRenderedGrid = copyGrid(canvas.grid);
   }
 
-  /**
-   * Render incremental updates based on state changes
-   * @param {object} changes - Change detection object from compareStates
-   * @param {Board} board - Board instance
-   * @param {Array} players - Array of player objects (excluding local player)
-   * @param {Array} entities - Array of entity objects (for future use)
-   * @param {string} localPlayerId - ID of local player
-   * @param {number} score - Current score
-   * @param {object} position - Local player position {x, y}
-   */
-  renderIncremental(changes, board, players, entities, localPlayerId, score, position) {
-    // Process moved players
-    for (const moved of changes.players.moved) {
-      // Safeguard: Skip local player (should be filtered out, but double-check)
-      if (moved.playerId === localPlayerId) {
-        continue;
-      }
-      
-      // Clear old position
-      this.restoreCellContent(
-        moved.oldPos.x,
-        moved.oldPos.y,
-        board,
-        players,
-        entities
-      );
-      
-      // Draw at new position
-      this.updateCell(
-        moved.newPos.x,
-        moved.newPos.y,
-        this.config.playerGlyph,
-        this.config.playerColor
-      );
+  render(canvas) {
+    if (!canvas || !canvas.grid || canvas.grid.length === 0) {
+      return;
+    }
+    // No previous frame: always full render (avoids calling hasLittleToNoChanges with undefined)
+    if (!this._lastRenderedGrid) {
+      this.renderFull(canvas);
+      return;
     }
 
-    // Process joined players
-    for (const joined of changes.players.joined) {
-      // Safeguard: Skip local player (should be filtered out, but double-check)
-      if (joined.playerId === localPlayerId) {
-        continue;
-      }
-      
-      this.updateCell(
-        joined.pos.x,
-        joined.pos.y,
-        this.config.playerGlyph,
-        this.config.playerColor
-      );
+    const prevCanvas = { grid: this._lastRenderedGrid };
+    if (canvas.hasNoChanges(prevCanvas, canvas)) {
+      this.logger.debug("No changes, skipping render");
+      return;
     }
-
-    // Process left players
-    for (const left of changes.players.left) {
-      // Safeguard: Skip local player (should be filtered out, but double-check)
-      if (left.playerId === localPlayerId) {
-        continue;
-      }
-      
-      this.restoreCellContent(
-        left.pos.x,
-        left.pos.y,
-        board,
-        players,
-        entities
-      );
-    }
-
-    // Update status bar if score changed (position changes are handled by caller, which also calls renderStatusBar)
-    if (changes.scoreChanged) {
-      const boardWidth = board.width ?? 80;
-      const boardHeight = board.height ?? 20;
-      this.renderStatusBar(score, position, boardWidth, boardHeight);
+    if (canvas.hasFewChanges(prevCanvas, canvas)) {
+      this.renderIncremental(canvas);
+    } else {
+      this.renderFull(canvas);
     }
   }
 }

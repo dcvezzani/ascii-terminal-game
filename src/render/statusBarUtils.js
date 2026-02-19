@@ -100,3 +100,32 @@ export function formatBoxRow(content, boardWidth) {
   const padded = padToWidth(content, contentWidth);
   return `| ${padded} |`;
 }
+
+const WIDTH_THRESHOLD_DEFAULT = 25;
+
+/**
+ * Return the number of lines the status bar box would use for given width.
+ * Used by layout computation for blockHeight.
+ * @param {number} score - Current score
+ * @param {{ x: number, y: number } | null | undefined} position - Player position
+ * @param {number} width - Box width (e.g. 60)
+ * @param {number} [widthThreshold=25] - Threshold for full vs simplified format
+ * @returns {number} Number of lines (top border + content rows + bottom border)
+ */
+export function getStatusBarHeight(score, position, width, widthThreshold = WIDTH_THRESHOLD_DEFAULT) {
+  const contentWidth = Math.max(1, width - 4);
+  const fullFormat = width > widthThreshold;
+  let segments1;
+  let segments2;
+  if (fullFormat) {
+    const line1Str = buildLine1(score, position);
+    const line2Str = buildLine2();
+    segments1 = wrapAtSpaces(line1Str, contentWidth);
+    segments2 = wrapAtSpaces(line2Str, contentWidth);
+  } else {
+    const lineStr = buildSimplifiedLine(score, position);
+    segments1 = wrapAtSpaces(lineStr, contentWidth);
+    segments2 = [];
+  }
+  return 1 + segments1.length + segments2.length + 1; // top + content + bottom
+}

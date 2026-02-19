@@ -361,8 +361,8 @@ This gameplan breaks down the map-spawn-points feature into logical phases. Impl
 - [x] Phase 6: CONNECT handling and disconnect (deferred spawn, wait message)
 - [x] Phase 7: Tests and verification
 - [x] All tests passing (`npm test`)
-- [ ] Feature card status updated when product complete (optional)
-- [ ] Gameplan directory renamed with `X_` prefix when feature is closed (optional)
+- [x] Feature card status updated to COMPLETE; card file renamed with `X_` prefix
+- [x] Gameplan directory renamed with `X_` prefix
 
 ---
 

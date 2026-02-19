@@ -7,10 +7,14 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const projectRoot = join(__dirname, '../..');
 const logsDir = join(projectRoot, 'logs');
+const clientsLogsDir = join(logsDir, 'clients');
 
-// Ensure logs directory exists
+// Ensure logs directories exist
 if (!existsSync(logsDir)) {
   mkdirSync(logsDir, { recursive: true });
+}
+if (!existsSync(clientsLogsDir)) {
+  mkdirSync(clientsLogsDir, { recursive: true });
 }
 
 /**
@@ -38,6 +42,15 @@ function createTransports(mode) {
           winston.format.colorize(),
           winston.format.simple()
         )
+      })
+    );
+  }
+
+  // Client mode + REUSE_CLIENT_LOGGER: also write to logs/client/client.log
+  if (mode === 'client' && process.env.REUSE_CLIENT_LOGGER === 'true') {
+    transports.push(
+      new winston.transports.File({
+        filename: join(clientsLogsDir, 'client.log')
       })
     );
   }
