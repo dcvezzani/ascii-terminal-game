@@ -4,7 +4,7 @@
 
 The **Game Title** is the single line of text displayed at the top of the game block (above the board). It is configurable (e.g. from server or default), has a fixed display width of 60 characters, and is truncated with ellipses when longer.
 
-**Consolidated from:** center-board-in-terminal_SPECS.md (title rendering, width, truncation).
+**Consolidated from:** center-board-in-terminal (title rendering, width, truncation; merged into [Canvas](../canvas/SPEC_Canvas.md)).
 
 ---
 

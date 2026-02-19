@@ -4,7 +4,7 @@
 
 The **Game Board** spec defines how the playable grid is **displayed** in the terminal: its position, dimensions, cell characters, and how players and board cells are combined for rendering. Board **data** (layout, parsing, RLE) is defined in [Board Parsing](../board-parsing/SPEC_Board_Parsing.md); this spec covers the visual representation and layout placement.
 
-**Consolidated from:** center-board-in-terminal_SPECS.md (board position), terminal-rendering (content dimensions), reduce-screen-flicker (cell content, incremental cell updates).
+**Consolidated from:** center-board-in-terminal (board position; merged into [Canvas](../canvas/SPEC_Canvas.md)), terminal-rendering (content dimensions), reduce-screen-flicker (cell content; merged into [Renderer](../renderer/SPEC_Renderer.md)).
 
 ---
 
@@ -35,6 +35,8 @@ The **Game Board** spec defines how the playable grid is **displayed** in the te
 - Empty: `' '` (space).
 - Wall: `'#'`.
 - Spawn: displayed as `' '` (same as empty).
+
+Spawn positions (entity 2 in board data) are recorded by the loader and used by the server for player starting positions; see [Board Parsing](../board-parsing/SPEC_Board_Parsing.md) and [Server](../server/SPEC_Server.md) §8.
 
 ### 3.2 Layering
 

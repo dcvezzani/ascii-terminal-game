@@ -4,7 +4,7 @@
 
 The **Canvas** determines how the title, board, and status bar are **organized and prepared** before anything is drawn. It represents the terminal viewport (dimensions, whether content fits, where the content block is placed), computes layout, and composes the content into a **prepared Canvas** that the [Renderer](../renderer/SPEC_Renderer.md) then renders to the terminal. It handles one-time startup clear, size checks, centering, resize debouncing, and the “terminal too small” condition. The Canvas does **not** draw to the terminal—it prepares; the Renderer renders.
 
-**Consolidated from:** terminal-rendering_SPECS.md (§2 Startup, §3.2–3.5, §4 Resize, §8 Layout/Terminal), center-board-in-terminal_SPECS.md (layout formulas, resize).
+**Consolidated from:** terminal-rendering_SPECS.md (§2 Startup, §3.2–3.5, §4 Resize, §8 Layout/Terminal), center-board-in-terminal_SPECS.md (fully merged here).
 
 ---
 
@@ -37,38 +37,45 @@ The **Canvas** determines how the title, board, and status bar are **organized a
 
 ## 3. Layout
 
-### 3.1 Inputs
+### 3.1 Layout constants
+
+- **Title and status bar width:** 60 characters (fixed). Title and status bar share this width; truncate title with ellipses if longer than 60.
+- **Blank line after title:** 1 (so title block height = 1 title line + 1 blank = 2 lines for MVP).
+- **Blank line before status bar:** 1 between last board row and first status bar line.
+
+### 3.2 Inputs
 
 - `terminalColumns`, `terminalRows` — from `getTerminalSize()`.
 - `boardWidth`, `boardHeight` — board dimensions in characters.
 - `titleHeight` — lines used by title block (e.g. 2: one title line + one blank).
 - `statusBarHeight` — lines used by the status bar (from Status Bar spec).
-- Options: `centerBoard` (boolean, default true), optional constants (blank lines after title, before status bar).
+- Options: `centerBoard` (boolean, default true).
 
-### 3.2 Block dimensions
+### 3.3 Block dimensions
 
 - **Block width:** `blockWidth = max(60, boardWidth)` (title and status bar are 60 chars; board may be narrower or wider).
 - **Block height:** `blockHeight = titleHeight + boardHeight + blankBeforeStatusBar + statusBarHeight`.
 
-### 3.3 Size check
+### 3.4 Size check
 
-- Before drawing: `terminalColumns >= contentColumns` and `terminalRows >= contentRows` (e.g. contentColumns = blockWidth, contentRows = blockHeight).
-- If **not** satisfied: treat as “terminal too small” (see §5).
+- **Minimum columns:** `minColumns = max(60, boardWidth)` (same as block width).
+- **Minimum rows:** `minRows = titleHeight + boardHeight + blankBeforeStatusBar + statusBarHeight`.
+- Before drawing: require `terminalColumns >= minColumns` and `terminalRows >= minRows`. If **not** satisfied: treat as "terminal too small" (see §5).
 
-### 3.4 Centering (when `centerBoard === true`)
+### 3.5 Centering (when `centerBoard === true`)
 
 - **Start column (1-based):**  
   `startColumn = max(1, floor((terminalColumns - blockWidth) / 2) + 1)`
 - **Start row (1-based):**  
   `startRow = max(1, floor((terminalRows - blockHeight) / 2) + 1)`
 
-### 3.5 Board start column
+### 3.6 Board start column
 
 - When `boardWidth < 60`: center board within the 60-character strip:  
   `boardStartColumn = startColumn + floor((60 - boardWidth) / 2)`
 - When `boardWidth >= 60`: `boardStartColumn = startColumn`.
 
-### 3.6 When `centerBoard === false`
+### 3.7 When `centerBoard === false`
 
 - Top-left placement: `startColumn = 1`, `startRow = 1`. Block width and board offset logic still apply.
 
@@ -87,8 +94,10 @@ The **Canvas** determines how the title, board, and status bar are **organized a
 
 ## 5. Terminal too small
 
-- If terminal is too small: clear the screen and show a centered message (e.g. two lines: “terminal is too small” / “please resize”). Store state as “too small.”
-- When the terminal becomes large enough again: **clear screen once** if coming from “too small”, then draw content and store the content region (Renderer).
+- If terminal is too small: clear the screen and show **only** a single centered message. Do not draw the game block.
+- **Width too narrow** (columns < minColumns): e.g. *"Please increase the width of your terminal window in order to play this game."*
+- **Rows too small:** e.g. *"Terminal too small; please resize."* (or two lines: "terminal is too small" / "please resize"). Show only one message at a time when both dimensions are insufficient.
+- When the terminal becomes large enough again: **clear screen once** if coming from "too small", then draw content and store the content region (Renderer).
 
 ---
 
@@ -97,7 +106,7 @@ The **Canvas** determines how the title, board, and status bar are **organized a
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
 | `rendering.centerBoard` | boolean | true | When true, center the game block; when false, top-left. |
-| Resize debounce | number (ms) | 250 | Env `RESIZE_DEBOUNCE_MS`; CLI `--resize-debounce=N`. |
+| Resize debounce | number (ms) | 250 | Env `RESIZE_DEBOUNCE_MS`; CLI `--resize-debounce=N`. Client config `rendering.resizeDebounceMs` (e.g. 200) may also be used; CLI/env override when present. |
 
 ---
 

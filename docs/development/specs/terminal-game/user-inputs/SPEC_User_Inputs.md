@@ -4,7 +4,7 @@
 
 **User Inputs** defines how the application captures and interprets keyboard (and optionally line-based) input: TTY raw mode, readline fallback when keys are not delivered, parsing of key sequences into application-defined actions, and stream error handling. The spec does **not** prescribe specific key bindings; the application defines which keys map to which actions (e.g. move, quit, restart, help).
 
-**Consolidated from:** terminal-rendering_SPECS.md (§5 Input), client-architecture_SPECS (Input Handling Patterns), mvp-multiplayer-game (input handling).
+**Consolidated from:** terminal-rendering_SPECS.md (§5 Input), Client spec (input handling patterns), mvp-multiplayer-game (input handling).
 
 ---
 

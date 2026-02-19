@@ -4,7 +4,13 @@
 
 The **Status Bar** is the area below the game board that shows score, position, and control instructions. It supports a two-line layout (score + position on line 1, instructions on line 2) when the board is wide enough, and a simplified one-line format for narrow boards. Content wraps at spaces to stay within board width; when content shortens, lines are cleared to end-of-line so no leftover text remains.
 
-**Consolidated from:** status-bar-two-lines-wrap_SPECS.md.
+**Supersedes:** status-bar-two-lines-wrap_SPECS.md (removed); this spec is the single source of truth.
+
+---
+
+## Problem
+
+A single-line status bar with no board-width awareness can overflow or be cut off on narrow boards, and when score or position use fewer characters (e.g. 100 → 0), old characters can remain visible to the right. The two-line/wrap/simplified behavior improves readability across board widths, keeps instructions visible on wide boards, and avoids leftover text when dynamic content shortens.
 
 ---
 
@@ -24,9 +30,13 @@ The **Status Bar** is the area below the game board that shows score, position, 
 
 ### 2.1 Config
 
+The threshold is read from client config (e.g. `config/defaults.js` or client config); resolve with `config?.statusBar?.widthThreshold ?? 25` when absent.
+
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
 | `statusBar.widthThreshold` | number | 25 | When `boardWidth > threshold` use full format (two lines). When `boardWidth <= threshold` use simplified (one line). |
+
+**Example** (client config): `"statusBar": { "widthThreshold": 25 }`
 
 ### 2.2 Fixed strings (MVP)
 
@@ -69,10 +79,38 @@ The **Status Bar** is the area below the game board that shows score, position, 
 
 - **Signature:** `renderStatusBar(score, position, boardWidth, boardHeight)` (and layout start row/column from Canvas).
 - **Callers** must pass `boardWidth` and `boardHeight` so the renderer can select format and wrap. Redraw when score or position changes.
+- The component that renders the status bar must have access to client config (or the threshold value) for format selection (e.g. via constructor or config).
 
 ---
 
-## 8. Success criteria
+## 8. Implementation notes
+
+- **Threshold:** Resolve with `config?.statusBar?.widthThreshold ?? 25`.
+- **Wrap:** Split at spaces; form segments ≤ `boardWidth`; break only at space boundaries. A single token longer than `boardWidth` stays on its own line (MVP: no mid-token break).
+- **Clear:** When a line is updated, clear to end of line (ANSI "erase in line" or spaces to `boardWidth`) so no previous content remains.
+
+---
+
+## 9. Non-functional requirements
+
+- **Deterministic:** Format selection and wrap are determined by `boardWidth`, threshold, score, and position.
+- **Performance:** Only status bar lines that changed (or need clearing) are written and cleared; no full-screen redraw for status bar updates.
+- **Config:** Threshold is read from config at startup/render; no runtime config reload required for MVP.
+
+---
+
+## 10. Testing requirements
+
+- **Format selection:** boardWidth > threshold → full format; boardWidth ≤ threshold → simplified; threshold from config; default 25 when key absent.
+- **Line content:** Full line 1/2 and simplified strings; null/undefined position shows `(?, ?)` or `P: (?, ?)`.
+- **Wrapping:** Long line wraps at spaces; no segment exceeds `boardWidth`.
+- **Clean display:** When score or position shorten, no trailing characters remain (clear to end of line).
+- **Render only when necessary:** Unchanged line is not written or cleared; line 2 (instructions) is static, drawn once.
+- **Caller:** `boardWidth` and `boardHeight` are passed; component has access to config for threshold.
+
+---
+
+## 11. Success criteria
 
 - [ ] Full format when board width > threshold; simplified when ≤ threshold; threshold configurable (default 25).
 - [ ] No content extends past board width; wrapping at spaces when needed.
@@ -81,10 +119,14 @@ The **Status Bar** is the area below the game board that shows score, position, 
 
 ---
 
-## 9. Related specs
+## 12. Related specs and implementation
 
-| Spec | Relation |
-|------|----------|
-| [Canvas](../canvas/SPEC_Canvas.md) | Provides start row/column; status bar height affects block height. |
+| Spec / reference | Relation |
+|------------------|----------|
+| [Canvas](../canvas/SPEC_Canvas.md) | Provides start row/column; status bar height affects block height. Canvas implements `renderStatusBar`. |
 | [Renderer](../renderer/SPEC_Renderer.md) | Draws the status bar at the given position; calls status bar logic. |
 | [Overall](../SPEC_Overall.md) | How Status Bar fits in the terminal game stack. |
+| `src/render/statusBarUtils.js` | Status bar helpers (wrap, format, height). |
+| `src/modes/networkedMode.js` | Caller: passes score, position, board dimensions to status bar render. |
+| `config/defaults.js`, client config | `statusBar.widthThreshold` (default 25). |
+| Feature card (archived) | `FEATURE_status_bar_two_lines_wrap`. |

@@ -32,7 +32,7 @@ npx @dcvezzani/ascii-tag init
 
   Use a specific board:
   ```bash
-  ascii-tag server --board classic.json
+  ascii-tag server --board boards/classic.json
   ```
 
 - **Init** (create default config in `.ascii-tag/`):
@@ -68,3 +68,7 @@ If a file is missing, it is created with defaults on first run. Edit these files
 ascii-tag --version
 ascii-tag --help
 ```
+
+## Documentation
+
+- **[Development documentation](docs/development/README.md)** — Overview of available docs, process (cards, specs, gameplans), scripts (`npm test`, SCRIPTS.md), and developer context.

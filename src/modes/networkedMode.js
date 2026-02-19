@@ -14,6 +14,94 @@ import { getStatusBarHeight } from '../render/statusBarUtils.js';
 import Message from '../render/Message.js';
 
 /**
+ * Get server player position (pure).
+ * @param {object|null} currentState - Current game state
+ * @param {string|null} localPlayerId - Local player ID
+ * @returns {{x: number, y: number}|null} Server position or null if not found
+ */
+export function getServerPlayerPosition(currentState, localPlayerId) {
+  if (!currentState || !currentState.players) {
+    return null;
+  }
+  const localPlayer = currentState.players.find(p => p.playerId === localPlayerId);
+  return localPlayer ? { x: localPlayer.x, y: localPlayer.y } : null;
+}
+
+/**
+ * Validate if position is within board bounds (pure).
+ */
+export function validateBounds(x, y, board) {
+  if (!board) return false;
+  return x >= 0 && x < board.width && y >= 0 && y < board.height;
+}
+
+/**
+ * Validate if position is not a wall (pure).
+ */
+export function validateWall(x, y, board) {
+  if (!board || !board.getCell) return false;
+  const cell = board.getCell(x, y);
+  if (cell === null) return false;
+  return cell !== '#';
+}
+
+/**
+ * Validate if no solid entity at position (pure).
+ */
+export function validateEntityCollision(x, y, entities) {
+  if (!entities || entities.length === 0) return true;
+  const solidEntity = entities.find(
+    e => e.x === x && e.y === y && e.solid === true
+  );
+  return !solidEntity;
+}
+
+/**
+ * Validate if no other player at position (pure).
+ */
+export function validatePlayerCollision(x, y, players, excludePlayerId) {
+  if (!players || players.length === 0) return true;
+  const otherPlayer = players.find(
+    p => p.playerId !== excludePlayerId && p.x === x && p.y === y
+  );
+  return !otherPlayer;
+}
+
+/**
+ * Validate movement (all checks) (pure).
+ * @param {number} x - X coordinate
+ * @param {number} y - Y coordinate
+ * @param {object} currentState - Current game state
+ * @param {string|null} localPlayerId - Local player ID to exclude from player collision
+ * @returns {boolean} True if movement is valid
+ */
+export function validateMovement(x, y, currentState, localPlayerId) {
+  if (!currentState || !currentState.board) return false;
+
+  const board = {
+    width: currentState.board.width,
+    height: currentState.board.height,
+    getCell: (x, y) => {
+      if (y < 0 || y >= currentState.board.grid.length) return null;
+      if (x < 0 || x >= currentState.board.grid[y].length) return null;
+      return currentState.board.grid[y][x];
+    }
+  };
+
+  const otherPlayers = (currentState.players || []).filter(
+    p => p.playerId !== localPlayerId
+  );
+  const entities = currentState.entities || [];
+
+  if (!validateBounds(x, y, board)) return false;
+  if (!validateWall(x, y, board)) return false;
+  if (!validateEntityCollision(x, y, entities)) return false;
+  if (!validatePlayerCollision(x, y, otherPlayers, localPlayerId)) return false;
+
+  return true;
+}
+
+/**
  * Networked game mode - connects to server and plays multiplayer game.
  * @param {object} [injectedConfig] - Optional config (when provided, used instead of repo clientConfig; used by CLI)
  */
@@ -84,7 +172,7 @@ export async function networkedMode(injectedConfig) {
       // Get current predicted position (or fall back to server position)
       const currentPos = localPlayerPredictedPosition.x !== null
         ? localPlayerPredictedPosition
-        : getServerPlayerPosition();
+        : getServerPlayerPosition(currentState, localPlayerId);
 
       if (!currentPos || currentPos.x === null) {
         // Can't predict without valid position
@@ -97,7 +185,7 @@ export async function networkedMode(injectedConfig) {
       const newY = currentPos.y + dy;
 
       // Validate new position
-      if (validateMovement(newX, newY, currentState)) {
+      if (validateMovement(newX, newY, currentState, localPlayerId)) {
         // Valid movement - update prediction immediately
         const oldPos = { ...localPlayerPredictedPosition };
         localPlayerPredictedPosition = { x: newX, y: newY };
@@ -162,18 +250,6 @@ export async function networkedMode(injectedConfig) {
   inputHandler.onQuit(() => {
     shutdown('Quit by user');
   });
-
-  /**
-   * Get server player position
-   * @returns {{x: number, y: number}|null} Server position or null if not found
-   */
-  function getServerPlayerPosition() {
-    if (!currentState || !currentState.players) {
-      return null;
-    }
-    const localPlayer = currentState.players.find(p => p.playerId === localPlayerId);
-    return localPlayer ? { x: localPlayer.x, y: localPlayer.y } : null;
-  }
 
   /**
    * Send MOVE message to server
@@ -310,106 +386,6 @@ export async function networkedMode(injectedConfig) {
       clearInterval(reconciliationTimer);
       reconciliationTimer = null;
     }
-  }
-
-  /**
-   * Validate if position is within board bounds
-   * @param {number} x - X coordinate
-   * @param {number} y - Y coordinate
-   * @param {object} board - Board object with width and height
-   * @returns {boolean} True if within bounds
-   */
-  function validateBounds(x, y, board) {
-    if (!board) return false;
-    return x >= 0 && x < board.width && y >= 0 && y < board.height;
-  }
-
-  /**
-   * Validate if position is not a wall
-   * @param {number} x - X coordinate
-   * @param {number} y - Y coordinate
-   * @param {object} board - Board object with getCell method
-   * @returns {boolean} True if not a wall
-   */
-  function validateWall(x, y, board) {
-    if (!board || !board.getCell) return false;
-    const cell = board.getCell(x, y);
-    // If cell is null (out of bounds), it's not a valid position
-    if (cell === null) return false;
-    return cell !== '#';
-  }
-
-  /**
-   * Validate if no solid entity at position
-   * @param {number} x - X coordinate
-   * @param {number} y - Y coordinate
-   * @param {Array} entities - Array of entity objects
-   * @returns {boolean} True if no solid entity at position
-   */
-  function validateEntityCollision(x, y, entities) {
-    if (!entities || entities.length === 0) return true;
-    
-    // Check for solid entities at position
-    const solidEntity = entities.find(
-      e => e.x === x && e.y === y && e.solid === true
-    );
-    return !solidEntity;
-  }
-
-  /**
-   * Validate if no other player at position
-   * @param {number} x - X coordinate
-   * @param {number} y - Y coordinate
-   * @param {Array} players - Array of player objects
-   * @param {string} excludePlayerId - Player ID to exclude from check
-   * @returns {boolean} True if no other player at position
-   */
-  function validatePlayerCollision(x, y, players, excludePlayerId) {
-    if (!players || players.length === 0) return true;
-    
-    // Check for other players at position
-    const otherPlayer = players.find(
-      p => p.playerId !== excludePlayerId && p.x === x && p.y === y
-    );
-    return !otherPlayer;
-  }
-
-  /**
-   * Validate movement (all checks)
-   * @param {number} x - X coordinate
-   * @param {number} y - Y coordinate
-   * @param {object} currentState - Current game state
-   * @returns {boolean} True if movement is valid
-   */
-  function validateMovement(x, y, currentState) {
-    if (!currentState || !currentState.board) return false;
-
-    // Create board adapter
-    const board = {
-      width: currentState.board.width,
-      height: currentState.board.height,
-      getCell: (x, y) => {
-        if (y < 0 || y >= currentState.board.grid.length) return null;
-        if (x < 0 || x >= currentState.board.grid[y].length) return null;
-        return currentState.board.grid[y][x];
-      }
-    };
-
-    // Get other players (exclude local player)
-    const otherPlayers = (currentState.players || []).filter(
-      p => p.playerId !== localPlayerId
-    );
-
-    // Get entities
-    const entities = currentState.entities || [];
-
-    // Validate all checks
-    if (!validateBounds(x, y, board)) return false;
-    if (!validateWall(x, y, board)) return false;
-    if (!validateEntityCollision(x, y, entities)) return false;
-    if (!validatePlayerCollision(x, y, otherPlayers, localPlayerId)) return false;
-
-    return true;
   }
 
   /**

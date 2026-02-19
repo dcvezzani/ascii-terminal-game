@@ -1,0 +1,142 @@
+%% Server Architecture Data Structures Diagram
+%% Shows internal data organization and relationships
+
+classDiagram
+    %% Entry Point
+    class EntryPoint {
+        +startServer(port) Promise
+        -shutdown() Promise
+        +loadConfig()
+        +configureLogger()
+    }
+    
+    %% Server (Facade)
+    class Server {
+        -port: number
+        -wss: WebSocketServer
+        -connectionManager: ConnectionManager
+        -gameServer: GameServer
+        -broadcastInterval: Interval
+        -broadcastIntervalMs: number
+        +constructor(port, game, options)
+        +start() Promise
+        +stop() Promise
+        -onConnection(ws)
+        -handleMessage(clientId, data)
+        -handleConnect(clientId, message)
+        -handleMove(clientId, message)
+        -onDisconnect(clientId)
+        -broadcastState()
+        -startBroadcasting()
+        -stopBroadcasting()
+    }
+    
+    %% ConnectionManager
+    class ConnectionManager {
+        -connections: Map~clientId, Connection~
+        -playerIdMap: Map~clientId, playerId~
+        +addConnection(clientId, ws)
+        +removeConnection(clientId)
+        +getConnection(clientId) Connection
+        +getAllConnections() Array
+        +setPlayerId(clientId, playerId)
+        +getPlayerId(clientId) string
+    }
+    
+    class Connection {
+        +clientId: string
+        +ws: WebSocket
+        +connectedAt: number
+        +lastActivity: number
+    }
+    
+    %% GameServer
+    class GameServer {
+        -game: Game
+        -players: Map~playerId, Player~
+        -spawnList: Array
+        -spawnConfig: object
+        +constructor(game, options)
+        +addPlayer(clientId, playerId, playerName)
+        +removePlayer(playerId)
+        +getPlayer(playerId) Player
+        +getAllPlayers() Array
+        +spawnPlayer(playerId, playerName)
+        +validateMove(playerId, dx, dy) boolean
+        +movePlayer(playerId, dx, dy) boolean
+        +serializeState() object
+    }
+    
+    class Player {
+        +playerId: string
+        +clientId: string
+        +playerName: string
+        +x: number | null
+        +y: number | null
+    }
+    
+    %% Game
+    class Game {
+        -board: Board
+        -score: number
+        -running: boolean
+        +constructor(board)
+    }
+    
+    %% Board
+    class Board {
+        -width: number
+        -height: number
+        -grid: string[][]
+        +constructor(boardData)
+        +initializeFromGrid(grid)
+        +initialize()
+        +getCell(x, y) string
+        +isWall(x, y) boolean
+        +serialize() string[][]
+    }
+    
+    %% MessageHandler
+    class MessageHandler {
+        +parseMessage(rawData) Message
+        +createMessage(type, payload, clientId?) Message
+    }
+    
+    class Message {
+        +type: string
+        +payload: object
+        +timestamp: number
+        +clientId?: string
+    }
+    
+    %% MessageTypes
+    class MessageTypes {
+        <<constants>>
+        +CONNECT: string
+        +MOVE: string
+        +STATE_UPDATE: string
+    }
+    
+    %% Relationships
+    EntryPoint --> Server : creates & starts
+    Server *-- ConnectionManager : owns
+    Server *-- GameServer : owns
+    Server --> MessageHandler : uses
+    Server --> MessageTypes : uses
+    
+    ConnectionManager "1" *-- "*" Connection : manages
+    ConnectionManager --> Player : maps via playerId
+    
+    GameServer o-- Game : holds ref
+    GameServer "1" *-- "*" Player : manages
+    
+    Game *-- Board : owns
+    
+    MessageHandler --> Message : creates/parses
+    MessageHandler --> MessageTypes : uses
+    
+    %% Notes
+    note for ConnectionManager "Maps clientId to playerId<br/>Tracks connection metadata"
+    note for GameServer "Server-authoritative<br/>Validates all moves"
+    note for Game "Domain model<br/>Core game state"
+    note for Board "Value object<br/>Immutable serialization"
