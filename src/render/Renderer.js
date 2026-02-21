@@ -182,7 +182,6 @@ export class Renderer {
    * @param {import('./Canvas.js').default} canvas
    */
   renderIncremental(canvas) {
-    this.logger.debug(">>>dcv (Renderer.js, , renderIncremental:122)", )
     if (!canvas || !canvas.grid || canvas.grid.length === 0) {
       return;
     }
