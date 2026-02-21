@@ -1,0 +1,34 @@
+%% Remote Entity Interpolation: What is Lerping and How It Helps
+%% Shows how renderTime sits between two buffer snapshots and the lerp formula for smooth motion
+
+flowchart LR
+    subgraph inputs [Inputs]
+        StateUpdate["STATE_UPDATE"]
+        Tick["Interpolation tick every 50ms"]
+    end
+
+    subgraph buffer [Per-entity buffer]
+        SnapshotA["buffer[i]: tA, xA, yA"]
+        SnapshotB["buffer[i+1]: tB, xB, yB"]
+    end
+
+    subgraph compute [Compute position]
+        RenderTime["renderTime = Date.now() - INTERPOLATION_DELAY_MS"]
+        FindPair["Find i where tA <= renderTime <= tB"]
+        Alpha["alpha = (renderTime - tA) / (tB - tA)"]
+        LerpX["x = xA + (xB - xA) * alpha"]
+        LerpY["y = yA + (yB - yA) * alpha"]
+    end
+
+    subgraph result [Result]
+        SmoothPos["Smooth interpolated position"]
+    end
+
+    StateUpdate --> buffer
+    Tick --> RenderTime
+    RenderTime --> FindPair
+    FindPair --> Alpha
+    Alpha --> LerpX
+    Alpha --> LerpY
+    LerpX --> SmoothPos
+    LerpY --> SmoothPos

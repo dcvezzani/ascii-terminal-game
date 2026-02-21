@@ -115,6 +115,8 @@ This document describes the technologies, core concepts, and design patterns use
 - Requires client-side validation logic (must match server rules)
 - Additional state management complexity
 
+See [Client-Side Prediction Specification](../client-side-prediction/client-side-prediction_SPECS.md) (includes [diagrams](../client-side-prediction/client-side-prediction_SPECS.md#diagrams) for lag and reconciliation).
+
 ### 2. Incremental Rendering
 
 **Concept**: Update only changed cells instead of re-rendering the entire screen, reducing flicker and improving performance.
@@ -167,7 +169,7 @@ Other players' **display** positions come from interpolated state (see Remote En
 
 **Benefits**: Smooth motion for remote players; optional server velocity improves extrapolation when the buffer runs dry.
 
-See [Remote Entity Interpolation Specification](../remote-entity-interpolation/remote-entity-interpolation_SPECS.md) for full details.
+See [Remote Entity Interpolation Specification](../remote-entity-interpolation/remote-entity-interpolation_SPECS.md) for full details. Diagrams (lerping, velocity, client lag) are in that spec’s [Diagrams section](../remote-entity-interpolation/remote-entity-interpolation_SPECS.md#diagrams).
 
 ### 5. Message Queue Pattern
 

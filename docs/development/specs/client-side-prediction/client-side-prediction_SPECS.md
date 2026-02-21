@@ -8,6 +8,10 @@ This enhancement implements immediate visual feedback for local player movement 
 
 **Purpose**: Provide instant, responsive movement feedback (< 16ms) by predicting local player movement on the client, while ensuring accuracy through reconciliation with the server's authoritative state.
 
+## Diagrams
+
+- **When the local client lags / reconciliation**: [Source](client-side-prediction_lag-reconciliation.mmd) · [SVG](client-side-prediction_lag-reconciliation.svg) – Predicted vs server position; reconciliation and correction when they differ.
+
 ## Problem Statement
 
 **Current Behavior**:

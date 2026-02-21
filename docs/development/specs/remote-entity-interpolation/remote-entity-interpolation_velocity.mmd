@@ -1,0 +1,32 @@
+%% Remote Entity Interpolation: Why Including Player Velocity Matters
+%% Velocity is used only when extrapolating; server velocity preferred over client-derived
+
+flowchart TD
+    NeedPos["Need position for renderTime"]
+    TwoSnapshots{"Two snapshots around renderTime?"}
+
+    Interpolate["Interpolate between buffer[i] and buffer[i+1]"]
+    IgnoreVel["Ignore velocity; path defined by two points"]
+
+    Extrapolate["Extrapolate: buffer run dry"]
+    HasServerVel{"Server sent vx, vy?"}
+
+    UseServerVel["Use server vx, vy from latest snapshot"]
+    UseClientVel["Derive velocity from last two buffer entries"]
+
+    Clamp["Clamp to EXTRAPOLATION_MAX_MS e.g. 300ms"]
+    PosExt["position = latest + velocity * timePast"]
+
+    NeedPos --> TwoSnapshots
+    TwoSnapshots -->|Yes| Interpolate
+    Interpolate --> IgnoreVel
+
+    TwoSnapshots -->|No| Extrapolate
+    Extrapolate --> HasServerVel
+    HasServerVel -->|Yes| UseServerVel
+    HasServerVel -->|No| UseClientVel
+    UseServerVel --> PosExt
+    UseClientVel --> PosExt
+    PosExt --> Clamp
+
+    note1["Server velocity: intent-aware, stable; client-derived: can be noisy from jitter"]

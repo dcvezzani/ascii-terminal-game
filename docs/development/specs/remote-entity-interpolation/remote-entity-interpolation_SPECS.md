@@ -8,6 +8,12 @@ This feature smooths the movement of remote players by maintaining a per-entity 
 
 **Purpose**: Provide smooth, visually continuous motion for other players between server true-ups, improving the multiplayer experience without changing the server as the single source of truth.
 
+## Diagrams
+
+- **Lerping**: [Source](remote-entity-interpolation_lerping.mmd) · [SVG](remote-entity-interpolation_lerping.svg) – What lerp is, how `renderTime` sits between two buffer snapshots, and the lerp formula for smooth motion.
+- **Why velocity matters**: [Source](remote-entity-interpolation_velocity.mmd) · [SVG](remote-entity-interpolation_velocity.svg) – When velocity is used (extrapolation only); server vs client-derived velocity.
+- **When a client lags**: [Source](remote-entity-interpolation_client-lag.mmd) · [SVG](remote-entity-interpolation_client-lag.svg) – Buffer runs dry, extrapolation vs hold, jitter buffer, clamp.
+
 ## Problem Statement
 
 **Previous Behavior**:
