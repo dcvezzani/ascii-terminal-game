@@ -41,7 +41,10 @@ export class GameServer {
       clientId,
       playerName,
       x: null,
-      y: null
+      y: null,
+      lastX: null,
+      lastY: null,
+      lastT: null
     };
     this.players.set(playerId, player);
     logger.debug(`Player added: ${playerId} (${playerName})`);
@@ -115,6 +118,9 @@ export class GameServer {
     if (spawn) {
       player.x = spawn.x;
       player.y = spawn.y;
+      player.lastX = player.x;
+      player.lastY = player.y;
+      player.lastT = Date.now();
       logger.debug(`Player spawned: ${playerId} at (${player.x}, ${player.y})`);
       return { spawned: true };
     }
@@ -206,6 +212,9 @@ export class GameServer {
     }
 
     const player = this.getPlayer(playerId);
+    player.lastX = player.x;
+    player.lastY = player.y;
+    player.lastT = Date.now();
     player.x += dx;
     player.y += dy;
 
@@ -224,12 +233,26 @@ export class GameServer {
         height: this.game.board.height,
         grid: this.game.board.serialize()
       },
-      players: this.getAllPlayers().map(player => ({
-        playerId: player.playerId,
-        x: player.x,
-        y: player.y,
-        playerName: player.playerName
-      })),
+      players: this.getAllPlayers().map(player => {
+        const now = Date.now();
+        let vx = 0;
+        let vy = 0;
+        if (player.lastX != null && player.lastY != null && player.lastT != null && (player.x !== player.lastX || player.y !== player.lastY)) {
+          const dtSec = (now - player.lastT) / 1000;
+          if (dtSec > 0) {
+            vx = (player.x - player.lastX) / dtSec;
+            vy = (player.y - player.lastY) / dtSec;
+          }
+        }
+        return {
+          playerId: player.playerId,
+          x: player.x,
+          y: player.y,
+          playerName: player.playerName,
+          vx,
+          vy
+        };
+      }),
       score: this.game.score
     };
   }
