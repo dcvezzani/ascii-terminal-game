@@ -128,6 +128,8 @@ export async function networkedMode(injectedConfig) {
   let cachedLayout = null;
   let lastContentRegion = null;
   let wasTooSmall = false;
+  let waitingForSpawn = false;
+  let spawnWaitMessage = null;
 
   // Set up WebSocket event handlers
   wsClient.on('connect', () => {
@@ -393,19 +395,34 @@ export async function networkedMode(injectedConfig) {
    */
   function handleConnect(message) {
     try {
-      const { clientId, playerId, playerName, gameState } = message.payload;
-      
-      // Only process CONNECT messages that have playerId and gameState
-      // (these are the server's response to our CONNECT request)
-      // Ignore any other CONNECT messages
-      if (!playerId || !gameState) {
-        logger.debug('Received CONNECT message without playerId/gameState, ignoring');
+      const { clientId, playerId, playerName, gameState, waitingForSpawn: payloadWaiting, message: payloadMessage } = message.payload;
+
+      if (!playerId) {
+        logger.debug('Received CONNECT message without playerId, ignoring');
         return;
       }
-      
+
+      // Waiting-for-spawn: server holds connection and sends wait message; no gameState yet
+      if (payloadWaiting === true && (gameState == null || gameState === undefined)) {
+        localPlayerId = playerId;
+        waitingForSpawn = true;
+        spawnWaitMessage = payloadMessage || 'Waiting for a spawn point...';
+        logger.info(`Waiting for spawn (${playerId}): ${spawnWaitMessage}`);
+        render();
+        return;
+      }
+
+      // Spawned (immediate or after wait): full game state
+      if (!gameState) {
+        logger.debug('Received CONNECT message without gameState, ignoring');
+        return;
+      }
+
+      waitingForSpawn = false;
+      spawnWaitMessage = null;
       localPlayerId = playerId;
       currentState = gameState;
-      
+
       // Initialize prediction from server position
       if (gameState.players) {
         const localPlayer = gameState.players.find(p => p.playerId === localPlayerId);
@@ -415,9 +432,9 @@ export async function networkedMode(injectedConfig) {
           startReconciliationTimer(); // Start reconciliation timer
         }
       }
-      
+
       logger.info(`Joined as ${playerName} (${playerId})`);
-      
+
       // Initial render
       render();
     } catch (error) {
@@ -584,10 +601,23 @@ export async function networkedMode(injectedConfig) {
    * Render the game
    */
   function render() {
+    if (displayEmptyDuringResize) return;
+
+    // Waiting for spawn: show only the wait message (no board), centered in terminal
+    if (waitingForSpawn) {
+      const { columns, rows } = getTerminalSize();
+      Message.applySpawnWait(canvas, {
+        message: spawnWaitMessage || 'Waiting for a spawn point...',
+        terminalColumns: columns,
+        terminalRows: rows
+      });
+      renderer.render(canvas);
+      return;
+    }
+
     if (
       !currentState
       || !changesSinceLastRender(previousState, currentState)
-      || displayEmptyDuringResize
     ) {
       return;
     }
