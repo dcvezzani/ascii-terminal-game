@@ -152,7 +152,24 @@ User Input → validateMovement() → update localPlayerPredictedPosition → im
 Periodic/Event → reconcilePosition() → correct prediction → re-render
 ```
 
-### 4. Message Queue Pattern
+Other players' **display** positions come from interpolated state (see Remote Entity Interpolation); server state still drives full/incremental render and change detection.
+
+### 4. Remote Entity Interpolation
+
+**Concept**: Smooth movement of other players between server true-ups by showing them slightly in the past and interpolating between the two most recent server snapshots.
+
+**Implementation**:
+- **Per-entity buffer**: Each remote player has a buffer of `{ t, x, y, playerName, vx?, vy? }` (timestamp and position; optional velocity from server). Capped (e.g. 20 entries).
+- **On STATE_UPDATE**: Push remote players to buffers using `message.timestamp`; remove buffers and clear cells for players who left.
+- **Interpolation tick** (e.g. every 50ms): `renderTime = Date.now() - INTERPOLATION_DELAY_MS` (e.g. 100ms). For each entity, lerp between the two snapshots surrounding `renderTime`, or use latest if 0–1 entries, or extrapolate when past last snapshot. Update `remoteEntityInterpolated` and redraw only remote player cells that changed; then call renderer.
+- **State**: `remoteEntityBuffers`, `remoteEntityInterpolated`, `lastDrawnInterpolatedPositions`, `interpolationTickTimer`; constants INTERPOLATION_DELAY_MS, INTERPOLATION_TICK_MS, REMOTE_ENTITY_BUFFER_MAX, EXTRAPOLATION_MAX_MS.
+- **Extrapolation**: When `renderTime` is past the last snapshot (e.g. packet loss), hold or extrapolate using server-provided `vx`/`vy` (if present) or client-derived velocity from the last two buffer entries; clamp duration (e.g. 300ms).
+
+**Benefits**: Smooth motion for remote players; optional server velocity improves extrapolation when the buffer runs dry.
+
+See [Remote Entity Interpolation Specification](../remote-entity-interpolation/remote-entity-interpolation_SPECS.md) for full details.
+
+### 5. Message Queue Pattern
 
 **Concept**: Buffer outgoing messages when WebSocket is not ready, preventing message loss during connection transitions.
 
@@ -167,7 +184,7 @@ Periodic/Event → reconcilePosition() → correct prediction → re-render
 - Handles transient connection states gracefully
 - Ensures all user input reaches server
 
-### 5. Event-Driven Architecture
+### 6. Event-Driven Architecture
 
 **Concept**: Components communicate via events and callbacks rather than direct method calls.
 
@@ -181,7 +198,7 @@ Periodic/Event → reconcilePosition() → correct prediction → re-render
 - Easy to extend with new event handlers
 - Natural fit for asynchronous operations
 
-### 6. Configuration-Driven Behavior
+### 7. Configuration-Driven Behavior
 
 **Concept**: Client behavior controlled via configuration file, allowing customization without code changes.
 
@@ -377,6 +394,7 @@ function reconcilePosition() {
 - `currentState` replaced entirely on `STATE_UPDATE`
 - `localPlayerPredictedPosition` replaced with new object
 - `previousState` stores copy of previous state
+- **Remote entity interpolation** uses separate state: `remoteEntityBuffers`, `remoteEntityInterpolated`, `lastDrawnInterpolatedPositions`. The interpolation tick does not change `currentState` or `previousState`; it only redraws remote player cells.
 
 **Benefits**:
 - Easier to compare states (reference equality)
@@ -533,6 +551,8 @@ renderer.renderStatusBar(score, position, height);
    - Clear old position (restore cell content)
    - Draw at new position
 4. Update status bar if needed
+
+Remote players are drawn at **interpolated** positions during the interpolation tick (clear old cell, draw new); full/incremental render on STATE_UPDATE may draw them at server positions first, then the tick overwrites with interpolated positions.
 
 ### 3. Cell Content Resolution
 

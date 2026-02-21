@@ -34,7 +34,7 @@ sequenceDiagram
             GS->>Game: Access game.score
             Game-->>GS: Score value
             
-            GS-->>Server: Complete game state
+            GS-->>Server: Complete game state (players include vx, vy in cells/sec)
             
             Server->>MH: createMessage(STATE_UPDATE, gameState)
             MH->>MT: Reference message types

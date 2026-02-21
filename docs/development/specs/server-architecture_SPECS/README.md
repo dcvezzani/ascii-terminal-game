@@ -415,7 +415,7 @@ Server                    All Clients
 
 The server is the **single source of truth** for game state:
 
-1. **State Storage**: Game state lives in memory (GameServer, Game, Board)
+1. **State Storage**: Game state lives in memory (GameServer, Game, Board). In-memory Player objects include `lastX`, `lastY`, and `lastT` for velocity calculation; serialized output adds `vx`, `vy` per player (cells per second).
 2. **State Updates**: Only server can modify game state
 3. **State Broadcasting**: Server periodically broadcasts full state to all clients
 4. **Client Input**: Clients send commands (MOVE), server validates and applies
@@ -437,7 +437,9 @@ The server is the **single source of truth** for game state:
       playerId: string,
       x: number,
       y: number,
-      playerName: string
+      playerName: string,
+      vx: number,   // velocity in cells per second (for client extrapolation)
+      vy: number
     },
     ...
   ],
@@ -445,8 +447,10 @@ The server is the **single source of truth** for game state:
 }
 ```
 
+**Velocity computation**: GameServer tracks per player `lastX`, `lastY`, and `lastT` (timestamp of last position update). These are set on spawn and on each move. In `serializeState()`, velocity is computed as `(x - lastX) / dtSec` and `(y - lastY) / dtSec` where `dtSec = (now - lastT) / 1000`. If there is no previous position or `dtSec` is zero, `vx` and `vy` are 0. The values are included so clients can extrapolate remote player positions when their interpolation buffer runs dry (e.g. packet loss).
+
 **Serialization Methods**:
-- `GameServer.serializeState()`: Serializes full game state
+- `GameServer.serializeState()`: Serializes full game state (including per-player velocity)
 - `Board.serialize()`: Returns copy of grid (immutable)
 
 ### State Update Frequency

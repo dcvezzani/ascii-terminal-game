@@ -887,6 +887,10 @@ This implementation focuses on basic prediction. Future enhancements can add:
 - **Server Architecture Spec**: `docs/development/specs/server-architecture_SPECS/README.md`
   - Section: "Movement Validation" (for matching validation rules)
 
+## Related: Remote Entity Interpolation
+
+Other players (remote entities) are smoothed via **entity interpolation**: position buffers and a periodic tick that lerps between server snapshots and optionally extrapolates when the buffer runs dry. See the [Client Architecture Specification](../client-architecture_SPECS/README.md) (Core Concept "Remote Entity Interpolation") and the [Remote Entity Interpolation Specification](../remote-entity-interpolation/remote-entity-interpolation_SPECS.md). Local player prediction and remote interpolation are independent: the local player uses prediction and reconciliation; remote players use interpolation only (no prediction).
+
 ## Summary
 
 This specification defines the implementation of client-side prediction to provide instant, responsive movement feedback. The solution uses optimistic prediction with client-side validation, immediate rendering, and periodic reconciliation to maintain accuracy with the server's authoritative state. The implementation is designed to be performant, reliable, and maintainable while providing a significantly improved user experience.

@@ -8,6 +8,10 @@ classDiagram
         -previousState: GameState | null
         -localPlayerId: string | null
         -localPlayerPredictedPosition: Position
+        -remoteEntityBuffers: Map~playerId, BufferSnapshot[]~
+        -remoteEntityInterpolated: Map~playerId, InterpolatedEntity~
+        -lastDrawnInterpolatedPositions: Map~playerId, Position~
+        -interpolationTickTimer: Timer | null
         -wsClient: WebSocketClient
         -renderer: Renderer
         -inputHandler: InputHandler
@@ -18,6 +22,10 @@ classDiagram
         -handleMove(dx, dy)
         -validateMovement(dx, dy) boolean
         -reconcilePosition()
+        -getInterpolatedPosition(buffer, renderTime)
+        -runInterpolationTick()
+        -startInterpolationTick()
+        -stopInterpolationTick()
         -render()
     }
     
@@ -38,6 +46,23 @@ classDiagram
         +x: number
         +y: number
         +playerName: string
+        +vx?: number
+        +vy?: number
+    }
+    
+    class BufferSnapshot {
+        +t: number
+        +x: number
+        +y: number
+        +playerName?: string
+        +vx?: number
+        +vy?: number
+    }
+    
+    class InterpolatedEntity {
+        +x: number
+        +y: number
+        +playerName?: string
     }
     
     class Position {
@@ -142,6 +167,9 @@ classDiagram
     NetworkedMode "1" *-- "1" GameState : currentState
     NetworkedMode "1" *-- "0..1" GameState : previousState
     NetworkedMode "1" *-- "1" Position : localPlayerPredictedPosition
+    NetworkedMode "1" *-- "*" BufferSnapshot : remoteEntityBuffers
+    NetworkedMode "1" *-- "*" InterpolatedEntity : remoteEntityInterpolated
+    NetworkedMode "1" *-- "*" Position : lastDrawnInterpolatedPositions
     NetworkedMode *-- WebSocketClient : uses
     NetworkedMode *-- Renderer : uses
     NetworkedMode *-- InputHandler : uses
