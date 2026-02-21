@@ -1,0 +1,53 @@
+%% Server Architecture: Server Initialization Flow
+%% Sequence diagram showing server startup sequence
+%% Entry Point loads board, creates Board and Game, builds spawn options, then creates Server.
+
+sequenceDiagram
+    participant EP as Entry Point<br/>(index.js)
+    participant Config as Config<br/>(serverConfig.js)
+    participant Logger as Logger<br/>(winston)
+    participant Loader as BoardLoader<br/>(loadBoardFromFiles)
+    participant Board as Board
+    participant Game as Game
+    participant Server as Server<br/>(server.js)
+    participant CM as ConnectionManager
+    participant GS as GameServer
+    participant WSS as WebSocketServer<br/>(ws)
+    
+    Note over EP: Server Startup Sequence
+    
+    EP->>Config: Load configuration
+    Config-->>EP: Return config object
+    
+    EP->>Logger: Configure logger (server mode)
+    Logger-->>EP: Logger configured
+    
+    EP->>EP: parseBoardPath(argv)
+    EP->>Loader: loadBoardFromFiles(path, dimensionsPath)
+    Loader-->>EP: boardData (width, height, grid, spawnPoints?)
+    
+    EP->>Board: new Board(boardData)
+    Board-->>EP: Board instance
+    
+    EP->>Game: new Game(board)
+    Game-->>EP: Game instance
+    
+    EP->>EP: Build spawnList from boardData.spawnPoints or center fallback
+    EP->>EP: Build spawnConfig
+    
+    EP->>Server: new Server(port, game, options)
+    Server->>CM: new ConnectionManager()
+    CM-->>Server: ConnectionManager ready
+    Server->>GS: new GameServer(game, options)
+    GS-->>Server: GameServer ready
+    Server-->>EP: Server instance created
+    
+    EP->>Server: await start()
+    Server->>WSS: new WebSocketServer({ port })
+    WSS-->>Server: WebSocketServer created
+    
+    Server->>WSS: Register event handlers
+    Server->>Server: startBroadcasting()
+    WSS->>WSS: Start listening
+    WSS-->>Server: 'listening' event
+    Server-->>EP: Server started

@@ -1,0 +1,168 @@
+%% Client Architecture Data Structures Diagram
+%% Shows internal data organization and relationships
+
+classDiagram
+    %% Networked Mode
+    class NetworkedMode {
+        -currentState: GameState
+        -previousState: GameState | null
+        -localPlayerId: string | null
+        -localPlayerPredictedPosition: Position
+        -wsClient: WebSocketClient
+        -canvas: Canvas
+        -renderer: Renderer
+        -inputHandler: InputHandler
+        -reconciliationTimer: Timer | null
+        +start() Promise
+        -handleConnect(message)
+        -handleStateUpdate(message)
+        -handleMove(dx, dy)
+        -validateMovement(dx, dy) boolean
+        -reconcilePosition()
+        -render()
+    }
+    
+    class GameState {
+        +board: BoardState
+        +players: Player[]
+        +entities: array
+        +score: number
+    }
+    
+    class BoardState {
+        +width: number
+        +height: number
+        +grid: string[][]
+    }
+    
+    class Player {
+        +playerId: string
+        +x: number
+        +y: number
+        +playerName: string
+    }
+    
+    class Position {
+        +x: number | null
+        +y: number | null
+    }
+    
+    %% WebSocket Client
+    class WebSocketClient {
+        -url: string
+        -ws: WebSocket | null
+        -messageQueue: Message[]
+        -reconnectAttempts: number
+        +connect() Promise
+        +send(message) boolean
+        +close()
+        -flushQueue()
+        -queueMessage(message)
+        +on(event, callback)
+    }
+    
+    class Message {
+        +type: string
+        +payload: object
+        +timestamp: number
+        +clientId?: string
+    }
+    
+    %% Canvas (composes display grid)
+    class Canvas {
+        -grid: array
+        +renderBoard(board, players, layout)
+        +renderIncremental(changes, board, players, entities, localPlayerId, score, position)
+        +restoreCellContent(x, y, board, players, entities)
+        +updateCell(x, y, character, color)
+    }
+    
+    %% Renderer (outputs canvas grid to terminal)
+    class Renderer {
+        +renderFull(canvas)
+        +renderIncremental(canvas)
+        +render(canvas)
+        +clearScreen()
+    }
+    
+    %% Input Handler
+    class InputHandler {
+        -moveCallbacks: Function[]
+        -quitCallbacks: Function[]
+        +onMove(callback)
+        +onQuit(callback)
+        +start()
+        +stop()
+        -handleInput(data)
+        -parseKeySequence(data) object
+    }
+    
+    %% State Comparison
+    class StateComparison {
+        +compareStates(previous, current) Changes
+    }
+    
+    class Changes {
+        +players: object
+        +scoreChanged: boolean
+    }
+    
+    class PlayerChange {
+        +playerId: string
+        +oldPos: object x, y
+        +newPos: object x, y
+    }
+    
+    %% Configuration
+    class ClientConfig {
+        +websocket: WebSocketConfig
+        +logging: LoggingConfig
+        +rendering: RenderingConfig
+        +prediction: PredictionConfig
+    }
+    
+    class WebSocketConfig {
+        +url: string
+    }
+    
+    class RenderingConfig {
+        +playerGlyph: string
+        +spaceGlyph: string
+        +wallGlyph: string
+        +playerColor: string
+    }
+    
+    class PredictionConfig {
+        +enabled: boolean
+        +reconciliationInterval: number
+    }
+    
+    %% Relationships
+    NetworkedMode "1" *-- "1" GameState : currentState
+    NetworkedMode "1" *-- "0..1" GameState : previousState
+    NetworkedMode "1" *-- "1" Position : localPlayerPredictedPosition
+    NetworkedMode *-- WebSocketClient : uses
+    NetworkedMode *-- Canvas : uses
+    NetworkedMode *-- Renderer : uses
+    NetworkedMode *-- InputHandler : uses
+    NetworkedMode *-- StateComparison : uses
+    
+    GameState "1" *-- "1" BoardState : contains
+    GameState "1" *-- "*" Player : contains
+    
+    WebSocketClient "1" *-- "*" Message : queues
+    
+    StateComparison --> Changes : creates
+    Changes "1" *-- "players.moved" PlayerChange : contains
+    
+    NetworkedMode --> ClientConfig : uses
+    ClientConfig "1" *-- "1" WebSocketConfig : contains
+    ClientConfig "1" *-- "1" RenderingConfig : contains
+    ClientConfig "1" *-- "1" PredictionConfig : contains
+    
+    %% Notes
+    note for NetworkedMode "Manages game state and\ncoordinates all components"
+    note for WebSocketClient "Handles connection and\nmessage queueing"
+    note for Canvas "Composes title, board, status bar\ninto grid; incremental updates"
+    note for Renderer "Renders prepared canvas grid\nto terminal only"
+    note for StateComparison "compareStates returns\nChanges object"

@@ -9,22 +9,20 @@ A Node.js utility that converts a text-based map file to a compressed JSON forma
 - **File Format**: Text file containing a grid map with configurable dimensions
 - **Dimensions**: Configurable columns and rows (default: 60x25, strict validation)
 - **Characters**: 
-  - `#` = block (glyph: 1)
-  - `@` = spawn (glyph: 2)  
-  - ` ` = empty space (glyph: 0)
+  - `#` = block (entity: 1)
+  - `@` = spawn (entity: 2)  
+  - ` ` = empty space (entity: 0)
 
 ### Output
 - **File Format**: JSON file written to current directory
-- **Structure**: Cell array with glyph/repeat properties (run-length encoded)
+- **Structure**: Top-level JSON array of cell objects with `entity`/`repeat` properties (run-length encoded). Matches the schema consumed by the server board loader.
 - **Example Format**:
 ```json
-{
-  "cells": [
-    { "glyph": 1, "repeat": 60 },
-    { "glyph": 0, "repeat": 10 },
-    { "glyph": 1, "repeat": 1 }
-  ]
-}
+[
+  { "entity": 1, "repeat": 60 },
+  { "entity": 0, "repeat": 10 },
+  { "entity": 1, "repeat": 1 }
+]
 ```
 
 ### Utility Interface
@@ -44,14 +42,14 @@ node map-parser.js /path/to/map1.txt
 ### Core Functions
 1. **File Reader**: Load and validate text file
 2. **Dimension Validator**: Ensure grid matches configured dimensions
-3. **Character Mapper**: Convert #/@/ to glyph values
-4. **Run-Length Encoder**: Compress using glyph/repeat format
+3. **Character Mapper**: Convert #/@/ to entity values (0, 1, 2)
+4. **Run-Length Encoder**: Compress using entity/repeat format
 5. **JSON Writer**: Save to current directory
 
 ### Configuration Constants
 - **DEFAULT_WIDTH**: 60 (configurable)
 - **DEFAULT_HEIGHT**: 25 (configurable)
-- **CHARACTER_MAPPING**: Fixed mapping of #/@/ to glyph values
+- **CHARACTER_MAPPING**: Fixed mapping of #/@/ to entity values (0, 1, 2)
 
 ### Error Cases to Handle
 - File not found
@@ -63,6 +61,10 @@ node map-parser.js /path/to/map1.txt
 ### File Naming Convention
 - Input: `{name}.txt`
 - Output: `{name}.json`
+
+## Related documentation
+
+- **Board Parsing** ([../../specs/terminal-game/board-parsing/SPEC_Board_Parsing.md](../../specs/terminal-game/board-parsing/SPEC_Board_Parsing.md)) — Board JSON schema (entity/repeat, RLE) consumed by the server.
 
 ## Technical Considerations
 - Use `fs` module for file operations

@@ -1,0 +1,55 @@
+%% Client Architecture: Connection and Initial State Flow
+%% Sequence diagram showing WebSocket connection and initial game state
+
+sequenceDiagram
+    participant WSClient as WebSocketClient
+    participant Server as Game Server
+    participant NetworkedMode as Networked Mode
+    participant MessageHandler as MessageHandler
+    participant Canvas as Canvas
+    participant Renderer as Renderer
+    participant StateComparison as StateComparison
+    
+    Note over WSClient,StateComparison: Connection and Initial State Sequence
+    
+    WSClient->>Server: WebSocket connection
+    Server-->>WSClient: Connection established
+    
+    WSClient->>WSClient: Emit 'connect' event
+    WSClient->>NetworkedMode: 'connect' event
+    
+    NetworkedMode->>MessageHandler: createMessage(CONNECT, {})
+    MessageHandler-->>NetworkedMode: CONNECT message
+    
+    NetworkedMode->>WSClient: send(CONNECT message)
+    WSClient->>Server: CONNECT message (JSON)
+    
+    Server->>Server: Generate playerId
+    Server->>Server: Add player to game
+    Server->>Server: Spawn player
+    
+    Server->>WSClient: CONNECT response (with gameState)
+    WSClient->>WSClient: Emit 'message' event
+    WSClient->>NetworkedMode: 'message' event (data)
+    
+    NetworkedMode->>MessageHandler: parseMessage(data)
+    MessageHandler-->>NetworkedMode: Parsed message object
+    
+    NetworkedMode->>NetworkedMode: Handle CONNECT response
+    NetworkedMode->>NetworkedMode: Extract playerId, clientId
+    NetworkedMode->>NetworkedMode: Store localPlayerId
+    NetworkedMode->>NetworkedMode: currentState = gameState
+    NetworkedMode->>NetworkedMode: previousState = null
+    
+    NetworkedMode->>NetworkedMode: Initialize predicted position
+    NetworkedMode->>NetworkedMode: localPlayerPredictedPosition = server position
+    
+    NetworkedMode->>Canvas: renderBoard(board, players, layout)
+    Canvas->>Canvas: Compose title, board, status bar into grid
+    Canvas-->>NetworkedMode: Grid ready
+    
+    NetworkedMode->>Renderer: render(canvas) or renderFull(canvas)
+    Renderer->>Renderer: Output canvas grid to terminal
+    Renderer-->>NetworkedMode: Initial render complete
+    
+    Note over NetworkedMode: Client connected and rendered
