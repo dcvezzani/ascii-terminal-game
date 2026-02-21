@@ -40,7 +40,7 @@ export async function networkedMode() {
   let wasTooSmall = false;
 
   // Remote entity interpolation (smooth other players between server updates)
-  const INTERPOLATION_DELAY_MS = 100;
+  const INTERPOLATION_DELAY_MS = 150;
   const INTERPOLATION_TICK_MS = 50;
   const REMOTE_ENTITY_BUFFER_MAX = 20;
   const EXTRAPOLATION_MAX_MS = 300;
@@ -321,14 +321,26 @@ export async function networkedMode() {
   }
 
   /**
-   * Compute interpolated or extrapolated position for one entity from its buffer
+   * Compute interpolated or extrapolated position for one entity from its buffer.
+   * When board is provided, clamps to latest position if computed position is inside a wall.
    * @param {Array} buffer - Array of { t, x, y, playerName }
    * @param {number} renderTime - Time to render at (ms)
+   * @param {{ getCell: (x: number, y: number) => string|null }} [board] - Optional board to clamp position (no drawing in walls)
    * @returns {{ x: number, y: number, playerName?: string } | null}
    */
-  function getInterpolatedPosition(buffer, renderTime) {
+  function getInterpolatedPosition(buffer, renderTime, board) {
     if (!buffer || buffer.length === 0) return null;
     const latest = buffer[buffer.length - 1];
+    function clampToBoard(pos, latestSnapshot) {
+      if (!board || !board.getCell) return pos;
+      const rx = Math.round(pos.x);
+      const ry = Math.round(pos.y);
+      const cell = board.getCell(rx, ry);
+      if (cell === '#') {
+        return { x: latestSnapshot.x, y: latestSnapshot.y, playerName: latestSnapshot.playerName };
+      }
+      return pos;
+    }
     if (buffer.length === 1) {
       return { x: latest.x, y: latest.y, playerName: latest.playerName };
     }
@@ -343,11 +355,12 @@ export async function networkedMode() {
       const total = b.t - a.t;
       const portion = renderTime - a.t;
       const ratio = total > 0 ? portion / total : 1;
-      return {
+      const lerped = {
         x: a.x + (b.x - a.x) * ratio,
         y: a.y + (b.y - a.y) * ratio,
         playerName: b.playerName ?? a.playerName
       };
+      return clampToBoard(lerped, latest);
     }
     // renderTime is past last snapshot: extrapolate or hold
     if (renderTime <= latest.t) return { x: latest.x, y: latest.y, playerName: latest.playerName };
@@ -367,11 +380,12 @@ export async function networkedMode() {
       vx = dt > 0 ? (latest.x - (prev?.x ?? latest.x)) / (dt / 1000) : 0;
       vy = dt > 0 ? (latest.y - (prev?.y ?? latest.y)) / (dt / 1000) : 0;
     }
-    return {
+    const extrapolated = {
       x: latest.x + vx * timePastSec,
       y: latest.y + vy * timePastSec,
       playerName: latest.playerName
     };
+    return clampToBoard(extrapolated, latest);
   }
 
   /**
@@ -397,7 +411,7 @@ export async function networkedMode() {
     };
     const entities = currentState.entities || [];
     for (const playerId of Object.keys(remoteEntityBuffers)) {
-      const pos = getInterpolatedPosition(remoteEntityBuffers[playerId], renderTime);
+      const pos = getInterpolatedPosition(remoteEntityBuffers[playerId], renderTime, board);
       if (pos) {
         remoteEntityInterpolated[playerId] = pos;
       }
@@ -715,9 +729,17 @@ export async function networkedMode() {
       ? localPlayerPredictedPosition
       : serverPosition;
 
-    const otherPlayers = (currentState.players || []).filter(
+    // Use interpolated positions for remotes when available (single source of truth for remote display)
+    const remotePlayersFromState = (currentState.players || []).filter(
       p => p.playerId !== localPlayerId
     );
+    const otherPlayers = remotePlayersFromState.map((p) => {
+      const interp = remoteEntityInterpolated[p.playerId];
+      if (interp != null && typeof interp.x === 'number' && typeof interp.y === 'number') {
+        return { x: Math.round(interp.x), y: Math.round(interp.y), playerName: interp.playerName };
+      }
+      return { x: p.x, y: p.y, playerName: p.playerName };
+    });
 
     const centerBoard = clientConfig.rendering?.centerBoard !== false;
     let layout = null;
@@ -886,11 +908,11 @@ export async function networkedMode() {
       // Incremental render
       // Use stored previousPredictedPosition (will be updated after render)
 
-      // Filter out local player from changes to prevent duplicate rendering
-      // The local player is rendered separately using predicted position
+      // Filter so incremental render does not draw remote player positions (interpolation tick owns those)
+      // Only local player moves are passed; remote moves are excluded to avoid snapping remotes to server
       const filteredChanges = {
         players: {
-          moved: changes.players.moved.filter(m => m.playerId !== localPlayerId),
+          moved: changes.players.moved.filter(m => m.playerId === localPlayerId),
           joined: changes.players.joined.filter(j => j.playerId !== localPlayerId),
           left: changes.players.left.filter(l => l.playerId !== localPlayerId)
         },
@@ -978,11 +1000,18 @@ export async function networkedMode() {
           ? localPlayerPredictedPosition
           : serverPosition;
         
-        // Exclude local player from server state rendering
-        const otherPlayersFallback = (currentState.players || []).filter(
+        // Use interpolated positions for remotes when available (same as runNormalRenderPath)
+        const remotePlayersFromStateFallback = (currentState.players || []).filter(
           p => p.playerId !== localPlayerId
         );
-        
+        const otherPlayersFallback = remotePlayersFromStateFallback.map((p) => {
+          const interp = remoteEntityInterpolated[p.playerId];
+          if (interp != null && typeof interp.x === 'number' && typeof interp.y === 'number') {
+            return { x: Math.round(interp.x), y: Math.round(interp.y), playerName: interp.playerName };
+          }
+          return { x: p.x, y: p.y, playerName: p.playerName };
+        });
+
         canvas.clearContentRegion(lastContentRegion);
         const centerBoardFallback = clientConfig.rendering?.centerBoard !== false;
         const fallbackLayout = centerBoardFallback ? computeLayout(
