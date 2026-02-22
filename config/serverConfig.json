@@ -6,5 +6,8 @@
     "maxCount": 25,
     "clearRadius": 3,
     "waitMessage": "Thank you for waiting. A spawn point is being selected for you."
+  },
+  "input": {
+    "keyRepeatIntervalMs": 100
   }
 }

@@ -51,6 +51,8 @@ export async function networkedMode() {
   const debugRemoteRender = process.env.REMOTE_RENDER_DEBUG === '1';
   const remoteDisplayEasing = clientConfig.rendering?.remoteDisplayEasing !== false;
   let interpolationTickCount = 0;
+  let keyRepeatIntervalMs = 0;
+  let lastMove = null;
 
   // Set up WebSocket event handlers
   wsClient.on('connect', () => {
@@ -88,6 +90,19 @@ export async function networkedMode() {
   inputHandler.onMove((dx, dy) => {
     if (!wsClient.isConnected() || !localPlayerId) {
       return;
+    }
+
+    if (keyRepeatIntervalMs > 0) {
+      const now = Date.now();
+      if (
+        lastMove &&
+        lastMove.dx === dx &&
+        lastMove.dy === dy &&
+        now - lastMove.time < keyRepeatIntervalMs
+      ) {
+        return;
+      }
+      lastMove = { dx, dy, time: now };
     }
 
     // Check if prediction is enabled
@@ -597,7 +612,11 @@ export async function networkedMode() {
       
       localPlayerId = playerId;
       currentState = gameState;
-      
+      const payloadKeyRepeat = message.payload.keyRepeatIntervalMs;
+      if (typeof payloadKeyRepeat === 'number' && payloadKeyRepeat >= 0) {
+        keyRepeatIntervalMs = payloadKeyRepeat;
+      }
+
       // Initialize prediction from server position
       if (gameState.players) {
         const localPlayer = gameState.players.find(p => p.playerId === localPlayerId);

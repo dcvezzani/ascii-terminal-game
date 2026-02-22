@@ -20,4 +20,11 @@ describe('serverConfig', () => {
     expect(serverConfig.spawnPoints.clearRadius).toBe(3);
     expect(serverConfig.spawnPoints.waitMessage).toContain('spawn point');
   });
+
+  it('should have input.keyRepeatIntervalMs defined (number, ms between repeated key moves)', () => {
+    expect(serverConfig.input).toBeDefined();
+    expect(serverConfig.input.keyRepeatIntervalMs).toBeDefined();
+    expect(typeof serverConfig.input.keyRepeatIntervalMs).toBe('number');
+    expect(serverConfig.input.keyRepeatIntervalMs).toBeGreaterThanOrEqual(0);
+  });
 });

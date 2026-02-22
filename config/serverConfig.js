@@ -11,6 +11,10 @@ try {
   const configPath = join(__dirname, 'serverConfig.json');
   const configFile = readFileSync(configPath, 'utf-8');
   config = JSON.parse(configFile);
+  if (!config.input) config.input = {};
+  if (config.input.keyRepeatIntervalMs === undefined) {
+    config.input.keyRepeatIntervalMs = 100;
+  }
 } catch (error) {
   // Use defaults if config file doesn't exist
   config = {
@@ -29,6 +33,9 @@ try {
       maxCount: 25,
       clearRadius: 3,
       waitMessage: 'Thank you for waiting. A spawn point is being selected for you.'
+    },
+    input: {
+      keyRepeatIntervalMs: 100
     }
   };
 }

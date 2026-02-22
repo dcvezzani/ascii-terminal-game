@@ -55,7 +55,8 @@ async function startServer(port, boardPath) {
 
   const server = new Server(serverPort, game, {
     spawnList,
-    spawnConfig
+    spawnConfig,
+    keyRepeatIntervalMs: serverConfig.input?.keyRepeatIntervalMs ?? 100
   });
 
   // Set up graceful shutdown

@@ -6,5 +6,8 @@
   },
   "logging": {
     "level": "info"
+  },
+  "input": {
+    "keyRepeatIntervalMs": 100
   }
 }
