@@ -62,4 +62,4 @@ sequenceDiagram
         Renderer-->>NetworkedMode: Render complete
     end
     
-    Note over NetworkedMode,Renderer: Interpolation tick (every e.g. 50ms): renderTime = now - INTERPOLATION_DELAY_MS; for each remote entity buffer, compute interpolated or extrapolated position; for each entity whose rounded position changed, restoreCellContent(old), updateCell(new), update lastDrawnInterpolatedPositions; renderer.render(canvas)
+    Note over NetworkedMode,Renderer: "Interpolation tick (every 50ms): renderTime = now - INTERPOLATION_DELAY_MS then for each remote entity buffer compute interpolated or extrapolated position then for each entity whose rounded position changed restoreCellContent(old) updateCell(new) update lastDrawnInterpolatedPositions then renderer.render(canvas)"

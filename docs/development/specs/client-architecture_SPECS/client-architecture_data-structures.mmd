@@ -91,18 +91,33 @@ classDiagram
         +clientId?: string
     }
     
-    %% Renderer
+    %% Canvas (in-memory display buffer)
+    class Canvas {
+        +grid: Cell[][]
+        +config: object
+        -emptyGrid: Cell[][]
+        +renderTitle(titleString, layout)
+        +renderBoard(board, players, layout)
+        +renderStatusBar(score, position, width, height, layout)
+        +updateCell(x, y, glyph, color)
+        +restoreCellContent(x, y, board, players, entities) string
+        +getCellContent(x, y, board, players) string
+        +clearScreen()
+        +clearContentRegion(region)
+        +hasNoChanges(prevCanvas, currentCanvas) boolean
+        +hasFewChanges(prevCanvas, currentCanvas) boolean
+    }
+    
+    %% Renderer (writes canvas to terminal)
     class Renderer {
         -playerGlyph: string
         -spaceGlyph: string
         -wallGlyph: string
         -playerColor: Function
-        +renderFull(board, players, score)
-        +renderIncremental(changes, board, players)
-        +renderStatusBar(score, position, height)
+        +render(canvas)
+        +renderFull(canvas)
+        +renderIncremental(canvas)
         +clearScreen()
-        -getCellContent(x, y, board, players) string
-        -restoreCellContent(x, y, board, players) string
     }
     
     %% Input Handler
@@ -171,10 +186,13 @@ classDiagram
     NetworkedMode "1" *-- "*" BufferSnapshot : remoteEntityBuffers
     NetworkedMode "1" *-- "*" InterpolatedEntity : remoteEntityInterpolated
     NetworkedMode "1" *-- "*" Position : lastDrawnInterpolatedPositions
+    NetworkedMode "1" *-- "1" Canvas : owns
     NetworkedMode *-- WebSocketClient : uses
     NetworkedMode *-- Renderer : uses
     NetworkedMode *-- InputHandler : uses
     NetworkedMode *-- StateComparison : uses
+    
+    Renderer ..> Canvas : "renders from"
     
     GameState "1" *-- "1" BoardState : contains
     GameState "1" *-- "*" Player : contains
@@ -192,5 +210,6 @@ classDiagram
     %% Notes
     note for NetworkedMode "Manages game state and\ncoordinates all components"
     note for WebSocketClient "Handles connection and\nmessage queueing"
-    note for Renderer "Terminal rendering with\nfull and incremental modes"
+    note for Canvas "In-memory display buffer\nbuilt by NetworkedMode"
+    note for Renderer "Writes canvas grid to\nterminal stdout"
     note for StateComparison "Detects changes between\nstate snapshots"
