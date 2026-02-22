@@ -163,11 +163,12 @@ Other players' **display** positions come from interpolated state (see Remote En
 **Implementation**:
 - **Per-entity buffer**: Each remote player has a buffer of `{ t, x, y, playerName, vx?, vy? }` (timestamp and position; optional velocity from server). Capped (e.g. 20 entries).
 - **On STATE_UPDATE**: Push remote players to buffers using `message.timestamp`; remove buffers and clear cells for players who left.
-- **Interpolation tick** (e.g. every 50ms): `renderTime = Date.now() - INTERPOLATION_DELAY_MS` (e.g. 100ms). For each entity, lerp between the two snapshots surrounding `renderTime`, or use latest if 0–1 entries, or extrapolate when past last snapshot. Update `remoteEntityInterpolated` and redraw only remote player cells that changed; then call renderer.
-- **State**: `remoteEntityBuffers`, `remoteEntityInterpolated`, `lastDrawnInterpolatedPositions`, `interpolationTickTimer`; constants INTERPOLATION_DELAY_MS, INTERPOLATION_TICK_MS, REMOTE_ENTITY_BUFFER_MAX, EXTRAPOLATION_MAX_MS.
-- **Extrapolation**: When `renderTime` is past the last snapshot (e.g. packet loss), hold or extrapolate using server-provided `vx`/`vy` (if present) or client-derived velocity from the last two buffer entries; clamp duration (e.g. 300ms).
+- **Interpolation tick** (e.g. every 50ms): `renderTime = Date.now() - INTERPOLATION_DELAY_MS` (e.g. 150ms). For each entity, lerp between the two snapshots surrounding `renderTime`, or use latest if 0–1 entries, or hold when past last snapshot. Update `remoteEntityInterpolated` and redraw only remote player cells that changed; then call renderer.
+- **State**: `remoteEntityBuffers`, `remoteEntityInterpolated`, `lastDrawnInterpolatedPositions`, `interpolationTickTimer`; constants INTERPOLATION_DELAY_MS, INTERPOLATION_TICK_MS, REMOTE_ENTITY_BUFFER_MAX.
+- **Buffer run dry**: When `renderTime` is past the last snapshot (e.g. packet loss), hold at latest position (no extrapolation).
+- **Display smoothing**: Optional per-tick easing so the drawn position moves at most 1 cell per axis toward the interpolated target; can be turned off via `rendering.remoteDisplayEasing` (default `true`).
 
-**Benefits**: Smooth motion for remote players; optional server velocity improves extrapolation when the buffer runs dry.
+**Benefits**: Smooth motion for remote players.
 
 See [Remote Entity Interpolation Specification](../remote-entity-interpolation/remote-entity-interpolation_SPECS.md) for full details. Diagrams (lerping, velocity, client lag) are in that spec’s [Diagrams section](../remote-entity-interpolation/remote-entity-interpolation_SPECS.md#diagrams).
 
@@ -633,6 +634,8 @@ Remote players are drawn at **interpolated** positions during the interpolation 
 - Testable (can mock callbacks)
 - Decoupled (input handler doesn't know game logic)
 
+**Key repeat rate**: The rate at which a held movement key is repeated is controlled by the server: the CONNECT response includes `keyRepeatIntervalMs`; the client throttles repeated same-direction moves to that interval. There is no client config for this.
+
 ---
 
 ## Error Handling and Resilience
@@ -709,7 +712,8 @@ try {
     "playerGlyph": "☻",
     "spaceGlyph": " ",
     "wallGlyph": "#",
-    "playerColor": "00FF00"
+    "playerColor": "00FF00",
+    "remoteDisplayEasing": true
   },
   "prediction": {
     "enabled": true,
@@ -728,6 +732,26 @@ try {
 - Works out of the box
 - Graceful handling of missing config
 - Easy to override
+
+### 2a. Configuration Options (client)
+
+| Property | Type | Default | Description | Example |
+|----------|------|---------|-------------|---------|
+| **rendering.remoteDisplayEasing** | boolean | `true` | Smooths remote player display by moving at most 1 cell per axis per tick toward interpolated target. Set to `false` to use raw interpolated cell each tick (pre–easing behavior). | `true` |
+| **rendering.centerBoard** | boolean | `true` | Center the game board in the terminal when possible. | `true` |
+| **rendering.resizeDebounceMs** | number | `200` | Debounce delay (ms) before re-rendering after terminal resize. | `200` |
+| **prediction.enabled** | boolean | `true` | Enable client-side prediction for local player movement. | `true` |
+| **prediction.reconciliationInterval** | number | `5000` | Interval (ms) for timer-based reconciliation of predicted vs server position. | `5000` |
+
+**Key repeat rate (movement)**: Controlled by the server, not client config. The CONNECT response includes `keyRepeatIntervalMs`; the client throttles repeated same-direction movement keys to that interval (ms). There is no client config key for this.
+
+### 2b. Configuration Reference (client and server)
+
+**Client** (`config/clientConfig.json`):
+- **rendering.remoteDisplayEasing**: boolean, default `true`. When true, remote players’ drawn position eases at most 1 cell per axis per tick toward interpolated target. When false, draw at interpolated cell each tick. Example: `true`.
+
+**Server** (`config/serverConfig.json`) — sent to clients in CONNECT:
+- **input.keyRepeatIntervalMs**: number (ms), default `100`. Sent to clients in CONNECT payload; clients throttle repeated same-direction key events to this interval. Example: `100`. Use `0` for no server-side throttle.
 
 ### 3. Configuration Access Pattern
 

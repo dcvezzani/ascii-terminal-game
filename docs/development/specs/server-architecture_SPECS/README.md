@@ -328,11 +328,13 @@ Client                    Server
       "board": { "width": 20, "height": 20, "grid": [...] },
       "players": [...],
       "score": 0
-    }
+    },
+    "keyRepeatIntervalMs": 100
   },
   "timestamp": 1234567890
 }
 ```
+*keyRepeatIntervalMs*: Optional; used by client to throttle key-repeat rate for movement (ms). Omitted or `0` means no server-side throttle.
 
 #### 2. Movement Flow
 
@@ -700,6 +702,9 @@ if (!playerId) {
   },
   "logging": {
     "level": "info"
+  },
+  "input": {
+    "keyRepeatIntervalMs": 100
   }
 }
 ```
@@ -709,7 +714,8 @@ if (!playerId) {
 **websocket.enabled**: Enable/disable WebSocket server (not currently used)  
 **websocket.port**: Port number for WebSocket server (default: 3000)  
 **websocket.host**: Host address to bind (default: "0.0.0.0")  
-**logging.level**: Winston log level (default: "info")
+**logging.level**: Winston log level (default: "info")  
+**input.keyRepeatIntervalMs**: Minimum interval (ms) between processing repeated same-direction movement keys on the client. Sent in CONNECT payload; client throttles key repeat to this value. Default `100`. Example: `100` (at most 10 moves per second per direction when key is held). Use `0` to allow client/terminal native repeat with no server throttle.
 
 ### Configuration Override
 

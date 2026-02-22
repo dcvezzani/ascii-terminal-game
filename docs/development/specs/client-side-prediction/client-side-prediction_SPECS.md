@@ -438,7 +438,8 @@ function render() {
   },
   "rendering": {
     "playerGlyph": "☻",
-    "playerColor": "00FF00"
+    "playerColor": "00FF00",
+    "remoteDisplayEasing": true
   },
   "prediction": {
     "enabled": true,
@@ -450,6 +451,8 @@ function render() {
 **Configuration Loading**:
 - Update `config/clientConfig.js` to include defaults for prediction settings
 - Defaults: `enabled: true`, `reconciliationInterval: 5000`
+
+Remote player display smoothing is controlled by `rendering.remoteDisplayEasing`; see [Remote Entity Interpolation Specification](../remote-entity-interpolation/remote-entity-interpolation_SPECS.md).
 
 **Configuration Usage**:
 ```javascript
@@ -508,6 +511,9 @@ const interval = clientConfig.prediction?.reconciliationInterval || 5000;
 
 ```javascript
 {
+  rendering: {
+    remoteDisplayEasing: boolean   // Default: true (smooths remote player display; see Remote Entity Interpolation spec)
+  },
   prediction: {
     enabled: boolean,           // Default: true
     reconciliationInterval: number  // Default: 5000 (milliseconds)
@@ -893,7 +899,7 @@ This implementation focuses on basic prediction. Future enhancements can add:
 
 ## Related: Remote Entity Interpolation
 
-Other players (remote entities) are smoothed via **entity interpolation**: position buffers and a periodic tick that lerps between server snapshots and optionally extrapolates when the buffer runs dry. See the [Client Architecture Specification](../client-architecture_SPECS/README.md) (Core Concept "Remote Entity Interpolation") and the [Remote Entity Interpolation Specification](../remote-entity-interpolation/remote-entity-interpolation_SPECS.md). Local player prediction and remote interpolation are independent: the local player uses prediction and reconciliation; remote players use interpolation only (no prediction).
+Other players (remote entities) are smoothed via **entity interpolation**: position buffers and a periodic tick that lerps between server snapshots and holds at latest when the buffer runs dry. See the [Client Architecture Specification](../client-architecture_SPECS/README.md) (Core Concept "Remote Entity Interpolation") and the [Remote Entity Interpolation Specification](../remote-entity-interpolation/remote-entity-interpolation_SPECS.md). Local player prediction and remote interpolation are independent: the local player uses prediction and reconciliation; remote players use interpolation only (no prediction). Key repeat rate for movement is server-driven: the CONNECT response includes `keyRepeatIntervalMs`; the client uses it to throttle repeated same-direction moves.
 
 ## Summary
 
