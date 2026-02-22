@@ -8,6 +8,6 @@
     "waitMessage": "Thank you for waiting. A spawn point is being selected for you."
   },
   "input": {
-    "keyRepeatIntervalMs": 100
+    "keyRepeatIntervalMs": 50
   }
 }
