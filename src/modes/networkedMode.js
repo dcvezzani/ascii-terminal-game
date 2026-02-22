@@ -48,6 +48,8 @@ export async function networkedMode() {
   const remoteEntityInterpolated = {};  // { [playerId]: { x, y, playerName } }
   const lastDrawnInterpolatedPositions = {}; // { [playerId]: { x, y } }
   let interpolationTickTimer = null;
+  const debugRemoteRender = process.env.REMOTE_RENDER_DEBUG === '1';
+  let interpolationTickCount = 0;
 
   // Set up WebSocket event handlers
   wsClient.on('connect', () => {
@@ -335,6 +337,11 @@ export async function networkedMode() {
       if (!board || !board.getCell) return pos;
       const rx = Math.round(pos.x);
       const ry = Math.round(pos.y);
+      if (board.width != null && board.height != null) {
+        if (rx < 0 || rx >= board.width || ry < 0 || ry >= board.height) {
+          return { x: latestSnapshot.x, y: latestSnapshot.y, playerName: latestSnapshot.playerName };
+        }
+      }
       const cell = board.getCell(rx, ry);
       if (cell === '#') {
         return { x: latestSnapshot.x, y: latestSnapshot.y, playerName: latestSnapshot.playerName };
@@ -362,30 +369,8 @@ export async function networkedMode() {
       };
       return clampToBoard(lerped, latest);
     }
-    // renderTime is past last snapshot: extrapolate or hold
-    if (renderTime <= latest.t) return { x: latest.x, y: latest.y, playerName: latest.playerName };
-    const timePast = renderTime - latest.t;
-    if (timePast > EXTRAPOLATION_MAX_MS) {
-      return { x: latest.x, y: latest.y, playerName: latest.playerName };
-    }
-    const timePastSec = timePast / 1000;
-    let vx = 0;
-    let vy = 0;
-    if (typeof latest.vx === 'number' && typeof latest.vy === 'number') {
-      vx = latest.vx;
-      vy = latest.vy;
-    } else {
-      const prev = buffer[buffer.length - 2];
-      const dt = latest.t - (prev?.t ?? latest.t);
-      vx = dt > 0 ? (latest.x - (prev?.x ?? latest.x)) / (dt / 1000) : 0;
-      vy = dt > 0 ? (latest.y - (prev?.y ?? latest.y)) / (dt / 1000) : 0;
-    }
-    const extrapolated = {
-      x: latest.x + vx * timePastSec,
-      y: latest.y + vy * timePastSec,
-      playerName: latest.playerName
-    };
-    return clampToBoard(extrapolated, latest);
+    // renderTime is past last snapshot: hold at latest (Option A - no extrapolation)
+    return { x: latest.x, y: latest.y, playerName: latest.playerName };
   }
 
   /**
@@ -420,6 +405,7 @@ export async function networkedMode() {
       .filter(o => o && typeof o.x === 'number' && typeof o.y === 'number')
       .map(o => ({ x: Math.round(o.x), y: Math.round(o.y) }));
     let anyChanged = false;
+    interpolationTickCount += 1;
     for (const [playerId, interp] of Object.entries(remoteEntityInterpolated)) {
       const newX = Math.round(interp.x);
       const newY = Math.round(interp.y);
@@ -427,6 +413,13 @@ export async function networkedMode() {
       const lastX = last ? last.x : null;
       const lastY = last ? last.y : null;
       if (lastX !== newX || lastY !== newY) {
+        if (debugRemoteRender) {
+          logger.info(`[REMOTE_RENDER] TICK_DRAW ts=${Date.now()} playerId=${playerId} from=(${lastX},${lastY}) to=(${newX},${newY}) raw=(${interp.x.toFixed(2)},${interp.y.toFixed(2)})`);
+          const buf = remoteEntityBuffers[playerId];
+          const latestT = buf && buf.length > 0 ? buf[buf.length - 1].t : 0;
+          const mode = !buf || buf.length < 2 ? 'hold' : (renderTime > latestT ? 'extrapolate' : 'lerp');
+          logger.info(`[REMOTE_RENDER] BUFFER ts=${Date.now()} playerId=${playerId} bufferLen=${buf ? buf.length : 0} renderTime=${renderTime} latestT=${latestT} mode=${mode}`);
+        }
         if (lastX != null && lastY != null) {
           canvas.restoreCellContent(
             lastX,
@@ -438,7 +431,19 @@ export async function networkedMode() {
         }
         canvas.updateCell(newX, newY, canvas.config.playerGlyph, canvas.config.playerColor);
         lastDrawnInterpolatedPositions[playerId] = { x: newX, y: newY };
+        if (debugRemoteRender) {
+          logger.info(`[REMOTE_RENDER] POS playerId=${playerId} x=${newX} y=${newY} src=tick ts=${Date.now()}`);
+        }
         anyChanged = true;
+      }
+    }
+    if (debugRemoteRender && interpolationTickCount % 5 === 0) {
+      const firstId = Object.keys(remoteEntityBuffers)[0];
+      if (firstId) {
+        const buf = remoteEntityBuffers[firstId];
+        const latestT = buf && buf.length > 0 ? buf[buf.length - 1].t : 0;
+        const mode = !buf || buf.length < 2 ? 'hold' : (renderTime > latestT ? 'extrapolate' : 'lerp');
+        logger.info(`[REMOTE_RENDER] BUFFER ts=${Date.now()} playerId=${firstId} bufferLen=${buf ? buf.length : 0} renderTime=${renderTime} latestT=${latestT} mode=${mode}`);
       }
     }
     if (anyChanged) {
@@ -635,6 +640,12 @@ export async function networkedMode() {
         const vy = typeof p.vy === 'number' ? p.vy : undefined;
         buf.push({ t: timestamp, x: p.x, y: p.y, playerName: p.playerName, vx, vy });
         if (buf.length > REMOTE_ENTITY_BUFFER_MAX) buf.shift();
+      }
+      if (debugRemoteRender && remotePlayers.length > 0) {
+        const p = remotePlayers[0];
+        const bufLen = remoteEntityBuffers[p.playerId] ? remoteEntityBuffers[p.playerId].length : 0;
+        const msgTs = typeof message.timestamp === 'number' ? message.timestamp : Date.now();
+        logger.info(`[REMOTE_RENDER] STATE_UPDATE ts=${Date.now()} msgTs=${msgTs} remoteId=${p.playerId} serverPos=(${p.x},${p.y}) bufferLenAfter=${bufLen}`);
       }
       // Remove buffers and clear cells for players who left
       for (const playerId of Object.keys(remoteEntityBuffers)) {
