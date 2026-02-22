@@ -30,4 +30,10 @@ describe('clientConfig', () => {
     expect(typeof clientConfig.rendering.resizeDebounceMs).toBe('number');
     expect(clientConfig.rendering.resizeDebounceMs).toBe(200);
   });
+
+  it('should have rendering.remoteDisplayEasing defined (default true)', () => {
+    expect(clientConfig.rendering.remoteDisplayEasing).toBeDefined();
+    expect(typeof clientConfig.rendering.remoteDisplayEasing).toBe('boolean');
+    expect(clientConfig.rendering.remoteDisplayEasing).toBe(true);
+  });
 });

@@ -49,6 +49,7 @@ export async function networkedMode() {
   const lastDrawnInterpolatedPositions = {}; // { [playerId]: { x, y } }
   let interpolationTickTimer = null;
   const debugRemoteRender = process.env.REMOTE_RENDER_DEBUG === '1';
+  const remoteDisplayEasing = clientConfig.rendering?.remoteDisplayEasing !== false;
   let interpolationTickCount = 0;
 
   // Set up WebSocket event handlers
@@ -407,14 +408,20 @@ export async function networkedMode() {
     let anyChanged = false;
     interpolationTickCount += 1;
     for (const [playerId, interp] of Object.entries(remoteEntityInterpolated)) {
-      const newX = Math.round(interp.x);
-      const newY = Math.round(interp.y);
+      const targetX = Math.round(interp.x);
+      const targetY = Math.round(interp.y);
       const last = lastDrawnInterpolatedPositions[playerId];
       const lastX = last ? last.x : null;
       const lastY = last ? last.y : null;
-      if (lastX !== newX || lastY !== newY) {
+      const displayX = remoteDisplayEasing
+        ? (last == null ? targetX : last.x + Math.max(-1, Math.min(1, targetX - last.x)))
+        : targetX;
+      const displayY = remoteDisplayEasing
+        ? (last == null ? targetY : last.y + Math.max(-1, Math.min(1, targetY - last.y)))
+        : targetY;
+      if (lastX !== displayX || lastY !== displayY) {
         if (debugRemoteRender) {
-          logger.info(`[REMOTE_RENDER] TICK_DRAW ts=${Date.now()} playerId=${playerId} from=(${lastX},${lastY}) to=(${newX},${newY}) raw=(${interp.x.toFixed(2)},${interp.y.toFixed(2)})`);
+          logger.info(`[REMOTE_RENDER] TICK_DRAW ts=${Date.now()} playerId=${playerId} from=(${lastX},${lastY}) target=(${targetX},${targetY}) display=(${displayX},${displayY}) raw=(${interp.x.toFixed(2)},${interp.y.toFixed(2)})`);
           const buf = remoteEntityBuffers[playerId];
           const latestT = buf && buf.length > 0 ? buf[buf.length - 1].t : 0;
           const mode = !buf || buf.length < 2 ? 'hold' : (renderTime > latestT ? 'extrapolate' : 'lerp');
@@ -429,10 +436,10 @@ export async function networkedMode() {
             entities
           );
         }
-        canvas.updateCell(newX, newY, canvas.config.playerGlyph, canvas.config.playerColor);
-        lastDrawnInterpolatedPositions[playerId] = { x: newX, y: newY };
+        canvas.updateCell(displayX, displayY, canvas.config.playerGlyph, canvas.config.playerColor);
+        lastDrawnInterpolatedPositions[playerId] = { x: displayX, y: displayY };
         if (debugRemoteRender) {
-          logger.info(`[REMOTE_RENDER] POS playerId=${playerId} x=${newX} y=${newY} src=tick ts=${Date.now()}`);
+          logger.info(`[REMOTE_RENDER] POS playerId=${playerId} target=(${targetX},${targetY}) display=(${displayX},${displayY}) src=tick ts=${Date.now()}`);
         }
         anyChanged = true;
       }
