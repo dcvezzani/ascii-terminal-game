@@ -1071,6 +1071,11 @@ export async function networkedMode(injectedConfig) {
           joined: changes.players.joined.filter(j => j.playerId !== localPlayerId),
           left: changes.players.left.filter(l => l.playerId !== localPlayerId)
         },
+        bullets: {
+          moved: changes.bullets.moved,
+          created: changes.bullets.created,
+          destroyed: changes.bullets.destroyed
+        },
         scoreChanged: changes.scoreChanged
       };
 
@@ -1218,7 +1223,7 @@ export async function networkedMode(injectedConfig) {
 
   function changesSinceLastRender(previousState, currentState) {
     const changes = compareStates(previousState, currentState);
-    return changes.players.moved.length > 0 || changes.players.joined.length > 0 || changes.players.left.length > 0 || changes.scoreChanged;
+    return changes.players.moved.length > 0 || changes.players.joined.length > 0 || changes.players.left.length > 0 || changes.bullets.moved.length > 0 || changes.bullets.created.length > 0 || changes.bullets.destroyed.length > 0 || changes.scoreChanged;
   } 
 
   /**

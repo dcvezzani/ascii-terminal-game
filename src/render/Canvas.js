@@ -403,6 +403,44 @@ export class Canvas {
             );
         }
 
+        const bulletChanges = changes.bullets || { moved: [], created: [], destroyed: [] };
+
+        for (const destroyed of bulletChanges.destroyed) {
+            this.restoreCellContent(
+                destroyed.pos.x,
+                destroyed.pos.y,
+                board,
+                players,
+                entities
+            );
+        }
+
+        for (const moved of bulletChanges.moved) {
+            this.restoreCellContent(
+                moved.oldPos.x,
+                moved.oldPos.y,
+                board,
+                players,
+                entities
+            );
+
+            this.updateCell(
+                moved.newPos.x,
+                moved.newPos.y,
+                this.config.bulletGlyph || '•',
+                this.config.bulletColor || 'FFFF00'
+            );
+        }
+
+        for (const created of bulletChanges.created) {
+            this.updateCell(
+                created.pos.x,
+                created.pos.y,
+                this.config.bulletGlyph || '•',
+                this.config.bulletColor || 'FFFF00'
+            );
+        }
+
         for (const bullet of bullets) {
             this.updateCell(
                 bullet.x,

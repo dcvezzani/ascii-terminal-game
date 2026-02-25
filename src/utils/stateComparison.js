@@ -30,6 +30,11 @@ export function compareStates(previousState, currentState) {
       joined: [],
       left: []
     },
+    bullets: {
+      moved: [],
+      created: [],
+      destroyed: []
+    },
     scoreChanged: false
   };
 
@@ -109,6 +114,61 @@ export function compareStates(previousState, currentState) {
   prevPlayerMap.forEach((pos, playerId) => {
     changes.players.left.push({
       playerId,
+      pos
+    });
+  });
+
+  // Compare bullets
+  const prevBulletMap = new Map();
+  if (previousState.bullets && Array.isArray(previousState.bullets)) {
+    previousState.bullets.forEach(b => {
+      if (b.bulletId && typeof b.x === 'number' && typeof b.y === 'number') {
+        prevBulletMap.set(b.bulletId, { x: b.x, y: b.y, dx: b.dx, dy: b.dy });
+      }
+    });
+  }
+
+  if (currentState.bullets && Array.isArray(currentState.bullets)) {
+    currentState.bullets.forEach(b => {
+      if (!b.bulletId) {
+        return;
+      }
+
+      const prevBullet = prevBulletMap.get(b.bulletId);
+
+      if (!prevBullet) {
+        // Bullet created (not in previous state)
+        if (typeof b.x === 'number' && typeof b.y === 'number') {
+          changes.bullets.created.push({
+            bulletId: b.bulletId,
+            playerId: b.playerId,
+            pos: { x: b.x, y: b.y },
+            dx: b.dx,
+            dy: b.dy
+          });
+        }
+      } else {
+        // Bullet exists in both states - check if moved
+        if (typeof b.x === 'number' && typeof b.y === 'number') {
+          if (prevBullet.x !== b.x || prevBullet.y !== b.y) {
+            changes.bullets.moved.push({
+              bulletId: b.bulletId,
+              playerId: b.playerId,
+              oldPos: { x: prevBullet.x, y: prevBullet.y },
+              newPos: { x: b.x, y: b.y }
+            });
+          }
+        }
+      }
+
+      prevBulletMap.delete(b.bulletId);
+    });
+  }
+
+  // Remaining bullets in map have been destroyed
+  prevBulletMap.forEach((pos, bulletId) => {
+    changes.bullets.destroyed.push({
+      bulletId,
       pos
     });
   });
