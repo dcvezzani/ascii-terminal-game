@@ -93,7 +93,7 @@ export function compareStates(previousState, currentState) {
           });
         }
       } else {
-        // Player exists in both states - check if moved
+        // Player exists in both states - check if moved or died
         if (typeof p.x === 'number' && typeof p.y === 'number') {
           if (prevPos.x !== p.x || prevPos.y !== p.y) {
             changes.players.moved.push({
@@ -102,6 +102,12 @@ export function compareStates(previousState, currentState) {
               newPos: { x: p.x, y: p.y }
             });
           }
+        } else if (p.x === null && p.y === null) {
+          // Player died - treat as left
+          changes.players.left.push({
+            playerId: p.playerId,
+            pos: prevPos
+          });
         }
       }
       
