@@ -22,7 +22,9 @@ export class Canvas {
             playerGlyph: '☻',
             playerColor: '00FF00',
             spaceGlyph: '.',
-            wallGlyph: '#'
+            wallGlyph: '#',
+            bulletGlyph: '•',
+            bulletColor: 'FFFF00'
         };
         this._lastStatusBarContent = null;
         this._lastStatusBarBoardWidth = null;
@@ -135,13 +137,14 @@ export class Canvas {
     }
 
     /**
-     * Render the game board with players into this.grid (2D array of { character, color }).
+     * Render the board into this.grid.
      * Does not write to the terminal.
      * @param {Board} board - Board instance
      * @param {Array} players - Array of player objects
      * @param {object} [layout] - Optional layout { startRow, boardStartColumn }; stored for incremental updates
+     * @param {Array} [bullets] - Optional array of bullet objects
      */
-    renderBoard(board, players, layout) {
+    renderBoard(board, players, layout, bullets = []) {
         this._currentLayout = layout || null;
         const serialized = board.serialize();
         const height = serialized.length;
@@ -153,7 +156,7 @@ export class Canvas {
         for (let y = 0; y < height; y++) {
             boardRows[y] = [];
             for (let x = 0; x < width; x++) {
-                const cellContent = this.getCellContent(x, y, board, players);
+                const cellContent = this.getCellContent(x, y, board, players, bullets);
                 boardRows[y][x] = {
                     character: cellContent.character,
                     color: cellContent.color
@@ -227,15 +230,23 @@ export class Canvas {
     }
 
     /**
-     * Get cell content at position (player > board cell)
+     * Get cell content at position (bullet > player > board cell)
      * @param {number} x - X coordinate
      * @param {number} y - Y coordinate
      * @param {Board} board - Board instance
      * @param {Array} players - Array of player objects
+     * @param {Array} [bullets] - Optional array of bullet objects
      * @returns {object} Object with character and color
      */
-    getCellContent(x, y, board, players) {
-        // Check for player at position
+    getCellContent(x, y, board, players, bullets = []) {
+        const bullet = bullets.find(b => b.x === x && b.y === y);
+        if (bullet) {
+            return {
+                character: this.config.bulletGlyph || '•',
+                color: this.config.bulletColor || 'FFFF00'
+            };
+        }
+
         const player = players.find(p => p.x === x && p.y === y);
         if (player) {
             return {
@@ -336,11 +347,10 @@ export class Canvas {
      * @param {string} localPlayerId - ID of local player
      * @param {number} score - Current score
      * @param {object} position - Local player position {x, y}
+     * @param {Array} [bullets] - Optional array of bullet objects
      */
-    renderIncremental(changes, board, players, entities, localPlayerId, score, position) {
-        // Process moved players
+    renderIncremental(changes, board, players, entities, localPlayerId, score, position, bullets = []) {
         for (const moved of changes.players.moved) {
-            // Safeguard: Skip local player (should be filtered out, but double-check)
             if (moved.playerId === localPlayerId) {
                 continue;
             }
@@ -358,7 +368,6 @@ export class Canvas {
                 entities
             );
 
-            // Draw at new position
             this.updateCell(
                 moved.newPos.x,
                 moved.newPos.y,
@@ -367,9 +376,7 @@ export class Canvas {
             );
         }
 
-        // Process joined players
         for (const joined of changes.players.joined) {
-            // Safeguard: Skip local player (should be filtered out, but double-check)
             if (joined.playerId === localPlayerId) {
                 continue;
             }
@@ -382,9 +389,7 @@ export class Canvas {
             );
         }
 
-        // Process left players
         for (const left of changes.players.left) {
-            // Safeguard: Skip local player (should be filtered out, but double-check)
             if (left.playerId === localPlayerId) {
                 continue;
             }
@@ -398,7 +403,15 @@ export class Canvas {
             );
         }
 
-        // Update status bar if score changed (position changes are handled by caller, which also calls renderStatusBar)
+        for (const bullet of bullets) {
+            this.updateCell(
+                bullet.x,
+                bullet.y,
+                this.config.bulletGlyph || '•',
+                this.config.bulletColor || 'FFFF00'
+            );
+        }
+
         if (changes.scoreChanged) {
             const boardWidth = board.width ?? 80;
             const boardHeight = board.height ?? 20;

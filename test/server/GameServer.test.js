@@ -220,8 +220,10 @@ describe('GameServer', () => {
       expect(Array.isArray(state.board.grid)).toBe(true);
       expect(state.players).toBeDefined();
       expect(Array.isArray(state.players)).toBe(true);
-      expect(state.score).toBeDefined();
-      expect(typeof state.score).toBe('number');
+      expect(state.scores).toBeDefined();
+      expect(typeof state.scores).toBe('object');
+      expect(state.bullets).toBeDefined();
+      expect(Array.isArray(state.bullets)).toBe(true);
     });
 
     it('should include players in serialized state', () => {
