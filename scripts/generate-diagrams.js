@@ -79,8 +79,8 @@ function showUsage() {
   console.log('  node generate-diagrams.js');
   console.log('    # Search entire project');
   console.log('');
-  console.log('  node generate-diagrams.js docs/development/specs/server-architecture_SPECS');
-  console.log('    # Search only in server architecture specs directory');
+  console.log('  node generate-diagrams.js docs/development/specs/terminal-game/server');
+  console.log('    # Search only in server architecture diagrams directory');
   console.log('');
   console.log('  node generate-diagrams.js docs/development/specs/client-architecture_SPECS/client-architecture_data-structures.mmd');
   console.log('    # Convert a single .mmd file');

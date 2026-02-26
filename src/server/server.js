@@ -332,7 +332,17 @@ export class Server {
     }
 
     // Attempt move
-    this.gameServer.movePlayer(playerId, dx, dy);
+    const moved = this.gameServer.movePlayer(playerId, dx, dy);
+    if (moved) {
+      // A spawn may have been freed; try to spawn any waiting players
+      const spawnedIds = this.gameServer.trySpawnWaitingPlayers();
+      for (const pid of spawnedIds) {
+        const conn = this.connectionManager.getConnectionByPlayerId(pid);
+        if (conn) {
+          this.sendSpawnedStateToClient(conn.clientId);
+        }
+      }
+    }
     // State will be broadcast in next periodic update
   }
 

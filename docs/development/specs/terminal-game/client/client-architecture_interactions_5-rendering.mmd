@@ -1,0 +1,48 @@
+%% Client Architecture: Rendering Flow (Full vs Incremental)
+%% Sequence diagram showing rendering decision and execution
+
+sequenceDiagram
+    participant NetworkedMode as Networked Mode
+    participant StateComparison as StateComparison
+    participant Canvas as Canvas
+    participant Renderer as Renderer
+    participant ANSI as ANSI Escapes
+    participant Chalk as Chalk
+    
+    Note over NetworkedMode,Chalk: Rendering Flow Decision
+    
+    NetworkedMode->>NetworkedMode: State update or input received
+    NetworkedMode->>NetworkedMode: Check if previousState exists
+    
+    alt previousState is null
+        Note over NetworkedMode: Initial render - use full render
+        NetworkedMode->>Canvas: Compose full grid (title, board, status bar)
+        Canvas-->>NetworkedMode: Grid ready
+        NetworkedMode->>Renderer: renderFull(canvas)
+        Renderer->>ANSI: eraseScreen(), cursor positioning
+        Renderer->>Renderer: Write canvas grid to terminal
+        Renderer-->>NetworkedMode: Full render complete
+    else previousState exists
+        NetworkedMode->>StateComparison: compareStates(previousState, currentState)
+        StateComparison-->>NetworkedMode: Changes object
+        
+        NetworkedMode->>NetworkedMode: Count total changes
+        
+        alt Too many changes (>10)
+            Note over NetworkedMode: Too many changes - use full render
+            NetworkedMode->>Canvas: Compose full grid (title, board, status bar)
+            Canvas-->>NetworkedMode: Grid ready
+            NetworkedMode->>Renderer: renderFull(canvas)
+            Renderer->>ANSI: eraseScreen(), cursor positioning
+            Renderer->>Renderer: Write canvas grid to terminal
+            Renderer-->>NetworkedMode: Full render complete
+        else Incremental render
+            Note over NetworkedMode: Small changes - use incremental render
+            NetworkedMode->>Canvas: renderIncremental(changes, board, players, entities, ...)
+            Canvas->>Canvas: Update grid (restoreCellContent, updateCell; status bar in grid)
+            Canvas-->>NetworkedMode: Grid ready
+            NetworkedMode->>Renderer: renderIncremental(canvas) or render(canvas)
+            Renderer->>Renderer: Diff grid, write only changed cells to ANSI/Chalk
+            Renderer-->>NetworkedMode: Incremental render complete
+        end
+    end

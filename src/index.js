@@ -6,13 +6,14 @@ import networkedMode from './modes/networkedMode.js';
 // Configure logger for client mode (files only, no console)
 configureLogger('client');
 
-// Set logger level from config
-logger.level = clientConfig.logging.level;
-
 /**
- * Start the client
+ * Start the client. When config is provided (e.g. from CLI with cwd config), use it; otherwise use repo config.
+ * @param {object} [config] - Optional config (when provided, used instead of repo clientConfig)
  */
-async function startClient() {
+async function startClient(config) {
+  const cfg = config ?? clientConfig;
+  logger.level = cfg.logging.level;
+
   // Set up graceful shutdown
   const shutdown = async () => {
     logger.info('Shutting down client...');
@@ -23,7 +24,7 @@ async function startClient() {
   process.on('SIGTERM', shutdown);
 
   try {
-    await networkedMode();
+    await networkedMode(cfg);
   } catch (error) {
     logger.error('Failed to start client:', error);
     process.exit(1);

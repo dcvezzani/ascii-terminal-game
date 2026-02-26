@@ -221,11 +221,11 @@ This is a common pattern in multiplayer games, especially grid-based or turn-bas
 
 ## Related Documentation
 
-- **Server Architecture Specs**: `docs/development/specs/server-architecture_SPECS/README.md`
-- **Movement Flow Diagram**: `docs/development/specs/server-architecture_SPECS/server-architecture_interactions_3-movement.mmd`
+- **Server spec**: `docs/development/specs/terminal-game/server/SPEC_Server.md`
+- **Movement Flow Diagram**: `docs/development/specs/terminal-game/server/server-architecture_interactions_3-movement.mmd`
 - **GameServer Implementation**: `src/server/GameServer.js`
 - **Server Message Handling**: `src/server/server.js`
 
 ---
 
-**Last Updated**: 2025-01-XX
+**Last Updated**: 2025-02-19. See Server spec and code for current implementation.

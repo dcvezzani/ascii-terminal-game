@@ -1,0 +1,55 @@
+%% Client Architecture: Client Initialization Flow
+%% Sequence diagram showing client startup and initialization
+
+sequenceDiagram
+    participant Process as Node.js Process
+    participant EntryPoint as Entry Point<br/>(index.js)
+    participant Config as ClientConfig
+    participant Logger as Logger
+    participant NetworkedMode as Networked Mode
+    participant WSClient as WebSocketClient
+    participant Canvas as Canvas
+    participant Renderer as Renderer
+    participant InputHandler as InputHandler
+    
+    Note over Process,InputHandler: Client Initialization Sequence
+    
+    Process->>EntryPoint: Execute index.js
+    
+    EntryPoint->>Config: Load config (clientConfig.js / clientConfig.json)
+    Config-->>EntryPoint: Config object (or defaults)
+    
+    EntryPoint->>Logger: configureLogger('client')
+    Logger->>Logger: Setup file transports only
+    Logger-->>EntryPoint: Logger configured
+    
+    EntryPoint->>NetworkedMode: Start networked mode
+    NetworkedMode->>NetworkedMode: Initialize state variables
+    
+    NetworkedMode->>WSClient: new WebSocketClient(url)
+    WSClient->>WSClient: Initialize message queue
+    WSClient->>WSClient: Setup event handlers
+    WSClient-->>NetworkedMode: WebSocketClient instance
+    
+    NetworkedMode->>Renderer: new Renderer({ logger })
+    Renderer-->>NetworkedMode: Renderer instance
+    
+    NetworkedMode->>Canvas: new Canvas(config: rendering, statusBar, logger)
+    Canvas-->>NetworkedMode: Canvas instance
+    
+    NetworkedMode->>InputHandler: new InputHandler()
+    InputHandler->>InputHandler: Setup raw mode
+    InputHandler->>InputHandler: Register key mappings
+    InputHandler-->>NetworkedMode: InputHandler instance
+    
+    NetworkedMode->>InputHandler: onMove(callback)
+    InputHandler-->>NetworkedMode: Callback registered
+    
+    NetworkedMode->>InputHandler: onQuit(callback)
+    InputHandler-->>NetworkedMode: Callback registered
+    
+    NetworkedMode->>WSClient: connect()
+    WSClient->>WSClient: Create WebSocket connection
+    WSClient->>WSClient: Setup connection handlers
+    
+    Note over NetworkedMode: Client ready, waiting for connection

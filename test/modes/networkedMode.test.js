@@ -1,7 +1,12 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-
-// Note: These tests simulate the validation function logic
-// Full integration testing of networkedMode would require mocking WebSocket, etc.
+import { describe, it, expect } from 'vitest';
+import {
+  getServerPlayerPosition,
+  validateBounds,
+  validateWall,
+  validateEntityCollision,
+  validatePlayerCollision,
+  validateMovement
+} from '../../src/modes/networkedMode.js';
 
 describe('networkedMode helper functions', () => {
   describe('getServerPlayerPosition', () => {
@@ -14,9 +19,7 @@ describe('networkedMode helper functions', () => {
       };
       const localPlayerId = 'player1';
 
-      // Simulate the helper function logic
-      const localPlayer = currentState.players.find(p => p.playerId === localPlayerId);
-      const result = localPlayer ? { x: localPlayer.x, y: localPlayer.y } : null;
+      const result = getServerPlayerPosition(currentState, localPlayerId);
 
       expect(result).toEqual({ x: 10, y: 10 });
     });
@@ -29,233 +32,134 @@ describe('networkedMode helper functions', () => {
       };
       const localPlayerId = 'player2';
 
-      // Simulate the helper function logic
-      const localPlayer = currentState.players.find(p => p.playerId === localPlayerId);
-      const result = localPlayer ? { x: localPlayer.x, y: localPlayer.y } : null;
+      const result = getServerPlayerPosition(currentState, localPlayerId);
 
       expect(result).toBeNull();
     });
 
     it('should return null when state is null', () => {
-      const currentState = null;
-
-      // Simulate the helper function logic
-      if (!currentState || !currentState.players) {
-        expect(null).toBeNull();
-      }
+      const result = getServerPlayerPosition(null, 'player1');
+      expect(result).toBeNull();
     });
 
     it('should return null when players array is missing', () => {
       const currentState = {};
-
-      // Simulate the helper function logic
-      if (!currentState || !currentState.players) {
-        expect(null).toBeNull();
-      }
+      const result = getServerPlayerPosition(currentState, 'player1');
+      expect(result).toBeNull();
     });
   });
 
   describe('validateBounds', () => {
     it('should return true for valid bounds within board', () => {
       const board = { width: 20, height: 20 };
-      const x = 10;
-      const y = 10;
-
-      const result = x >= 0 && x < board.width && y >= 0 && y < board.height;
-      expect(result).toBe(true);
+      expect(validateBounds(10, 10, board)).toBe(true);
     });
 
     it('should return false for negative x', () => {
       const board = { width: 20, height: 20 };
-      const x = -1;
-      const y = 10;
-
-      const result = x >= 0 && x < board.width && y >= 0 && y < board.height;
-      expect(result).toBe(false);
+      expect(validateBounds(-1, 10, board)).toBe(false);
     });
 
     it('should return false for negative y', () => {
       const board = { width: 20, height: 20 };
-      const x = 10;
-      const y = -1;
-
-      const result = x >= 0 && x < board.width && y >= 0 && y < board.height;
-      expect(result).toBe(false);
+      expect(validateBounds(10, -1, board)).toBe(false);
     });
 
     it('should return false for x too large', () => {
       const board = { width: 20, height: 20 };
-      const x = 20;
-      const y = 10;
-
-      const result = x >= 0 && x < board.width && y >= 0 && y < board.height;
-      expect(result).toBe(false);
+      expect(validateBounds(20, 10, board)).toBe(false);
     });
 
     it('should return false for y too large', () => {
       const board = { width: 20, height: 20 };
-      const x = 10;
-      const y = 20;
-
-      const result = x >= 0 && x < board.width && y >= 0 && y < board.height;
-      expect(result).toBe(false);
+      expect(validateBounds(10, 20, board)).toBe(false);
     });
 
     it('should return true for edge case (0, 0)', () => {
       const board = { width: 20, height: 20 };
-      const x = 0;
-      const y = 0;
-
-      const result = x >= 0 && x < board.width && y >= 0 && y < board.height;
-      expect(result).toBe(true);
+      expect(validateBounds(0, 0, board)).toBe(true);
     });
 
     it('should return true for edge case (width-1, height-1)', () => {
       const board = { width: 20, height: 20 };
-      const x = 19;
-      const y = 19;
-
-      const result = x >= 0 && x < board.width && y >= 0 && y < board.height;
-      expect(result).toBe(true);
+      expect(validateBounds(19, 19, board)).toBe(true);
     });
 
     it('should return false for null board', () => {
-      const board = null;
-
-      const result = board ? true : false;
-      expect(result).toBe(false);
+      expect(validateBounds(10, 10, null)).toBe(false);
     });
   });
 
   describe('validateWall', () => {
     it('should return true for non-wall cell', () => {
       const board = {
-        getCell: (x, y) => '.'
+        getCell: () => '.'
       };
-      const x = 10;
-      const y = 10;
-
-      const cell = board.getCell(x, y);
-      const result = cell !== '#';
-      expect(result).toBe(true);
+      expect(validateWall(10, 10, board)).toBe(true);
     });
 
     it('should return false for wall cell', () => {
       const board = {
-        getCell: (x, y) => '#'
+        getCell: () => '#'
       };
-      const x = 10;
-      const y = 10;
+      expect(validateWall(10, 10, board)).toBe(false);
+    });
 
-      const cell = board.getCell(x, y);
-      const result = cell !== '#';
-      expect(result).toBe(false);
+    it('should return false for null cell (out of bounds)', () => {
+      const board = {
+        getCell: () => null
+      };
+      expect(validateWall(10, 10, board)).toBe(false);
     });
 
     it('should return false for null board', () => {
-      const board = null;
-
-      const result = board && board.getCell ? true : false;
-      expect(result).toBe(false);
+      expect(validateWall(10, 10, null)).toBe(false);
     });
 
     it('should return false for board without getCell', () => {
       const board = {};
-
-      const result = board && board.getCell ? true : false;
-      expect(result).toBe(false);
+      expect(validateWall(10, 10, board)).toBe(false);
     });
   });
 
   describe('validateEntityCollision', () => {
     it('should return true when no entities', () => {
-      const entities = [];
-      const x = 10;
-      const y = 10;
-
-      const result = !entities || entities.length === 0 || !entities.find(
-        e => e.x === x && e.y === y && e.solid === true
-      );
-      expect(result).toBe(true);
+      expect(validateEntityCollision(10, 10, [])).toBe(true);
     });
 
     it('should return true when entities is null', () => {
-      const entities = null;
-      const x = 10;
-      const y = 10;
-
-      const result = !entities || entities.length === 0 || !entities.find(
-        e => e.x === x && e.y === y && e.solid === true
-      );
-      expect(result).toBe(true);
+      expect(validateEntityCollision(10, 10, null)).toBe(true);
     });
 
     it('should return true for non-solid entity at position', () => {
       const entities = [
         { entityId: 'e1', x: 10, y: 10, solid: false }
       ];
-      const x = 10;
-      const y = 10;
-
-      const solidEntity = entities.find(
-        e => e.x === x && e.y === y && e.solid === true
-      );
-      const result = !solidEntity;
-      expect(result).toBe(true);
+      expect(validateEntityCollision(10, 10, entities)).toBe(true);
     });
 
     it('should return false for solid entity at position', () => {
       const entities = [
         { entityId: 'e1', x: 10, y: 10, solid: true }
       ];
-      const x = 10;
-      const y = 10;
-
-      const solidEntity = entities.find(
-        e => e.x === x && e.y === y && e.solid === true
-      );
-      const result = !solidEntity;
-      expect(result).toBe(false);
+      expect(validateEntityCollision(10, 10, entities)).toBe(false);
     });
 
     it('should return true for entity at different position', () => {
       const entities = [
         { entityId: 'e1', x: 5, y: 5, solid: true }
       ];
-      const x = 10;
-      const y = 10;
-
-      const solidEntity = entities.find(
-        e => e.x === x && e.y === y && e.solid === true
-      );
-      const result = !solidEntity;
-      expect(result).toBe(true);
+      expect(validateEntityCollision(10, 10, entities)).toBe(true);
     });
   });
 
   describe('validatePlayerCollision', () => {
     it('should return true when no players', () => {
-      const players = [];
-      const x = 10;
-      const y = 10;
-      const excludePlayerId = 'player1';
-
-      const result = !players || players.length === 0 || !players.find(
-        p => p.playerId !== excludePlayerId && p.x === x && p.y === y
-      );
-      expect(result).toBe(true);
+      expect(validatePlayerCollision(10, 10, [], 'player1')).toBe(true);
     });
 
     it('should return true when players is null', () => {
-      const players = null;
-      const x = 10;
-      const y = 10;
-      const excludePlayerId = 'player1';
-
-      const result = !players || players.length === 0 || !players.find(
-        p => p.playerId !== excludePlayerId && p.x === x && p.y === y
-      );
-      expect(result).toBe(true);
+      expect(validatePlayerCollision(10, 10, null, 'player1')).toBe(true);
     });
 
     it('should return false for other player at position', () => {
@@ -263,30 +167,14 @@ describe('networkedMode helper functions', () => {
         { playerId: 'player1', x: 10, y: 10 },
         { playerId: 'player2', x: 10, y: 10 }
       ];
-      const x = 10;
-      const y = 10;
-      const excludePlayerId = 'player1';
-
-      const otherPlayer = players.find(
-        p => p.playerId !== excludePlayerId && p.x === x && p.y === y
-      );
-      const result = !otherPlayer;
-      expect(result).toBe(false);
+      expect(validatePlayerCollision(10, 10, players, 'player1')).toBe(false);
     });
 
     it('should return true for local player at position (excluded)', () => {
       const players = [
         { playerId: 'player1', x: 10, y: 10 }
       ];
-      const x = 10;
-      const y = 10;
-      const excludePlayerId = 'player1';
-
-      const otherPlayer = players.find(
-        p => p.playerId !== excludePlayerId && p.x === x && p.y === y
-      );
-      const result = !otherPlayer;
-      expect(result).toBe(true);
+      expect(validatePlayerCollision(10, 10, players, 'player1')).toBe(true);
     });
 
     it('should return true for player at different position', () => {
@@ -294,15 +182,7 @@ describe('networkedMode helper functions', () => {
         { playerId: 'player1', x: 5, y: 5 },
         { playerId: 'player2', x: 5, y: 5 }
       ];
-      const x = 10;
-      const y = 10;
-      const excludePlayerId = 'player1';
-
-      const otherPlayer = players.find(
-        p => p.playerId !== excludePlayerId && p.x === x && p.y === y
-      );
-      const result = !otherPlayer;
-      expect(result).toBe(true);
+      expect(validatePlayerCollision(10, 10, players, 'player1')).toBe(true);
     });
   });
 
@@ -319,33 +199,7 @@ describe('networkedMode helper functions', () => {
         ],
         entities: []
       };
-      const localPlayerId = 'player1';
-      const x = 11;
-      const y = 10;
-
-      // Simulate validateMovement logic
-      const board = {
-        width: currentState.board.width,
-        height: currentState.board.height,
-        getCell: (x, y) => {
-          if (y < 0 || y >= currentState.board.grid.length) return null;
-          if (x < 0 || x >= currentState.board.grid[y].length) return null;
-          return currentState.board.grid[y][x];
-        }
-      };
-      const otherPlayers = (currentState.players || []).filter(
-        p => p.playerId !== localPlayerId
-      );
-      const entities = currentState.entities || [];
-
-      // All checks
-      const boundsOk = x >= 0 && x < board.width && y >= 0 && y < board.height;
-      const wallOk = board.getCell(x, y) !== '#';
-      const entityOk = !entities.find(e => e.x === x && e.y === y && e.solid === true);
-      const playerOk = !otherPlayers.find(p => p.x === x && p.y === y);
-
-      const result = boundsOk && wallOk && entityOk && playerOk;
-      expect(result).toBe(true);
+      expect(validateMovement(11, 10, currentState, 'player1')).toBe(true);
     });
 
     it('should return false for invalid bounds', () => {
@@ -358,16 +212,7 @@ describe('networkedMode helper functions', () => {
         players: [],
         entities: []
       };
-      const x = 25;
-      const y = 10;
-
-      const board = {
-        width: currentState.board.width,
-        height: currentState.board.height
-      };
-
-      const boundsOk = x >= 0 && x < board.width && y >= 0 && y < board.height;
-      expect(boundsOk).toBe(false);
+      expect(validateMovement(25, 10, currentState, 'player1')).toBe(false);
     });
 
     it('should return false for wall collision', () => {
@@ -382,19 +227,7 @@ describe('networkedMode helper functions', () => {
         players: [],
         entities: []
       };
-      const x = 10;
-      const y = 10;
-
-      const board = {
-        getCell: (x, y) => {
-          if (y < 0 || y >= currentState.board.grid.length) return null;
-          if (x < 0 || x >= currentState.board.grid[y].length) return null;
-          return currentState.board.grid[y][x];
-        }
-      };
-
-      const wallOk = board.getCell(x, y) !== '#';
-      expect(wallOk).toBe(false);
+      expect(validateMovement(10, 10, currentState, 'player1')).toBe(false);
     });
 
     it('should return false for solid entity collision', () => {
@@ -409,12 +242,7 @@ describe('networkedMode helper functions', () => {
           { entityId: 'e1', x: 10, y: 10, solid: true }
         ]
       };
-      const x = 10;
-      const y = 10;
-
-      const entities = currentState.entities || [];
-      const entityOk = !entities.find(e => e.x === x && e.y === y && e.solid === true);
-      expect(entityOk).toBe(false);
+      expect(validateMovement(10, 10, currentState, 'player1')).toBe(false);
     });
 
     it('should return false for player collision', () => {
@@ -430,79 +258,23 @@ describe('networkedMode helper functions', () => {
         ],
         entities: []
       };
-      const localPlayerId = 'player1';
-      const x = 10;
-      const y = 10;
-
-      const otherPlayers = (currentState.players || []).filter(
-        p => p.playerId !== localPlayerId
-      );
-      const playerOk = !otherPlayers.find(p => p.x === x && p.y === y);
-      expect(playerOk).toBe(false);
+      expect(validateMovement(10, 10, currentState, 'player1')).toBe(false);
     });
 
     it('should return false for null state', () => {
-      const currentState = null;
-
-      const result = currentState && currentState.board ? true : false;
-      expect(result).toBe(false);
+      expect(validateMovement(10, 10, null, 'player1')).toBe(false);
     });
   });
 
-  describe('prediction initialization', () => {
+  describe('prediction initialization (contract)', () => {
     it('should initialize from CONNECT response with gameState', () => {
       const gameState = {
         players: [
           { playerId: 'player1', x: 10, y: 10, playerName: 'Player 1' }
         ]
       };
-      const localPlayerId = 'player1';
-
-      // Simulate initialization logic
-      const localPlayer = gameState.players.find(p => p.playerId === localPlayerId);
-      const predictedPosition = localPlayer ? { x: localPlayer.x, y: localPlayer.y } : { x: null, y: null };
-
-      expect(predictedPosition).toEqual({ x: 10, y: 10 });
-    });
-
-    it('should initialize from STATE_UPDATE if not already set', () => {
-      let predictedPosition = { x: null, y: null };
-      const currentState = {
-        players: [
-          { playerId: 'player1', x: 10, y: 10, playerName: 'Player 1' }
-        ]
-      };
-      const localPlayerId = 'player1';
-
-      // Simulate initialization logic (only if not already set)
-      if (predictedPosition.x === null && localPlayerId && currentState.players) {
-        const localPlayer = currentState.players.find(p => p.playerId === localPlayerId);
-        if (localPlayer) {
-          predictedPosition = { x: localPlayer.x, y: localPlayer.y };
-        }
-      }
-
-      expect(predictedPosition).toEqual({ x: 10, y: 10 });
-    });
-
-    it('should not re-initialize if already set', () => {
-      let predictedPosition = { x: 5, y: 5 }; // Already set
-      const currentState = {
-        players: [
-          { playerId: 'player1', x: 10, y: 10, playerName: 'Player 1' }
-        ]
-      };
-      const localPlayerId = 'player1';
-
-      // Simulate initialization logic (only if not already set)
-      if (predictedPosition.x === null && localPlayerId && currentState.players) {
-        const localPlayer = currentState.players.find(p => p.playerId === localPlayerId);
-        if (localPlayer) {
-          predictedPosition = { x: localPlayer.x, y: localPlayer.y };
-        }
-      }
-
-      expect(predictedPosition).toEqual({ x: 5, y: 5 }); // Should remain unchanged
+      const result = getServerPlayerPosition(gameState, 'player1');
+      expect(result).toEqual({ x: 10, y: 10 });
     });
 
     it('should handle missing player in gameState', () => {
@@ -511,92 +283,33 @@ describe('networkedMode helper functions', () => {
           { playerId: 'player2', x: 10, y: 10, playerName: 'Player 2' }
         ]
       };
-      const localPlayerId = 'player1';
-
-      // Simulate initialization logic
-      const localPlayer = gameState.players.find(p => p.playerId === localPlayerId);
-      const predictedPosition = localPlayer ? { x: localPlayer.x, y: localPlayer.y } : { x: null, y: null };
-
-      expect(predictedPosition).toEqual({ x: null, y: null });
+      const result = getServerPlayerPosition(gameState, 'player1');
+      expect(result).toBeNull();
     });
   });
 
-  describe('reconciliation logic', () => {
+  describe('reconciliation logic (contract)', () => {
     it('should detect position match (no correction needed)', () => {
       const predictedPos = { x: 10, y: 10 };
       const serverPos = { x: 10, y: 10 };
-
-      // Simulate reconciliation comparison
       const mismatch = serverPos.x !== predictedPos.x || serverPos.y !== predictedPos.y;
-
       expect(mismatch).toBe(false);
     });
 
     it('should detect position mismatch (correction needed)', () => {
       const predictedPos = { x: 10, y: 10 };
       const serverPos = { x: 11, y: 10 };
-
-      // Simulate reconciliation comparison
       const mismatch = serverPos.x !== predictedPos.x || serverPos.y !== predictedPos.y;
-
       expect(mismatch).toBe(true);
-    });
-
-    it('should detect mismatch in y coordinate', () => {
-      const predictedPos = { x: 10, y: 10 };
-      const serverPos = { x: 10, y: 11 };
-
-      // Simulate reconciliation comparison
-      const mismatch = serverPos.x !== predictedPos.x || serverPos.y !== predictedPos.y;
-
-      expect(mismatch).toBe(true);
-    });
-
-    it('should skip reconciliation when predicted position is null', () => {
-      const predictedPos = { x: null, y: null };
-      const serverPos = { x: 10, y: 10 };
-
-      // Simulate prerequisite check
-      const canReconcile = predictedPos.x !== null && predictedPos.y !== null;
-
-      expect(canReconcile).toBe(false);
-    });
-
-    it('should skip reconciliation when localPlayerId is not set', () => {
-      const localPlayerId = null;
-      const predictedPos = { x: 10, y: 10 };
-
-      // Simulate prerequisite check
-      const canReconcile = localPlayerId !== null && predictedPos.x !== null;
-
-      expect(canReconcile).toBe(false);
-    });
-
-    it('should skip reconciliation when server player not found', () => {
-      const currentState = {
-        players: [
-          { playerId: 'player2', x: 10, y: 10 }
-        ]
-      };
-      const localPlayerId = 'player1';
-
-      // Simulate server player lookup
-      const serverPlayer = currentState.players.find(p => p.playerId === localPlayerId);
-      const canReconcile = serverPlayer !== undefined;
-
-      expect(canReconcile).toBe(false);
     });
 
     it('should correct predicted position to server position on mismatch', () => {
       let predictedPos = { x: 10, y: 10 };
       const serverPos = { x: 11, y: 10 };
-
-      // Simulate reconciliation correction
       const mismatch = serverPos.x !== predictedPos.x || serverPos.y !== predictedPos.y;
       if (mismatch) {
         predictedPos = { x: serverPos.x, y: serverPos.y };
       }
-
       expect(predictedPos).toEqual({ x: 11, y: 10 });
     });
   });
