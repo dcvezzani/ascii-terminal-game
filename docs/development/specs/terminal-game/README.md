@@ -15,6 +15,7 @@ This folder contains **consolidated specifications** for the terminal game, spli
 | **Board Parsing** | [board-parsing/SPEC_Board_Parsing.md](board-parsing/SPEC_Board_Parsing.md) | Load board from JSON (RLE + dimensions) |
 | **User Inputs** | [user-inputs/SPEC_User_Inputs.md](user-inputs/SPEC_User_Inputs.md) | TTY/readline, key parsing, quit |
 | **Client** | [client/SPEC_Client.md](client/SPEC_Client.md) | Client application concepts, workflows, and client-side prediction |
+| **Bullets** | [bullets/SPEC_Bullets.md](bullets/SPEC_Bullets.md) | Projectile system, firing, collision, scoring, respawn |
 
 ## Diagrams
 

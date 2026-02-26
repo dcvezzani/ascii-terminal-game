@@ -9,6 +9,7 @@ export class InputHandler {
     this.moveCallback = null;
     this.quitCallback = null;
     this.renderCallback = null;
+    this.fireCallback = null;
     this.dataHandler = null;
     this.running = false;
   }
@@ -74,6 +75,10 @@ export class InputHandler {
     this.renderCallback = callback;
   }
 
+  onFire(callback) {
+    this.fireCallback = callback;
+  }
+
   /**
    * Handle raw input data
    * @param {Buffer|string} data - Raw input data
@@ -107,7 +112,19 @@ export class InputHandler {
     }
     else if (str === 'r' || str === 'R') { // R
       this.triggerRender();
-    }    
+    }
+    else if (str === 'k' || str === 'K') { // Fire up
+      this.triggerFire(0, -1);
+    }
+    else if (str === 'j' || str === 'J') { // Fire down
+      this.triggerFire(0, 1);
+    }
+    else if (str === 'h' || str === 'H') { // Fire left
+      this.triggerFire(-1, 0);
+    }
+    else if (str === 'l' || str === 'L') { // Fire right
+      this.triggerFire(1, 0);
+    }
   }
 
   /**
@@ -147,6 +164,16 @@ export class InputHandler {
         this.renderCallback();
       } catch (error) {
         logger.error('Error in render callback:', error);
+      }
+    }
+  }
+
+  triggerFire(dx, dy) {
+    if (this.fireCallback) {
+      try {
+        this.fireCallback(dx, dy);
+      } catch (error) {
+        logger.error('Error in fire callback:', error);
       }
     }
   }

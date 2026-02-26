@@ -27,6 +27,9 @@ export class GameServer {
       ];
     }
     this.spawnConfig = { ...DEFAULT_SPAWN_CONFIG, ...options.spawnConfig };
+    this.bullets = new Map();
+    this.scores = new Map();
+    this.respawnQueue = [];
   }
 
   /**
@@ -56,6 +59,12 @@ export class GameServer {
    */
   removePlayer(playerId) {
     this.players.delete(playerId);
+    const bullet = this.getPlayerBullet(playerId);
+    if (bullet) {
+      this.destroyBullet(bullet.bulletId);
+    }
+    this.scores.delete(playerId);
+    this.respawnQueue = this.respawnQueue.filter(r => r.playerId !== playerId);
     logger.debug(`Player removed: ${playerId}`);
   }
 
@@ -222,6 +231,164 @@ export class GameServer {
     return true;
   }
 
+  fireBullet(playerId, dx, dy) {
+    const player = this.getPlayer(playerId);
+    if (!player) {
+      return { success: false, error: 'Player not found' };
+    }
+
+    if (player.x === null || player.y === null) {
+      return { success: false, error: 'Player not spawned' };
+    }
+
+    const existingBullet = this.getPlayerBullet(playerId);
+    if (existingBullet) {
+      return { success: false, error: 'Player already has active bullet' };
+    }
+
+    const bulletId = `bullet-${playerId}-${Date.now()}`;
+    const bullet = {
+      bulletId,
+      playerId,
+      x: player.x,
+      y: player.y,
+      dx,
+      dy
+    };
+
+    this.bullets.set(bulletId, bullet);
+    logger.debug(`Bullet fired: ${bulletId} by player ${playerId} direction (${dx}, ${dy})`);
+    return { success: true, bullet };
+  }
+
+  getPlayerBullet(playerId) {
+    for (const bullet of this.bullets.values()) {
+      if (bullet.playerId === playerId) {
+        return bullet;
+      }
+    }
+    return null;
+  }
+
+  destroyBullet(bulletId) {
+    const bullet = this.bullets.get(bulletId);
+    if (bullet) {
+      this.bullets.delete(bulletId);
+      logger.debug(`Bullet destroyed: ${bulletId}`);
+      return true;
+    }
+    return false;
+  }
+
+  updateBullets() {
+    const destroyedBullets = [];
+    const playerKills = [];
+
+    for (const bullet of this.bullets.values()) {
+      const newX = bullet.x + bullet.dx;
+      const newY = bullet.y + bullet.dy;
+
+      if (newX < 0 || newX >= this.game.board.width || newY < 0 || newY >= this.game.board.height) {
+        destroyedBullets.push(bullet.bulletId);
+        continue;
+      }
+
+      if (this.game.board.isWall(newX, newY)) {
+        destroyedBullets.push(bullet.bulletId);
+        continue;
+      }
+
+      const hitPlayer = this.getAllPlayers().find(p =>
+        p.x === newX && p.y === newY
+      );
+
+      if (hitPlayer) {
+        destroyedBullets.push(bullet.bulletId);
+
+        if (hitPlayer.playerId !== bullet.playerId) {
+          playerKills.push({
+            killerId: bullet.playerId,
+            victimId: hitPlayer.playerId
+          });
+
+          hitPlayer.x = null;
+          hitPlayer.y = null;
+          this.scheduleRespawn(hitPlayer.playerId);
+        }
+        continue;
+      }
+
+      bullet.x = newX;
+      bullet.y = newY;
+    }
+
+    for (const bulletId of destroyedBullets) {
+      this.destroyBullet(bulletId);
+    }
+
+    for (const kill of playerKills) {
+      this.addScore(kill.killerId, 1);
+    }
+
+    return { destroyedBullets, playerKills };
+  }
+
+  addScore(playerId, points) {
+    const current = this.scores.get(playerId) || 0;
+    this.scores.set(playerId, current + points);
+    logger.debug(`Score updated: ${playerId} now has ${current + points} points`);
+  }
+
+  getScore(playerId) {
+    return this.scores.get(playerId) || 0;
+  }
+
+  getAllScores() {
+    const result = {};
+    for (const [playerId, score] of this.scores) {
+      result[playerId] = score;
+    }
+    return result;
+  }
+
+  scheduleRespawn(playerId) {
+    this.respawnQueue.push({
+      playerId,
+      respawnAt: Date.now() + 3000
+    });
+    logger.debug(`Player ${playerId} scheduled for respawn`);
+  }
+
+  processRespawns() {
+    const now = Date.now();
+    const respawned = [];
+
+    const remaining = [];
+    for (const respawn of this.respawnQueue) {
+      if (now >= respawn.respawnAt) {
+        const spawn = this._pickAvailableSpawn();
+        if (spawn) {
+          const player = this.getPlayer(respawn.playerId);
+          if (player) {
+            player.x = spawn.x;
+            player.y = spawn.y;
+            respawned.push(respawn.playerId);
+            logger.debug(`Player ${respawn.playerId} respawned at (${spawn.x}, ${spawn.y})`);
+          }
+        } else {
+          respawn.respawnAt = now + 3000;
+          remaining.push(respawn);
+          logger.debug(`Player ${respawn.playerId} respawn delayed (no spawn available)`);
+        }
+      } else {
+        remaining.push(respawn);
+      }
+    }
+    this.respawnQueue = remaining;
+
+    return respawned;
+  }
+
   /**
    * Serialize game state for broadcasting
    * @returns {object} Serialized game state
@@ -253,7 +420,15 @@ export class GameServer {
           vy
         };
       }),
-      score: this.game.score
+      bullets: Array.from(this.bullets.values()).map(bullet => ({
+        bulletId: bullet.bulletId,
+        playerId: bullet.playerId,
+        x: bullet.x,
+        y: bullet.y,
+        dx: bullet.dx,
+        dy: bullet.dy
+      })),
+      scores: this.getAllScores()
     };
   }
 }

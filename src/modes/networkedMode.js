@@ -281,6 +281,15 @@ export async function networkedMode(injectedConfig) {
     shutdown('Quit by user');
   });
 
+  inputHandler.onFire((dx, dy) => {
+    if (!wsClient.isConnected() || !localPlayerId) {
+      return;
+    }
+
+    const fireMessage = MessageHandler.createMessage(MessageTypes.FIRE, { dx, dy });
+    wsClient.send(fireMessage);
+  });
+
   /**
    * Send MOVE message to server
    * @param {number} dx - Delta X (-1, 0, or 1)
@@ -907,12 +916,13 @@ export async function networkedMode(injectedConfig) {
     renderer.moveCursorToHome();
     canvas.clearContentRegion(lastContentRegion);
     const titleString = '=== Multiplayer Terminal Game ===';
+    const bullets = currentState.bullets || [];
     if (layout) {
       canvas.renderTitle(titleString, layout);
-      canvas.renderBoard(board, otherPlayers, layout);
+      canvas.renderBoard(board, otherPlayers, layout, bullets);
     } else {
       canvas.renderTitle(titleString);
-      canvas.renderBoard(board, otherPlayers);
+      canvas.renderBoard(board, otherPlayers, null, bullets);
     }
     if (position) {
       canvas.updateCell(position.x, position.y, canvas.config.playerGlyph, canvas.config.playerColor);
@@ -1061,6 +1071,11 @@ export async function networkedMode(injectedConfig) {
           joined: changes.players.joined.filter(j => j.playerId !== localPlayerId),
           left: changes.players.left.filter(l => l.playerId !== localPlayerId)
         },
+        bullets: {
+          moved: changes.bullets.moved,
+          created: changes.bullets.created,
+          destroyed: changes.bullets.destroyed
+        },
         scoreChanged: changes.scoreChanged
       };
 
@@ -1071,7 +1086,8 @@ export async function networkedMode(injectedConfig) {
         currentState.entities || [],
         localPlayerId,
         currentState.score || 0,
-        position
+        position,
+        currentState.bullets || []
       );
 
       // Handle local player movement separately (using predicted position)
@@ -1170,11 +1186,11 @@ export async function networkedMode(injectedConfig) {
         if (fallbackLayout?.fitsInTerminal) {
           canvas._currentLayout = fallbackLayout;
           canvas.renderTitle('=== Multiplayer Terminal Game ===', fallbackLayout);
-          canvas.renderBoard(board, otherPlayersFallback, fallbackLayout);
+          canvas.renderBoard(board, otherPlayersFallback, fallbackLayout, currentState.bullets || []);
         } else {
           canvas._currentLayout = null;
           canvas.renderTitle('=== Multiplayer Terminal Game ===');
-          canvas.renderBoard(board, otherPlayersFallback);
+          canvas.renderBoard(board, otherPlayersFallback, null, currentState.bullets || []);
         }
         // Render local player separately using predicted/server position
         if (position) {
@@ -1207,7 +1223,7 @@ export async function networkedMode(injectedConfig) {
 
   function changesSinceLastRender(previousState, currentState) {
     const changes = compareStates(previousState, currentState);
-    return changes.players.moved.length > 0 || changes.players.joined.length > 0 || changes.players.left.length > 0 || changes.scoreChanged;
+    return changes.players.moved.length > 0 || changes.players.joined.length > 0 || changes.players.left.length > 0 || changes.bullets.moved.length > 0 || changes.bullets.created.length > 0 || changes.bullets.destroyed.length > 0 || changes.scoreChanged;
   } 
 
   /**

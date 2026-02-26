@@ -143,6 +143,16 @@ export class Server {
       return; // No clients connected
     }
 
+    this.gameServer.updateBullets();
+
+    const respawned = this.gameServer.processRespawns();
+    for (const playerId of respawned) {
+      const conn = this.connectionManager.getConnectionByPlayerId(playerId);
+      if (conn) {
+        this.sendSpawnedStateToClient(conn.clientId);
+      }
+    }
+
     const gameState = this.gameServer.serializeState();
     const stateUpdate = MessageHandler.createMessage(
       MessageTypes.STATE_UPDATE,
@@ -222,6 +232,8 @@ export class Server {
         this.handleConnect(clientId, message);
       } else if (message.type === MessageTypes.MOVE) {
         this.handleMove(clientId, message);
+      } else if (message.type === MessageTypes.FIRE) {
+        this.handleFire(clientId, message);
       } else {
         log.warn('Unknown message type', { type: message.type });
       }
@@ -344,6 +356,40 @@ export class Server {
       }
     }
     // State will be broadcast in next periodic update
+  }
+
+  handleFire(clientId, message) {
+    const log = this.log(clientId);
+
+    const playerId = this.connectionManager.getPlayerId(clientId);
+    if (!playerId) {
+      log.warn('Cannot fire: client has no playerId');
+      return;
+    }
+
+    const { dx, dy } = message.payload;
+
+    if (typeof dx !== 'number' || typeof dy !== 'number') {
+      log.warn('Invalid fire: dx or dy is not a number');
+      return;
+    }
+
+    if (dx < -1 || dx > 1 || dy < -1 || dy > 1) {
+      log.warn('Invalid fire: dx or dy out of range');
+      return;
+    }
+
+    if (dx === 0 && dy === 0) {
+      log.warn('Invalid fire: both dx and dy are zero');
+      return;
+    }
+
+    const result = this.gameServer.fireBullet(playerId, dx, dy);
+    if (result.success) {
+      log.debug('Bullet fired', { bulletId: result.bullet.bulletId, dx, dy });
+    } else {
+      log.debug('Bullet fire failed', { error: result.error });
+    }
   }
 
   /**
