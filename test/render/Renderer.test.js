@@ -32,6 +32,7 @@ describe('Renderer', () => {
       rows: 24
     };
     renderer.stdout = mockStdout;
+  });
 
   describe('hideCursor and showCursor', () => {
     it('should have hideCursor method', () => {
