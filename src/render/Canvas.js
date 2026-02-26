@@ -345,6 +345,10 @@ export class Canvas {
                 continue;
             }
 
+            if (process.env.REMOTE_RENDER_DEBUG === '1' && this.logger) {
+                this.logger.info(`[REMOTE_RENDER] INCR_DRAW ts=${Date.now()} playerId=${moved.playerId} oldPos=(${moved.oldPos.x},${moved.oldPos.y}) newPos=(${moved.newPos.x},${moved.newPos.y})`);
+            }
+
             // Clear old position
             this.restoreCellContent(
                 moved.oldPos.x,

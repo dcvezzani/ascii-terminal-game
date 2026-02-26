@@ -12,7 +12,7 @@ import createClientLogger from '../utils/clientLogger.js';
  * WebSocket Server class
  * @param {number} port - Port to listen on
  * @param {Game} [game] - Game instance
- * @param {{ spawnList?: Array<{x: number, y: number}>, spawnConfig?: object }} [options] - Spawn list and config for GameServer
+ * @param {{ spawnList?: Array<{x: number, y: number}>, spawnConfig?: object, keyRepeatIntervalMs?: number }} [options] - Spawn list and config for GameServer; keyRepeatIntervalMs sent to clients for key-repeat throttling
  */
 export class Server {
   constructor(port, game, options = {}) {
@@ -25,6 +25,7 @@ export class Server {
     );
     this.broadcastInterval = null;
     this.broadcastIntervalMs = 250; // 250ms = 4 updates per second
+    this.keyRepeatIntervalMs = options.keyRepeatIntervalMs ?? 100;
   }
 
   log(clientId) {
@@ -252,7 +253,8 @@ export class Server {
         clientId,
         playerId,
         playerName,
-        gameState
+        gameState,
+        keyRepeatIntervalMs: this.keyRepeatIntervalMs
       });
       connection.ws.send(JSON.stringify(response));
       this.log(clientId).info('Player joined', { playerId, playerName });
@@ -264,7 +266,8 @@ export class Server {
         playerName,
         gameState: null,
         waitingForSpawn: true,
-        message: waitMessage
+        message: waitMessage,
+        keyRepeatIntervalMs: this.keyRepeatIntervalMs
       });
       connection.ws.send(JSON.stringify(response));
       this.log(clientId).info('Player waiting for spawn', {
@@ -291,7 +294,8 @@ export class Server {
       clientId,
       playerId,
       playerName: player.playerName,
-      gameState
+      gameState,
+      keyRepeatIntervalMs: this.keyRepeatIntervalMs
     });
     connection.ws.send(JSON.stringify(response));
     this.log(clientId).info('Player spawned (was waiting)', {

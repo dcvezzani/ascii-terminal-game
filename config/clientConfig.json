@@ -9,7 +9,8 @@
     "playerGlyph": "☻",
     "spaceGlyph": " ",
     "wallGlyph": "#",
-    "playerColor": "00FF00"
+    "playerColor": "00FF00",
+    "remoteDisplayEasing": true
   },
   "prediction": {
     "enabled": true,

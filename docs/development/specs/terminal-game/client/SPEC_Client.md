@@ -28,7 +28,11 @@ This enhancement implements immediate visual feedback for local player movement 
 
 **Purpose**: Provide instant, responsive movement feedback (< 16ms) by predicting local player movement on the client, while ensuring accuracy through reconciliation with the server's authoritative state.
 
-### Problem Statement
+## Diagrams
+
+- **When the local client lags / reconciliation**: [Source](client-side-prediction_lag-reconciliation.mmd) · [SVG](client-side-prediction_lag-reconciliation.svg) – Predicted vs server position; reconciliation and correction when they differ.
+
+## Problem Statement
 
 **Current Behavior**:
 - Player presses movement key (arrow keys or WASD)
@@ -454,7 +458,8 @@ function render() {
   },
   "rendering": {
     "playerGlyph": "☻",
-    "playerColor": "00FF00"
+    "playerColor": "00FF00",
+    "remoteDisplayEasing": true
   },
   "prediction": {
     "enabled": true,
@@ -466,6 +471,8 @@ function render() {
 **Configuration Loading**:
 - Update `config/clientConfig.js` to include defaults for prediction settings
 - Defaults: `enabled: true`, `reconciliationInterval: 5000`
+
+Remote player display smoothing is controlled by `rendering.remoteDisplayEasing`; see [Remote Entity Interpolation Specification](../remote-entity-interpolation/remote-entity-interpolation_SPECS.md).
 
 **Configuration Usage**:
 ```javascript
@@ -524,6 +531,9 @@ const interval = clientConfig.prediction?.reconciliationInterval || 5000;
 
 ```javascript
 {
+  rendering: {
+    remoteDisplayEasing: boolean   // Default: true (smooths remote player display; see Remote Entity Interpolation spec)
+  },
   prediction: {
     enabled: boolean,           // Default: true
     reconciliationInterval: number  // Default: 5000 (milliseconds)
@@ -905,6 +915,10 @@ This implementation focuses on basic prediction. Future enhancements can add:
 - **Server spec**: [../server/SPEC_Server.md](../server/SPEC_Server.md)
   - Section: "Movement Validation" (for matching validation rules)
 
-### Summary
+## Related: Remote Entity Interpolation
+
+Other players (remote entities) are smoothed via **entity interpolation**: position buffers and a periodic tick that lerps between server snapshots and holds at latest when the buffer runs dry. See the [Client Architecture Specification](../client-architecture_SPECS/README.md) (Core Concept "Remote Entity Interpolation") and the [Remote Entity Interpolation Specification](../remote-entity-interpolation/remote-entity-interpolation_SPECS.md). Local player prediction and remote interpolation are independent: the local player uses prediction and reconciliation; remote players use interpolation only (no prediction). Key repeat rate for movement is server-driven: the CONNECT response includes `keyRepeatIntervalMs`; the client uses it to throttle repeated same-direction moves.
+
+## Summary
 
 This specification defines the implementation of client-side prediction to provide instant, responsive movement feedback. The solution uses optimistic prediction with client-side validation, immediate rendering, and periodic reconciliation to maintain accuracy with the server's authoritative state. The implementation is designed to be performant, reliable, and maintainable while providing a significantly improved user experience.

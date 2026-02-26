@@ -23,6 +23,9 @@ sequenceDiagram
         NetworkedMode->>NetworkedMode: previousState = currentState
         NetworkedMode->>NetworkedMode: currentState = message.payload
         
+        NetworkedMode->>NetworkedMode: For each remote player: push { t, x, y, playerName, vx?, vy? } to buffer (cap size)
+        NetworkedMode->>NetworkedMode: For players no longer in payload: clear last-drawn cell, remove buffer and interpolated/last-drawn entries
+        
         NetworkedMode->>NetworkedMode: reconcilePosition()
         NetworkedMode->>NetworkedMode: Get server position for local player
         NetworkedMode->>NetworkedMode: Compare with predicted position
@@ -56,3 +59,5 @@ sequenceDiagram
         NetworkedMode->>Renderer: render(canvas)
         Renderer-->>NetworkedMode: Render complete
     end
+    
+    Note over NetworkedMode,Renderer: "Interpolation tick (every 50ms): renderTime = now - INTERPOLATION_DELAY_MS then for each remote entity buffer compute interpolated or extrapolated position then for each entity whose rounded position changed restoreCellContent(old) updateCell(new) update lastDrawnInterpolatedPositions then renderer.render(canvas)"

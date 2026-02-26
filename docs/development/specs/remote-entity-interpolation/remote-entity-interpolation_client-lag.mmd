@@ -1,0 +1,34 @@
+%% Remote Entity Interpolation: What Happens When a Client Lags
+%% Buffer runs dry, extrapolation vs hold, jitter buffer, clamp
+
+flowchart TD
+    subgraph normal [Normal: no lag]
+        BufferFull["Buffer has 2+ snapshots around renderTime"]
+        Lerp["Lerp between snapshots"]
+        Smooth["Smooth motion"]
+    end
+
+    subgraph lag [Client or network lags]
+        LatePackets["Packets late or lost"]
+        RenderTimePast["renderTime is past last snapshot"]
+        BufferDry["Buffer runs dry"]
+    end
+
+    subgraph responses [Client response]
+        JitterBuffer["Jitter buffer: delay ~3x server interval e.g. 100-150ms"]
+        ExtrapOrHold["Extrapolate using velocity or hold at latest"]
+        ClampMax["Clamp extrapolation e.g. 300ms then hold"]
+    end
+
+    subgraph result [Result]
+        NoRunaway["Entity does not run away; smooth when data resumes"]
+    end
+
+    LatePackets --> RenderTimePast
+    RenderTimePast --> BufferDry
+    BufferDry --> ExtrapOrHold
+    JitterBuffer --> BufferFull
+    BufferFull --> Lerp
+    Lerp --> Smooth
+    ExtrapOrHold --> ClampMax
+    ClampMax --> NoRunaway

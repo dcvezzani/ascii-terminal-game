@@ -131,6 +131,21 @@ export async function networkedMode(injectedConfig) {
   let waitingForSpawn = false;
   let spawnWaitMessage = null;
 
+  // Remote entity interpolation (smooth other players between server updates)
+  const INTERPOLATION_DELAY_MS = 150;
+  const INTERPOLATION_TICK_MS = 50;
+  const REMOTE_ENTITY_BUFFER_MAX = 20;
+  const EXTRAPOLATION_MAX_MS = 300;
+  const remoteEntityBuffers = {};       // { [playerId]: [{ t, x, y, playerName }] }
+  const remoteEntityInterpolated = {};  // { [playerId]: { x, y, playerName } }
+  const lastDrawnInterpolatedPositions = {}; // { [playerId]: { x, y } }
+  let interpolationTickTimer = null;
+  const debugRemoteRender = process.env.REMOTE_RENDER_DEBUG === '1';
+  const remoteDisplayEasing = clientConfig.rendering?.remoteDisplayEasing !== false;
+  let interpolationTickCount = 0;
+  let keyRepeatIntervalMs = 0;
+  let lastMove = null;
+
   // Set up WebSocket event handlers
   wsClient.on('connect', () => {
     logger.info('Connected to server');
@@ -167,6 +182,19 @@ export async function networkedMode(injectedConfig) {
   inputHandler.onMove((dx, dy) => {
     if (!wsClient.isConnected() || !localPlayerId) {
       return;
+    }
+
+    if (keyRepeatIntervalMs > 0) {
+      const now = Date.now();
+      if (
+        lastMove &&
+        lastMove.dx === dx &&
+        lastMove.dy === dy &&
+        now - lastMove.time < keyRepeatIntervalMs
+      ) {
+        return;
+      }
+      lastMove = { dx, dy, time: now };
     }
 
     // Check if prediction is enabled
@@ -391,6 +419,263 @@ export async function networkedMode(injectedConfig) {
   }
 
   /**
+   * Compute interpolated or extrapolated position for one entity from its buffer.
+   * When board is provided, clamps to latest position if computed position is inside a wall.
+   * @param {Array} buffer - Array of { t, x, y, playerName }
+   * @param {number} renderTime - Time to render at (ms)
+   * @param {{ getCell: (x: number, y: number) => string|null }} [board] - Optional board to clamp position (no drawing in walls)
+   * @returns {{ x: number, y: number, playerName?: string } | null}
+   */
+  function getInterpolatedPosition(buffer, renderTime, board) {
+    if (!buffer || buffer.length === 0) return null;
+    const latest = buffer[buffer.length - 1];
+    function clampToBoard(pos, latestSnapshot) {
+      if (!board || !board.getCell) return pos;
+      const rx = Math.round(pos.x);
+      const ry = Math.round(pos.y);
+      if (board.width != null && board.height != null) {
+        if (rx < 0 || rx >= board.width || ry < 0 || ry >= board.height) {
+          return { x: latestSnapshot.x, y: latestSnapshot.y, playerName: latestSnapshot.playerName };
+        }
+      }
+      const cell = board.getCell(rx, ry);
+      if (cell === '#') {
+        return { x: latestSnapshot.x, y: latestSnapshot.y, playerName: latestSnapshot.playerName };
+      }
+      return pos;
+    }
+    if (buffer.length === 1) {
+      return { x: latest.x, y: latest.y, playerName: latest.playerName };
+    }
+    // Find two snapshots surrounding renderTime
+    let i = 0;
+    while (i < buffer.length - 1 && buffer[i + 1].t < renderTime) {
+      i++;
+    }
+    const a = buffer[i];
+    const b = buffer[i + 1];
+    if (b && renderTime >= a.t && renderTime <= b.t) {
+      const total = b.t - a.t;
+      const portion = renderTime - a.t;
+      const ratio = total > 0 ? portion / total : 1;
+      const lerped = {
+        x: a.x + (b.x - a.x) * ratio,
+        y: a.y + (b.y - a.y) * ratio,
+        playerName: b.playerName ?? a.playerName
+      };
+      return clampToBoard(lerped, latest);
+    }
+    // renderTime is past last snapshot: hold at latest (Option A - no extrapolation)
+    return { x: latest.x, y: latest.y, playerName: latest.playerName };
+  }
+
+  /**
+   * Run interpolation tick: update interpolated positions and redraw remote player cells
+   */
+  function runInterpolationTick() {
+    if (!currentState || !currentState.board) return;
+    const renderTime = Date.now() - INTERPOLATION_DELAY_MS;
+    const board = {
+      width: currentState.board.width,
+      height: currentState.board.height,
+      grid: currentState.board.grid,
+      getCell: (x, y) => {
+        if (y < 0 || y >= currentState.board.grid.length) return null;
+        if (x < 0 || x >= currentState.board.grid[y].length) return null;
+        return currentState.board.grid[y][x];
+      },
+      isWall: (x, y) => {
+        const cell = board.getCell(x, y);
+        return cell === '#';
+      },
+      serialize: () => currentState.board.grid
+    };
+    const entities = currentState.entities || [];
+    for (const playerId of Object.keys(remoteEntityBuffers)) {
+      const pos = getInterpolatedPosition(remoteEntityBuffers[playerId], renderTime, board);
+      if (pos) {
+        remoteEntityInterpolated[playerId] = pos;
+      }
+    }
+    const otherPlayersAtInterpolated = Object.values(remoteEntityInterpolated)
+      .filter(o => o && typeof o.x === 'number' && typeof o.y === 'number')
+      .map(o => ({ x: Math.round(o.x), y: Math.round(o.y) }));
+    let anyChanged = false;
+    interpolationTickCount += 1;
+    for (const [playerId, interp] of Object.entries(remoteEntityInterpolated)) {
+      const targetX = Math.round(interp.x);
+      const targetY = Math.round(interp.y);
+      const last = lastDrawnInterpolatedPositions[playerId];
+      const lastX = last ? last.x : null;
+      const lastY = last ? last.y : null;
+      const displayX = remoteDisplayEasing
+        ? (last == null ? targetX : last.x + Math.max(-1, Math.min(1, targetX - last.x)))
+        : targetX;
+      const displayY = remoteDisplayEasing
+        ? (last == null ? targetY : last.y + Math.max(-1, Math.min(1, targetY - last.y)))
+        : targetY;
+      if (lastX !== displayX || lastY !== displayY) {
+        if (debugRemoteRender) {
+          logger.info(`[REMOTE_RENDER] TICK_DRAW ts=${Date.now()} playerId=${playerId} from=(${lastX},${lastY}) target=(${targetX},${targetY}) display=(${displayX},${displayY}) raw=(${interp.x.toFixed(2)},${interp.y.toFixed(2)})`);
+          const buf = remoteEntityBuffers[playerId];
+          const latestT = buf && buf.length > 0 ? buf[buf.length - 1].t : 0;
+          const mode = !buf || buf.length < 2 ? 'hold' : (renderTime > latestT ? 'extrapolate' : 'lerp');
+          logger.info(`[REMOTE_RENDER] BUFFER ts=${Date.now()} playerId=${playerId} bufferLen=${buf ? buf.length : 0} renderTime=${renderTime} latestT=${latestT} mode=${mode}`);
+        }
+        if (lastX != null && lastY != null) {
+          canvas.restoreCellContent(
+            lastX,
+            lastY,
+            board,
+            otherPlayersAtInterpolated,
+            entities
+          );
+        }
+        canvas.updateCell(displayX, displayY, canvas.config.playerGlyph, canvas.config.playerColor);
+        lastDrawnInterpolatedPositions[playerId] = { x: displayX, y: displayY };
+        if (debugRemoteRender) {
+          logger.info(`[REMOTE_RENDER] POS playerId=${playerId} target=(${targetX},${targetY}) display=(${displayX},${displayY}) src=tick ts=${Date.now()}`);
+        }
+        anyChanged = true;
+      }
+    }
+    if (debugRemoteRender && interpolationTickCount % 5 === 0) {
+      const firstId = Object.keys(remoteEntityBuffers)[0];
+      if (firstId) {
+        const buf = remoteEntityBuffers[firstId];
+        const latestT = buf && buf.length > 0 ? buf[buf.length - 1].t : 0;
+        const mode = !buf || buf.length < 2 ? 'hold' : (renderTime > latestT ? 'extrapolate' : 'lerp');
+        logger.info(`[REMOTE_RENDER] BUFFER ts=${Date.now()} playerId=${firstId} bufferLen=${buf ? buf.length : 0} renderTime=${renderTime} latestT=${latestT} mode=${mode}`);
+      }
+    }
+    if (anyChanged) {
+      renderer.render(canvas);
+    }
+  }
+
+  /**
+   * Start interpolation tick (runs when we have state and localPlayerId)
+   */
+  function startInterpolationTick() {
+    if (interpolationTickTimer) return;
+    interpolationTickTimer = setInterval(() => {
+      if (running && currentState && localPlayerId) {
+        runInterpolationTick();
+      }
+    }, INTERPOLATION_TICK_MS);
+  }
+
+  /**
+   * Stop interpolation tick
+   */
+  function stopInterpolationTick() {
+    if (interpolationTickTimer) {
+      clearInterval(interpolationTickTimer);
+      interpolationTickTimer = null;
+    }
+  }
+
+  /**
+   * Validate if position is within board bounds
+   * @param {number} x - X coordinate
+   * @param {number} y - Y coordinate
+   * @param {object} board - Board object with width and height
+   * @returns {boolean} True if within bounds
+   */
+  function validateBounds(x, y, board) {
+    if (!board) return false;
+    return x >= 0 && x < board.width && y >= 0 && y < board.height;
+  }
+
+  /**
+   * Validate if position is not a wall
+   * @param {number} x - X coordinate
+   * @param {number} y - Y coordinate
+   * @param {object} board - Board object with getCell method
+   * @returns {boolean} True if not a wall
+   */
+  function validateWall(x, y, board) {
+    if (!board || !board.getCell) return false;
+    const cell = board.getCell(x, y);
+    // If cell is null (out of bounds), it's not a valid position
+    if (cell === null) return false;
+    return cell !== '#';
+  }
+
+  /**
+   * Validate if no solid entity at position
+   * @param {number} x - X coordinate
+   * @param {number} y - Y coordinate
+   * @param {Array} entities - Array of entity objects
+   * @returns {boolean} True if no solid entity at position
+   */
+  function validateEntityCollision(x, y, entities) {
+    if (!entities || entities.length === 0) return true;
+    
+    // Check for solid entities at position
+    const solidEntity = entities.find(
+      e => e.x === x && e.y === y && e.solid === true
+    );
+    return !solidEntity;
+  }
+
+  /**
+   * Validate if no other player at position
+   * @param {number} x - X coordinate
+   * @param {number} y - Y coordinate
+   * @param {Array} players - Array of player objects
+   * @param {string} excludePlayerId - Player ID to exclude from check
+   * @returns {boolean} True if no other player at position
+   */
+  function validatePlayerCollision(x, y, players, excludePlayerId) {
+    if (!players || players.length === 0) return true;
+    
+    // Check for other players at position
+    const otherPlayer = players.find(
+      p => p.playerId !== excludePlayerId && p.x === x && p.y === y
+    );
+    return !otherPlayer;
+  }
+
+  /**
+   * Validate movement (all checks)
+   * @param {number} x - X coordinate
+   * @param {number} y - Y coordinate
+   * @param {object} currentState - Current game state
+   * @returns {boolean} True if movement is valid
+   */
+  function validateMovement(x, y, currentState) {
+    if (!currentState || !currentState.board) return false;
+
+    // Create board adapter
+    const board = {
+      width: currentState.board.width,
+      height: currentState.board.height,
+      getCell: (x, y) => {
+        if (y < 0 || y >= currentState.board.grid.length) return null;
+        if (x < 0 || x >= currentState.board.grid[y].length) return null;
+        return currentState.board.grid[y][x];
+      }
+    };
+
+    // Get other players (exclude local player)
+    const otherPlayers = (currentState.players || []).filter(
+      p => p.playerId !== localPlayerId
+    );
+
+    // Get entities
+    const entities = currentState.entities || [];
+
+    // Validate all checks
+    if (!validateBounds(x, y, board)) return false;
+    if (!validateWall(x, y, board)) return false;
+    if (!validateEntityCollision(x, y, entities)) return false;
+    if (!validatePlayerCollision(x, y, otherPlayers, localPlayerId)) return false;
+
+    return true;
+  }
+
+  /**
    * Handle CONNECT response
    */
   function handleConnect(message) {
@@ -422,6 +707,10 @@ export async function networkedMode(injectedConfig) {
       spawnWaitMessage = null;
       localPlayerId = playerId;
       currentState = gameState;
+      const payloadKeyRepeat = message.payload.keyRepeatIntervalMs;
+      if (typeof payloadKeyRepeat === 'number' && payloadKeyRepeat >= 0) {
+        keyRepeatIntervalMs = payloadKeyRepeat;
+      }
 
       // Initialize prediction from server position
       if (gameState.players) {
@@ -434,7 +723,8 @@ export async function networkedMode(injectedConfig) {
       }
 
       logger.info(`Joined as ${playerName} (${playerId})`);
-
+      
+      startInterpolationTick();
       // Initial render
       render();
     } catch (error) {
@@ -458,6 +748,52 @@ export async function networkedMode(injectedConfig) {
       const serverPosBefore = serverPlayerBefore ? { x: serverPlayerBefore.x, y: serverPlayerBefore.y } : null;
       
       currentState = message.payload; //dcv
+      
+      // Push remote player positions to interpolation buffers (use message timestamp)
+      const timestamp = typeof message.timestamp === 'number' ? message.timestamp : Date.now();
+      const remotePlayers = (currentState.players || []).filter(p => p.playerId !== localPlayerId);
+      const currentRemoteIds = new Set(remotePlayers.map(p => p.playerId));
+      for (const p of remotePlayers) {
+        if (!p.playerId || typeof p.x !== 'number' || typeof p.y !== 'number') continue;
+        if (!remoteEntityBuffers[p.playerId]) remoteEntityBuffers[p.playerId] = [];
+        const buf = remoteEntityBuffers[p.playerId];
+        const vx = typeof p.vx === 'number' ? p.vx : undefined;
+        const vy = typeof p.vy === 'number' ? p.vy : undefined;
+        buf.push({ t: timestamp, x: p.x, y: p.y, playerName: p.playerName, vx, vy });
+        if (buf.length > REMOTE_ENTITY_BUFFER_MAX) buf.shift();
+      }
+      if (debugRemoteRender && remotePlayers.length > 0) {
+        const p = remotePlayers[0];
+        const bufLen = remoteEntityBuffers[p.playerId] ? remoteEntityBuffers[p.playerId].length : 0;
+        const msgTs = typeof message.timestamp === 'number' ? message.timestamp : Date.now();
+        logger.info(`[REMOTE_RENDER] STATE_UPDATE ts=${Date.now()} msgTs=${msgTs} remoteId=${p.playerId} serverPos=(${p.x},${p.y}) bufferLenAfter=${bufLen}`);
+      }
+      // Remove buffers and clear cells for players who left
+      for (const playerId of Object.keys(remoteEntityBuffers)) {
+        if (currentRemoteIds.has(playerId)) continue;
+        const lastPos = lastDrawnInterpolatedPositions[playerId];
+        if (lastPos != null && currentState.board) {
+          const board = {
+            width: currentState.board.width,
+            height: currentState.board.height,
+            grid: currentState.board.grid,
+            getCell: (x, y) => {
+              if (y < 0 || y >= currentState.board.grid.length) return null;
+              if (x < 0 || x >= currentState.board.grid[y].length) return null;
+              return currentState.board.grid[y][x];
+            },
+            isWall: () => false,
+            serialize: () => currentState.board.grid
+          };
+          const otherPlayersHere = Object.values(remoteEntityInterpolated)
+            .filter(o => o && typeof o.x === 'number' && typeof o.y === 'number')
+            .map(o => ({ x: Math.round(o.x), y: Math.round(o.y) }));
+          canvas.restoreCellContent(lastPos.x, lastPos.y, board, otherPlayersHere, currentState.entities || []);
+        }
+        delete remoteEntityBuffers[playerId];
+        delete remoteEntityInterpolated[playerId];
+        delete lastDrawnInterpolatedPositions[playerId];
+      }
       
       // Get server position after updating state
       const serverPlayerAfter = currentState.players?.find(p => p.playerId === localPlayerId);
@@ -525,9 +861,17 @@ export async function networkedMode(injectedConfig) {
       ? localPlayerPredictedPosition
       : serverPosition;
 
-    const otherPlayers = (currentState.players || []).filter(
+    // Use interpolated positions for remotes when available (single source of truth for remote display)
+    const remotePlayersFromState = (currentState.players || []).filter(
       p => p.playerId !== localPlayerId
     );
+    const otherPlayers = remotePlayersFromState.map((p) => {
+      const interp = remoteEntityInterpolated[p.playerId];
+      if (interp != null && typeof interp.x === 'number' && typeof interp.y === 'number') {
+        return { x: Math.round(interp.x), y: Math.round(interp.y), playerName: interp.playerName };
+      }
+      return { x: p.x, y: p.y, playerName: p.playerName };
+    });
 
     const centerBoard = config.rendering?.centerBoard !== false;
     let layout = null;
@@ -709,11 +1053,11 @@ export async function networkedMode(injectedConfig) {
       // Incremental render
       // Use stored previousPredictedPosition (will be updated after render)
 
-      // Filter out local player from changes to prevent duplicate rendering
-      // The local player is rendered separately using predicted position
+      // Filter so incremental render does not draw remote player positions (interpolation tick owns those)
+      // Only local player moves are passed; remote moves are excluded to avoid snapping remotes to server
       const filteredChanges = {
         players: {
-          moved: changes.players.moved.filter(m => m.playerId !== localPlayerId),
+          moved: changes.players.moved.filter(m => m.playerId === localPlayerId),
           joined: changes.players.joined.filter(j => j.playerId !== localPlayerId),
           left: changes.players.left.filter(l => l.playerId !== localPlayerId)
         },
@@ -801,11 +1145,18 @@ export async function networkedMode(injectedConfig) {
           ? localPlayerPredictedPosition
           : serverPosition;
         
-        // Exclude local player from server state rendering
-        const otherPlayersFallback = (currentState.players || []).filter(
+        // Use interpolated positions for remotes when available (same as runNormalRenderPath)
+        const remotePlayersFromStateFallback = (currentState.players || []).filter(
           p => p.playerId !== localPlayerId
         );
-        
+        const otherPlayersFallback = remotePlayersFromStateFallback.map((p) => {
+          const interp = remoteEntityInterpolated[p.playerId];
+          if (interp != null && typeof interp.x === 'number' && typeof interp.y === 'number') {
+            return { x: Math.round(interp.x), y: Math.round(interp.y), playerName: interp.playerName };
+          }
+          return { x: p.x, y: p.y, playerName: p.playerName };
+        });
+
         canvas.clearContentRegion(lastContentRegion);
         const centerBoardFallback = config.rendering?.centerBoard !== false;
         const fallbackLayout = centerBoardFallback ? computeLayout(
@@ -874,7 +1225,8 @@ export async function networkedMode(injectedConfig) {
 
     // Stop reconciliation timer
     stopReconciliationTimer();
-    
+    stopInterpolationTick();
+
     // Reset prediction state
     localPlayerPredictedPosition = { x: null, y: null };
     previousPredictedPosition = null;

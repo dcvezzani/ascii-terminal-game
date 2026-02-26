@@ -1,0 +1,34 @@
+%% Client-Side Prediction: When the Local Client Lags or Server Disagrees
+%% Reconciliation corrects predicted position to server position
+
+sequenceDiagram
+    participant User as User
+    participant Client as Client
+    participant Renderer as Renderer
+    participant Server as Game Server
+
+    Note over User,Server: Movement with possible lag
+
+    User->>Client: Press movement key
+    Client->>Client: Validate movement
+    Client->>Client: Update localPlayerPredictedPosition
+    Client->>Renderer: Render at predicted position
+    Note over Client: User sees instant feedback
+    Client->>Server: MOVE message
+
+    Note over Server: Network or server lag
+
+    Server->>Server: Process move, update state
+    Server->>Client: STATE_UPDATE with authoritative position
+
+    Client->>Client: Reconcile: compare predicted vs server position
+
+    alt Positions match
+        Client->>Client: No correction needed
+    else Positions differ
+        Client->>Renderer: Clear old cell at predicted position
+        Client->>Client: Set localPlayerPredictedPosition to server position
+        Client->>Renderer: Draw at server position
+        Client->>Renderer: Update status bar
+        Note over Client: Correction applied, server is authoritative
+    end

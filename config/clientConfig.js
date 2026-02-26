@@ -26,6 +26,9 @@ try {
   if (config.rendering.resizeDebounceMs === undefined) {
     config.rendering.resizeDebounceMs = 200;
   }
+  if (config.rendering.remoteDisplayEasing === undefined) {
+    config.rendering.remoteDisplayEasing = true;
+  }
 } catch (error) {
   // Use defaults if config file doesn't exist
   config = {
@@ -41,7 +44,8 @@ try {
       spaceGlyph: '.',
       wallGlyph: '#',
       centerBoard: true,
-      resizeDebounceMs: 200
+      resizeDebounceMs: 200,
+      remoteDisplayEasing: true
     },
     prediction: {
       enabled: true,

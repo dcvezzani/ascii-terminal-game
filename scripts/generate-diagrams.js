@@ -66,13 +66,14 @@ function convertToSvg(mmdPath) {
  * Show usage information
  */
 function showUsage() {
-  console.log('Usage: node generate-diagrams.js [directories...]');
+  console.log('Usage: node generate-diagrams.js [paths...]');
   console.log('');
   console.log('Generate SVG files from Mermaid (.mmd) files.');
   console.log('');
   console.log('Arguments:');
-  console.log('  directories...  One or more directories to search (optional)');
-  console.log('                  If not provided, searches entire project');
+  console.log('  paths...  One or more directories and/or .mmd files (optional)');
+  console.log('           Directories are searched recursively for .mmd files.');
+  console.log('           If not provided, searches entire project.');
   console.log('');
   console.log('Examples:');
   console.log('  node generate-diagrams.js');
@@ -81,73 +82,110 @@ function showUsage() {
   console.log('  node generate-diagrams.js docs/development/specs/terminal-game/server');
   console.log('    # Search only in server architecture diagrams directory');
   console.log('');
-  console.log('  node generate-diagrams.js docs/development/specs/terminal-game/server docs/development/specs/terminal-game/client');
-  console.log('    # Search in server and client diagram directories');
+  console.log('  node generate-diagrams.js docs/development/specs/client-architecture_SPECS/client-architecture_data-structures.mmd');
+  console.log('    # Convert a single .mmd file');
+  console.log('');
+  console.log('  node generate-diagrams.js docs/specs docs/foo.mmd docs/bar.mmd');
+  console.log('    # Search directory plus specific files');
 }
 
 /**
- * Parse command-line arguments for directories
- * @returns {string[]} Array of directory paths to search (empty = search all)
+ * Parse command-line arguments for individual .mmd files
+ * @returns {string[]} Array of resolved .mmd file paths
+ */
+function parseFiles() {
+  const args = process.argv.slice(2);
+
+  if (args.includes('--help') || args.includes('-h') || args.length === 0) {
+    return [];
+  }
+
+  return args
+    .filter(arg => {
+      const resolvedPath = resolve(projectRoot, arg);
+      if (!existsSync(resolvedPath)) {
+        console.error(`❌ Error: Path does not exist: ${arg}`);
+        process.exit(1);
+      }
+      const stat = statSync(resolvedPath);
+      if (stat.isFile() && extname(arg) === '.mmd') {
+        return true;
+      }
+      return false;
+    })
+    .map(arg => resolve(projectRoot, arg));
+}
+
+/**
+ * Parse command-line arguments for directories to search
+ * @returns {string[]} Array of directory paths to search (empty = search all when no args)
  */
 function parseDirectories() {
   const args = process.argv.slice(2);
-  
-  // Show help if requested
-  if (args.includes('--help') || args.includes('-h')) {
-    showUsage();
-    process.exit(0);
+
+  if (args.includes('--help') || args.includes('-h') || args.length === 0) {
+    return [];
   }
-  
-  if (args.length === 0) {
-    return []; // Empty array means search entire project
-  }
-  
-  return args.map(arg => {
-    // Resolve path relative to project root
-    const resolvedPath = resolve(projectRoot, arg);
-    
-    // Check if directory exists
-    if (!existsSync(resolvedPath)) {
-      console.error(`❌ Error: Directory does not exist: ${arg}`);
+
+  return args
+    .filter(arg => {
+      const resolvedPath = resolve(projectRoot, arg);
+      if (!existsSync(resolvedPath)) {
+        console.error(`❌ Error: Path does not exist: ${arg}`);
+        process.exit(1);
+      }
+      const stat = statSync(resolvedPath);
+      if (stat.isDirectory()) {
+        return true;
+      }
+      if (stat.isFile() && extname(arg) === '.mmd') {
+        return false; // .mmd files are handled by parseFiles
+      }
+      console.error(`❌ Error: Path is not a directory or .mmd file: ${arg}`);
       process.exit(1);
-    }
-    
-    const stat = statSync(resolvedPath);
-    if (!stat.isDirectory()) {
-      console.error(`❌ Error: Path is not a directory: ${arg}`);
-      process.exit(1);
-    }
-    
-    return resolvedPath;
-  });
+    })
+    .map(arg => resolve(projectRoot, arg));
 }
 
 /**
  * Main function
  */
 function main() {
+  if (process.argv.includes('--help') || process.argv.includes('-h')) {
+    showUsage();
+    process.exit(0);
+  }
+
+  const explicitFiles = parseFiles();
   const searchDirectories = parseDirectories();
-  
-  if (searchDirectories.length === 0) {
+
+  if (searchDirectories.length === 0 && explicitFiles.length === 0) {
     console.log('🔍 Finding all Mermaid (.mmd) files in project...\n');
   } else {
-    console.log('🔍 Finding Mermaid (.mmd) files in specified directories...\n');
+    console.log('🔍 Finding Mermaid (.mmd) files...\n');
+    explicitFiles.forEach(file => {
+      console.log(`  📄 ${file.replace(projectRoot + '/', '')}`);
+    });
     searchDirectories.forEach(dir => {
-      const relativePath = dir.replace(projectRoot + '/', '');
-      console.log(`  📁 ${relativePath}`);
+      console.log(`  📁 ${dir.replace(projectRoot + '/', '')}`);
     });
     console.log();
   }
-  
-  // Collect files from all search directories (or project root if none specified)
-  const searchPaths = searchDirectories.length > 0 
-    ? searchDirectories 
-    : [projectRoot];
-  
-  const mermaidFiles = [];
+
+  // Collect: explicit .mmd files + all .mmd from each search directory (or project root only when no args)
+  const searchPaths =
+    searchDirectories.length > 0 ? searchDirectories : (explicitFiles.length === 0 ? [projectRoot] : []);
+  const seen = new Set(explicitFiles.map(p => resolve(p)));
+  const mermaidFiles = [...explicitFiles];
   searchPaths.forEach(searchPath => {
-    const files = findMermaidFiles(searchPath);
-    mermaidFiles.push(...files);
+    const found = findMermaidFiles(searchPath);
+    found.forEach(path => {
+      const resolved = resolve(path);
+      if (!seen.has(resolved)) {
+        seen.add(resolved);
+        mermaidFiles.push(path);
+      }
+    });
   });
 
   if (mermaidFiles.length === 0) {
